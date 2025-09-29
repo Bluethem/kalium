@@ -14,10 +14,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                .anyRequest().permitAll() // Permite todas las peticiones sin autenticación
             )
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> {}); // ✅ Usa la configuración CORS automática
+            .csrf(csrf -> csrf.disable()) // Deshabilita CSRF para API REST
+            .cors(cors -> {}); // Usa la configuración CORS de CorsConfig
         
         return http.build();
     }
