@@ -87,7 +87,7 @@ const Reportes = () => {
                   name="tipoReporte"
                   value={filtros.tipoReporte}
                   onChange={handleChange}
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#14378f]/50 focus:border-[#14378f] transition-all text-gray-900 dark:text-white"
+                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#2cab5b]/50 focus:border-[rgb(44,171,91)] transition-all text-gray-900 dark:text-white"
                 >
                   <option>Inventario</option>
                   <option>Pedidos</option>
@@ -106,7 +106,7 @@ const Reportes = () => {
                   name="fechaInicio"
                   value={filtros.fechaInicio}
                   onChange={handleChange}
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#14378f]/50 focus:border-[#14378f] transition-all text-gray-900 dark:text-white"
+                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#2cab5b]/50 focus:border-[#2cab5b] transition-all text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -120,7 +120,7 @@ const Reportes = () => {
                   name="fechaFin"
                   value={filtros.fechaFin}
                   onChange={handleChange}
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#14378f]/50 focus:border-[#14378f] transition-all text-gray-900 dark:text-white"
+                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#2cab5b]/50 focus:border-[rgb(44,171,91)] transition-all text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -133,7 +133,7 @@ const Reportes = () => {
                   name="categoria"
                   value={filtros.categoria}
                   onChange={handleChange}
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#14378f]/50 focus:border-[#14378f] transition-all text-gray-900 dark:text-white"
+                  className="w-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 rounded-md h-12 px-4 focus:ring-2 focus:ring-[#2cab5b]/50 focus:border-[#2cab5b] transition-all text-gray-900 dark:text-white"
                 >
                   <option>Todas</option>
                   <option>Químicos</option>
@@ -146,7 +146,7 @@ const Reportes = () => {
             <div className="flex justify-end pt-4">
               <button
                 onClick={handleGenerarReporte}
-                className="bg-[#14378f] text-white font-semibold rounded-md h-12 px-6 hover:bg-[#14378f]/90 transition-colors flex items-center gap-2"
+                className="bg-[#2cab5b] text-white font-semibold rounded-md h-12 px-6 hover:bg-[#2cab5b]/90 transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined">description</span>
                 <span>Generar Reporte</span>

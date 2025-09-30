@@ -23,17 +23,17 @@ function App() {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                    <span className="material-symbols-outlined text-[#14378f] text-5xl mb-4">inventory_2</span>
+                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">inventory_2</span>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Insumos</h3>
                     <p className="text-gray-600 dark:text-gray-400">Gestiona el inventario de insumos del laboratorio</p>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                    <span className="material-symbols-outlined text-[#14378f] text-5xl mb-4">shopping_cart</span>
+                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">shopping_cart</span>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Pedidos</h3>
                     <p className="text-gray-600 dark:text-gray-400">Administra pedidos de materiales</p>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                    <span className="material-symbols-outlined text-[#14378f] text-5xl mb-4">description</span>
+                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">description</span>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Reportes</h3>
                     <p className="text-gray-600 dark:text-gray-400">Genera informes detallados</p>
                   </div>

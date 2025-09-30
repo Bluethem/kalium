@@ -52,7 +52,7 @@ const DetalleInsumo = () => {
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#14378f] mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando detalles...</p>
           </div>
         </div>
@@ -147,7 +147,7 @@ const DetalleInsumo = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[#14378f] dark:hover:text-[#14378f]">
+                          <button className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)]">
                             <span className="material-symbols-outlined text-base">edit</span>
                             <span>Editar</span>
                           </button>

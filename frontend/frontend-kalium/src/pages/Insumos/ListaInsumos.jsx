@@ -39,7 +39,7 @@ const ListaInsumos = () => {
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#14378f] mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando insumos...</p>
           </div>
         </div>
@@ -59,7 +59,7 @@ const ListaInsumos = () => {
           </h2>
           <button
             onClick={() => navigate('/insumos/nuevo')}
-            className="flex items-center gap-2 bg-[#14378f] text-white px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-all"
+            className="flex items-center gap-2 bg-[rgb(44,171,91)] text-white px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-all"
           >
             <span className="material-symbols-outlined text-base">add</span>
             <span className="truncate">Agregar Insumo</span>
@@ -81,7 +81,7 @@ const ListaInsumos = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border-transparent focus:border-[#14378f] focus:ring-[#14378f] text-gray-900 dark:text-white"
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border-transparent focus:border-[rgb(44,171,91)] focus:ring-[rgb(44,171,91)] text-gray-900 dark:text-white"
               placeholder="Buscar insumos..."
             />
           </div>
@@ -137,7 +137,7 @@ const ListaInsumos = () => {
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => navigate(`/insumos/${insumo.idTipoInsumo}`)}
-                        className="flex items-center justify-center gap-2 w-full bg-[#14378f]/10 text-[#14378f] px-3 py-1.5 rounded-md font-medium hover:bg-[#14378f]/20 text-xs transition-all"
+                        className="flex items-center justify-center gap-2 w-full bg-[#14378f]/10 text-[rgb(44,171,91)] px-3 py-1.5 rounded-md font-medium hover:bg-[#14378f]/20 text-xs transition-all"
                       >
                         <span>Ver Detalles</span>
                         <span className="material-symbols-outlined text-base">arrow_forward</span>
