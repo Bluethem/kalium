@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import Header from '../../components/Layout/Header';
 import { insumoService } from '../../services/api';
 
@@ -38,6 +37,9 @@ const DetalleInsumo = () => {
     const estados = {
       'Disponible': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
       'En Uso': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+      'En Tránsito': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+      'Entregado': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      'Reservado': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
       'Agotado': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
       'En Mantenimiento': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
     };
@@ -80,7 +82,7 @@ const DetalleInsumo = () => {
             onClick={() => navigate('/insumos')}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
           >
-            <ArrowLeft size={20} />
+            <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Detalle del Insumo: {tipoInsumo.nombreTipoInsumo}
@@ -105,11 +107,11 @@ const DetalleInsumo = () => {
             </div>
             <div className="flex items-center gap-2">
               <button className="flex items-center gap-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600">
-                <Edit size={16} />
+                <span className="material-symbols-outlined text-base">edit</span>
                 <span>Editar Tipo</span>
               </button>
               <button className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700">
-                <Trash2 size={16} />
+                <span className="material-symbols-outlined text-base">delete</span>
                 <span>Eliminar Tipo</span>
               </button>
             </div>
@@ -146,11 +148,11 @@ const DetalleInsumo = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[#14378f] dark:hover:text-[#14378f]">
-                            <Edit size={16} />
+                            <span className="material-symbols-outlined text-base">edit</span>
                             <span>Editar</span>
                           </button>
                           <button className="flex items-center gap-1 text-sm font-medium text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400">
-                            <Trash2 size={16} />
+                            <span className="material-symbols-outlined text-base">delete</span>
                             <span>Eliminar</span>
                           </button>
                         </div>

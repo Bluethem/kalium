@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ArrowRight } from 'lucide-react';
 import { insumoService } from '../../services/api';
 import Header from '../../components/Layout/Header';
 
@@ -62,7 +61,7 @@ const ListaInsumos = () => {
             onClick={() => navigate('/insumos/nuevo')}
             className="flex items-center gap-2 bg-[#14378f] text-white px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-all"
           >
-            <Plus size={20} />
+            <span className="material-symbols-outlined text-base">add</span>
             <span className="truncate">Agregar Insumo</span>
           </button>
         </div>
@@ -77,7 +76,7 @@ const ListaInsumos = () => {
         {/* Barra de búsqueda */}
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">search</span>
             <input
               type="text"
               value={searchTerm}
@@ -141,7 +140,7 @@ const ListaInsumos = () => {
                         className="flex items-center justify-center gap-2 w-full bg-[#14378f]/10 text-[#14378f] px-3 py-1.5 rounded-md font-medium hover:bg-[#14378f]/20 text-xs transition-all"
                       >
                         <span>Ver Detalles</span>
-                        <ArrowRight size={16} />
+                        <span className="material-symbols-outlined text-base">arrow_forward</span>
                       </button>
                     </td>
                   </tr>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Header from '../../components/Layout/Header';
-import { FileText } from 'lucide-react';
 
 const Reportes = () => {
   const [filtros, setFiltros] = useState({
@@ -149,7 +148,7 @@ const Reportes = () => {
                 onClick={handleGenerarReporte}
                 className="bg-[#14378f] text-white font-semibold rounded-md h-12 px-6 hover:bg-[#14378f]/90 transition-colors flex items-center gap-2"
               >
-                <FileText size={20} />
+                <span className="material-symbols-outlined">description</span>
                 <span>Generar Reporte</span>
               </button>
             </div>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell } from 'lucide-react';
 
 const Header = () => {
   const location = useLocation();
@@ -68,10 +67,10 @@ const Header = () => {
 
       <div className="flex items-center gap-4">
         <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors">
-          <Bell size={20} />
+          <span className="material-symbols-outlined">notifications</span>
         </button>
         <div
-          className="size-10 rounded-full bg-cover bg-center bg-gray-300 dark:bg-gray-600"
+          className="size-10 rounded-full bg-cover bg-center"
           style={{
             backgroundImage:
               'url("https://ui-avatars.com/api/?name=Usuario&background=14378f&color=fff")',
