@@ -4,7 +4,7 @@
 -- ============================================
 
 USE kaliumdb;
-
+    
 -- 1. Insertar Usuarios
 INSERT INTO Usuario (IDUsuario, Nombre, Apellido, Correo, Contrasena) VALUES
 (1, 'Juan', 'Pérez', 'juan.perez@lab.com', 'password123'),
