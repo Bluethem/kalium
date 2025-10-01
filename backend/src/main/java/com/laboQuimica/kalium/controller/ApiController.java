@@ -14,7 +14,7 @@ public class ApiController {
         Map<String, String> response = new HashMap<>();
         response.put("mensaje", "Bienvenido a Kalium API");
         response.put("status", "success");
-        response.put("endpoints", "/api/mensaje, /api/usuarios");
+        response.put("endpoints", "/api/mensaje, /api/usuarios, /api/insumos, /api/categorias, /api/unidades");
         return response;
     }
 
@@ -27,6 +27,18 @@ public class ApiController {
         return response;
     }
 
+    // ✅ Health check
+    @GetMapping("/health")
+    public Map<String, String> healthCheck() {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "OK");
+        response.put("service", "Kalium API");
+        response.put("timestamp", new Date().toString());
+        return response;
+    }
+
+    // ❌ COMENTADO: Estas rutas ahora están en UsuarioController
+    /*
     // ✅ Obtener usuarios (simulado)
     @GetMapping("/usuarios")
     public List<Map<String, Object>> getUsuarios() {
@@ -67,16 +79,6 @@ public class ApiController {
         return response;
     }
 
-    // ✅ Health check
-    @GetMapping("/health")
-    public Map<String, String> healthCheck() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "OK");
-        response.put("service", "Kalium API");
-        response.put("timestamp", new Date().toString());
-        return response;
-    }
-
     // ✅ Ejemplo con parámetro en URL
     @GetMapping("/usuarios/{id}")
     public Map<String, Object> getUsuarioById(@PathVariable int id) {
@@ -88,4 +90,5 @@ public class ApiController {
         
         return response;
     }
+    */
 }

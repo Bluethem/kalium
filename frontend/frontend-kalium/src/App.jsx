@@ -1,175 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { usuarioService, generalService } from './services/api';
-import { Users, MessageCircle, Heart, Plus } from 'lucide-react';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ListaInsumos from './pages/Insumos/ListaInsumos';
+import NuevoInsumo from './pages/Insumos/NuevoInsumo';
+import DetalleInsumo from './pages/Insumos/DetalleInsumo';
+import Reportes from './pages/Reportes/Reportes';
+import Header from './components/Layout/Header';
 
 function App() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [mensaje, setMensaje] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [nuevoUsuario, setNuevoUsuario] = useState({
-    nombre: '',
-    email: '',
-    activo: true
-  });
-
-  // Cargar datos al iniciar
-  useEffect(() => {
-    cargarDatosIniciales();
-  }, []);
-
-  const cargarDatosIniciales = async () => {
-    try {
-      setLoading(true);
-      
-      // Cargar usuarios y mensaje en paralelo
-      const [responseUsuarios, responseMensaje] = await Promise.all([
-        usuarioService.getUsuarios(),
-        generalService.getMensaje()
-      ]);
-
-      setUsuarios(responseUsuarios.data);
-      setMensaje(responseMensaje.data.mensaje);
-      setError('');
-    } catch (err) {
-      setError('Error al cargar datos: ' + (err.response?.data?.message || err.message));
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setNuevoUsuario(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleCrearUsuario = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await usuarioService.createUsuario(nuevoUsuario);
-      console.log('Usuario creado:', response.data);
-      
-      // Recargar usuarios
-      await cargarDatosIniciales();
-      
-      // Limpiar formulario
-      setNuevoUsuario({ nombre: '', email: '', activo: true });
-      
-      alert('Usuario creado exitosamente!');
-    } catch (err) {
-      setError('Error al crear usuario: ' + (err.response?.data?.message || err.message));
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-        <p>Cargando datos desde Spring Boot...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>🚀 Kalium App - React + Spring Boot</h1>
-        <p className="app-subtitle">{mensaje}</p>
-      </header>
-
-      {error && (
-        <div className="error-banner">
-          ⚠️ {error}
-          <button onClick={() => setError('')}>×</button>
-        </div>
-      )}
-
-      <main className="app-main">
-        {/* Sección de crear usuario */}
-        <section className="section">
-          <h2><Plus size={20} /> Crear Nuevo Usuario</h2>
-          <form onSubmit={handleCrearUsuario} className="form">
-            <div className="form-group">
-              <label>Nombre:</label>
-              <input
-                type="text"
-                name="nombre"
-                value={nuevoUsuario.nombre}
-                onChange={handleInputChange}
-                required
-                placeholder="Ej: Juan Pérez"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Email:</label>
-              <input
-                type="email"
-                name="email"
-                value={nuevoUsuario.email}
-                onChange={handleInputChange}
-                required
-                placeholder="Ej: juan@email.com"
-              />
-            </div>
-            
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  name="activo"
-                  checked={nuevoUsuario.activo}
-                  onChange={handleInputChange}
-                />
-                Usuario activo
-              </label>
-            </div>
-            
-            <button type="submit" className="btn-primary">
-              <Plus size={16} /> Crear Usuario
-            </button>
-          </form>
-        </section>
-
-        {/* Sección de listado de usuarios */}
-        <section className="section">
-          <h2><Users size={20} /> Lista de Usuarios ({usuarios.length})</h2>
-          
-          <div className="usuarios-grid">
-            {usuarios.map(usuario => (
-              <div key={usuario.id} className="usuario-card">
-                <div className="usuario-header">
-                  <h3>{usuario.nombre}</h3>
-                  <span className={`status ${usuario.activo ? 'active' : 'inactive'}`}>
-                    {usuario.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                </div>
-                
-                <div className="usuario-info">
-                  <p>📧 {usuario.email}</p>
-                  <p>🆔 ID: {usuario.id}</p>
-                  <p>📅 Creado: {new Date(usuario.fechaCreacion).toLocaleDateString()}</p>
-                </div>
-                
-                <div className="usuario-actions">
-                  <button className="btn-secondary">Editar</button>
-                  <button className="btn-danger">Eliminar</button>
+    <Router>
+      <Routes>
+        <Route path="/" element={
+          <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+            <Header />
+            <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                  Bienvenido a Kalium
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-8">
+                  Sistema de Gestión de Laboratorio Químico
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">inventory_2</span>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Insumos</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Gestiona el inventario de insumos del laboratorio</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">shopping_cart</span>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Pedidos</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Administra pedidos de materiales</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">description</span>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Reportes</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Genera informes detallados</p>
+                  </div>
                 </div>
               </div>
-            ))}
+            </main>
           </div>
-        </section>
-      </main>
-
-      <footer className="app-footer">
-        <p>✅ Conectado a Spring Boot en http://localhost:8080</p>
-      </footer>
-    </div>
+        } />
+        <Route path="/insumos" element={<ListaInsumos />} />
+        <Route path="/insumos/nuevo" element={<NuevoInsumo />} />
+        <Route path="/insumos/:id" element={<DetalleInsumo />} />
+        <Route path="/reportes" element={<Reportes />} />
+        <Route path="/pedidos" element={
+          <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+            <Header />
+            <main className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <span className="material-symbols-outlined text-gray-400 text-8xl mb-4">construction</span>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Página en Desarrollo</h2>
+                <p className="text-gray-600 dark:text-gray-400">La gestión de pedidos estará disponible próximamente</p>
+              </div>
+            </main>
+          </div>
+        } />
+      </Routes>
+    </Router>
   );
 }
 
