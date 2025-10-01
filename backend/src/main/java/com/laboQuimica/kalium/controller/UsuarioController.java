@@ -74,4 +74,21 @@ public class UsuarioController {
                 .body("Error al eliminar usuario: " + e.getMessage());
         }
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Usuario credenciales) {
+        try {
+            return usuarioService.autenticar(credenciales.getCorreo(), credenciales.getContrasena())
+                    .<ResponseEntity<?>>map(usuario -> {
+                        // No exponer la contraseña en la respuesta
+                        usuario.setContrasena(null);
+                        return ResponseEntity.ok(usuario);
+                    })
+                    .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body("Credenciales inválidas"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error en el inicio de sesión: " + e.getMessage());
+        }
+    }
 }
