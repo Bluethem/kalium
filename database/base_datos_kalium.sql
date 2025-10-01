@@ -22,7 +22,7 @@ CREATE TABLE Usuario
 CREATE TABLE Administrador
 (
   IDAdministrador INT NOT NULL,
-  IDUsuario INT NOT NULL,
+  IDUsuario INT NOT NULL UNIQUE,
   PRIMARY KEY (IDAdministrador),
   FOREIGN KEY (IDUsuario) REFERENCES Usuario(IDUsuario)
 );
@@ -30,7 +30,7 @@ CREATE TABLE Administrador
 CREATE TABLE Instructor
 (
   IDInstructor INT NOT NULL,
-  IDUsuario INT NOT NULL,
+  IDUsuario INT NOT NULL UNIQUE,
   PRIMARY KEY (IDInstructor),
   FOREIGN KEY (IDUsuario) REFERENCES Usuario(IDUsuario)
 );
@@ -68,7 +68,7 @@ CREATE TABLE Pedido
 (
   IDPedido INT NOT NULL,
   FechaPedido DATE NOT NULL,
-  CantGrupos INT NOT NULL,
+  CantGrupos INT NOT NULL CHECK (CantGrupos > 0),
   IDInstructor INT NOT NULL,
   IDEstPedido INT NOT NULL,
   IDCurso INT NOT NULL,
@@ -99,10 +99,11 @@ CREATE TABLE Unidad
 CREATE TABLE TipoInsumo
 (
   IDTipoInsumo INT NOT NULL,
-  NombreTipoInsumo VARCHAR(100) NOT NULL,
+  NombreTipoInsumo VARCHAR(100) NOT NULL UNIQUE,
   Descripcion VARCHAR(255) NOT NULL,
   IDCategoria INT NOT NULL,
   IDUnidad INT NOT NULL,
+  EsQuimico TINYINT(1) NOT NULL DEFAULT 0, -- 1 = químico, 0 = insumo físico
   PRIMARY KEY (IDTipoInsumo),
   FOREIGN KEY (IDCategoria) REFERENCES Categoria(IDCategoria),
   FOREIGN KEY (IDUnidad) REFERENCES Unidad(IDUnidad)
@@ -131,10 +132,11 @@ CREATE TABLE Insumo
   IDInsumo INT NOT NULL,
   IDEstInsumo INT NOT NULL,
   IDTipoInsumo INT NOT NULL,
+  FechaIngreso DATE NOT NULL DEFAULT (CURRENT_DATE),
   PRIMARY KEY (IDInsumo),
   FOREIGN KEY (IDEstInsumo) REFERENCES EstInsumo(IDEstInsumo),
   FOREIGN KEY (IDTipoInsumo) REFERENCES TipoInsumo(IDTipoInsumo)
-);
+);  
 
 CREATE TABLE Estudiante
 (
@@ -242,6 +244,7 @@ CREATE TABLE Quimico
   IDQuimico INT NOT NULL,
   CantQuimico FLOAT NOT NULL,
   IDTipoInsumo INT NOT NULL,
+  FechaIngreso DATE NOT NULL DEFAULT (CURRENT_DATE),
   PRIMARY KEY (IDQuimico),
   FOREIGN KEY (IDTipoInsumo) REFERENCES TipoInsumo(IDTipoInsumo)
 );

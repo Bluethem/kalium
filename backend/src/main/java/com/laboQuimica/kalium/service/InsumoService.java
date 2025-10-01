@@ -1,5 +1,6 @@
 package com.laboQuimica.kalium.service;
 
+import com.laboQuimica.kalium.dto.TipoInsumoStockDTO;
 import com.laboQuimica.kalium.entity.*;
 import com.laboQuimica.kalium.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -24,6 +26,9 @@ public class InsumoService {
     
     @Autowired
     private CategoriaRepository categoriaRepository;
+    
+    @Autowired
+    private QuimicoRepository quimicoRepository;
     
     public List<Insumo> obtenerTodos() {
         return insumoRepository.findAll();
@@ -77,6 +82,36 @@ public class InsumoService {
     // Métodos para TipoInsumo
     public List<TipoInsumo> obtenerTodosTipos() {
         return tipoInsumoRepository.findAll();
+    }
+    
+    public List<TipoInsumoStockDTO> obtenerTodosTiposConStock() {
+        List<TipoInsumo> tipos = tipoInsumoRepository.findAll();
+        
+        return tipos.stream().map(tipo -> {
+            TipoInsumoStockDTO dto = new TipoInsumoStockDTO();
+            dto.setIdTipoInsumo(tipo.getIdTipoInsumo());
+            dto.setNombreTipoInsumo(tipo.getNombreTipoInsumo());
+            dto.setDescripcion(tipo.getDescripcion());
+            dto.setCategoria(tipo.getCategoria());
+            dto.setUnidad(tipo.getUnidad());
+            dto.setEsQuimico(tipo.getEsQuimico());
+            
+            if (tipo.getEsQuimico()) {
+                // Para químicos: sumar cantidades
+                Float cantidadTotal = quimicoRepository.sumCantidadByTipoInsumo(tipo.getIdTipoInsumo());
+                if (cantidadTotal == null) cantidadTotal = 0.0f;
+                dto.setCantidadTotal(String.format("%.2f", cantidadTotal));
+                dto.setCantidadNumerica(cantidadTotal.doubleValue());
+            } else {
+                // Para insumos: contar unidades
+                Long cantidad = insumoRepository.countByTipoInsumo(tipo.getIdTipoInsumo());
+                if (cantidad == null) cantidad = 0L;
+                dto.setCantidadTotal(cantidad.toString());
+                dto.setCantidadNumerica(cantidad.doubleValue());
+            }
+            
+            return dto;
+        }).collect(Collectors.toList());
     }
     
     public List<TipoInsumo> obtenerTiposPorCategoria(Integer idCategoria) {

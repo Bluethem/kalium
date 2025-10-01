@@ -1,5 +1,7 @@
 package com.laboQuimica.kalium.entity;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,4 +23,7 @@ public class Insumo {
     @ManyToOne
     @JoinColumn(name = "IDTipoInsumo", nullable = false)
     private TipoInsumo tipoInsumo;
+
+    @Column(name = "FechaIngreso", nullable = false)
+    private LocalDate fechaIngreso;
 }

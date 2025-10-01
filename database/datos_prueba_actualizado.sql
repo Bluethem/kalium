@@ -37,15 +37,15 @@ INSERT INTO Unidad (IDUnidad, Unidad) VALUES
 (5, 'L');
 
 -- 6. Insertar Tipos de Insumo
-INSERT INTO TipoInsumo (IDTipoInsumo, NombreTipoInsumo, Descripcion, IDCategoria, IDUnidad) VALUES
-(1, 'Ácido Sulfúrico', 'Ácido fuerte utilizado en múltiples reacciones químicas', 1, 1),
-(2, 'Hidróxido de Sodio', 'Base fuerte para neutralización y síntesis', 1, 2),
-(3, 'Matraz Erlenmeyer', 'Matraz cónico de vidrio para mezclas', 2, 3),
-(4, 'Probeta Graduada', 'Instrumento para medir volúmenes de líquidos', 2, 3),
-(5, 'Balanza Analítica', 'Equipo de precisión para medir masas', 3, 3),
-(6, 'Guantes de Nitrilo', 'Protección para manos en laboratorio', 4, 3),
-(7, 'Etanol', 'Alcohol etílico para limpieza y reacciones', 1, 1),
-(8, 'Cloruro de Sodio', 'Sal común para preparación de soluciones', 1, 2);
+INSERT INTO TipoInsumo (IDTipoInsumo, NombreTipoInsumo, Descripcion, IDCategoria, IDUnidad, EsQuimico) VALUES
+(1, 'Ácido Sulfúrico', 'Ácido fuerte utilizado en múltiples reacciones químicas', 1, 1, 1),
+(2, 'Hidróxido de Sodio', 'Base fuerte para neutralización y síntesis', 1, 2,1),
+(3, 'Matraz Erlenmeyer', 'Matraz cónico de vidrio para mezclas', 2, 3, 0),
+(4, 'Probeta Graduada', 'Instrumento para medir volúmenes de líquidos', 2, 3, 0),
+(5, 'Balanza Analítica', 'Equipo de precisión para medir masas', 3, 3, 0),
+(6, 'Guantes de Nitrilo', 'Protección para manos en laboratorio', 4, 3, 0),
+(7, 'Etanol', 'Alcohol etílico para limpieza y reacciones', 1, 1, 1),
+(8, 'Cloruro de Sodio', 'Sal común para preparación de soluciones', 1, 2, 1);
 
 -- 7. Insertar Estados de Insumo
 INSERT INTO EstInsumo (IDEstInsumo, NombreEstInsumo) VALUES
@@ -55,22 +55,20 @@ INSERT INTO EstInsumo (IDEstInsumo, NombreEstInsumo) VALUES
 (4, 'En Mantenimiento');
 
 -- 8. Insertar Insumos
-INSERT INTO Insumo (IDInsumo, IDEstInsumo, IDTipoInsumo) VALUES
-(1, 1, 1), -- Ácido Sulfúrico Disponible
-(2, 1, 2), -- Hidróxido de Sodio Disponible
-(3, 1, 3), -- Matraz Erlenmeyer Disponible
-(4, 2, 4), -- Probeta en Uso
-(5, 1, 5), -- Balanza Disponible
-(6, 1, 6), -- Guantes Disponibles
-(7, 3, 7), -- Etanol Agotado
-(8, 1, 8); -- Cloruro de Sodio Disponible
+INSERT INTO Insumo (IDInsumo, IDEstInsumo, IDTipoInsumo, FechaIngreso) VALUES
+(1, 1, 3, '2025-09-10'), -- Matraz Erlenmeyer Disponible (cantida 1)
+(2, 2, 4, '2025-09-10'), -- Probeta en Uso (Cantidad 1)
+(3, 1, 5, '2025-09-10'), -- Balanza Disponible (Cantidad 1)
+(4, 1, 6, '2025-09-10'), -- Guantes Disponibles (Cantidad 1)
+(5, 1, 5, '2025-09-10'), -- Balanza Disponible (Cantidad 1)
+(6, 1, 4, '2025-09-10'), -- Probeta Disponible (Cantidad 1)
 
 -- 9. Insertar Químicos
-INSERT INTO Quimico (IDQuimico, CantQuimico, IDTipoInsumo) VALUES
-(1, 500.5, 1), -- 500.5 ml de Ácido Sulfúrico
-(2, 250.0, 2), -- 250 g de Hidróxido de Sodio
-(3, 1000.0, 7), -- 1000 ml de Etanol
-(4, 500.0, 8); -- 500 g de Cloruro de Sodio
+INSERT INTO Quimico (IDQuimico, CantQuimico, IDTipoInsumo, FechaIngreso) VALUES
+(1, 500.5, 1, '2025-09-10'), -- 500.5 ml de Ácido Sulfúrico
+(2, 250.0, 2, '2025-09-10'), -- 250 g de Hidróxido de Sodio
+(3, 1000.0, 7, '2025-09-10'), -- 1000 ml de Etanol
+(4, 500.0, 8, '2025-09-10'); -- 500 g de Cloruro de Sodio
 
 -- 10. Insertar Estudiantes
 INSERT INTO Estudiante (IDEstudiante, Nombre, Apellido) VALUES
@@ -125,9 +123,9 @@ INSERT INTO Entrega (IDEntrega, FechaEntrega, HoraEntrega, IDPedido, IDEstudiant
 
 -- 18. Insertar Entregas de Insumos
 INSERT INTO EntregaInsumo (IDEntregaInsumo, IDEntrega, IDInsumo) VALUES
-(1, 1, 1), -- Entrega 1 incluye Ácido Sulfúrico
-(2, 1, 3), -- Entrega 1 incluye Matraz
-(3, 2, 2), -- Entrega 2 incluye Hidróxido
+(1, 1, 1), -- Entrega 1 incluye Matraz
+(2, 1, 3), -- Entrega 1 incluye Balanza
+(3, 2, 2), -- Entrega 2 incluye Probeta
 (4, 2, 5); -- Entrega 2 incluye Balanza
 
 -- 19. Insertar Entregas de Químicos
@@ -179,3 +177,62 @@ SELECT 'Datos de prueba insertados correctamente!' AS Resultado;
 SELECT COUNT(*) AS TotalTiposInsumo FROM TipoInsumo;
 SELECT COUNT(*) AS TotalInsumos FROM Insumo;
 SELECT COUNT(*) AS TotalUsuarios FROM Usuario;
+
+-- =========================
+-- TRIGGERS PARA VALIDACION
+-- =========================
+
+-- Insumo: no permitir si TipoInsumo es quimico
+CREATE TRIGGER trg_insumo_before_insert
+BEFORE INSERT ON Insumo
+FOR EACH ROW
+BEGIN
+  DECLARE vEsQuimico TINYINT DEFAULT 0;
+  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
+  IF vEsQuimico = 1 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo es quimico, no puede insertarse en Insumo';
+  END IF;
+END;
+//
+
+CREATE TRIGGER trg_insumo_before_update
+BEFORE UPDATE ON Insumo
+FOR EACH ROW
+BEGIN
+  DECLARE vEsQuimico TINYINT DEFAULT 0;
+  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
+  IF vEsQuimico = 1 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo es quimico, no puede asignarse en Insumo';
+  END IF;
+END;
+//
+
+-- Quimico: solo permitir si TipoInsumo es quimico
+CREATE TRIGGER trg_quimico_before_insert
+BEFORE INSERT ON Quimico
+FOR EACH ROW
+BEGIN
+  DECLARE vEsQuimico TINYINT DEFAULT 0;
+  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
+  IF vEsQuimico = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo no es quimico, no puede insertarse en Quimico';
+  END IF;
+  IF NEW.CantQuimico < 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: CantQuimico no puede ser negativa';
+  END IF;
+END;
+//
+
+CREATE TRIGGER trg_quimico_before_update
+BEFORE UPDATE ON Quimico
+FOR EACH ROW
+BEGIN
+  DECLARE vEsQuimico TINYINT DEFAULT 0;
+  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
+  IF vEsQuimico = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo no es quimico, no puede actualizarse en Quimico';
+  END IF;
+  IF NEW.CantQuimico < 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: CantQuimico no puede ser negativa';
+  END IF;
+END;

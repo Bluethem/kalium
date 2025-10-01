@@ -1,5 +1,6 @@
 package com.laboQuimica.kalium.controller;
 
+import com.laboQuimica.kalium.dto.TipoInsumoStockDTO;
 import com.laboQuimica.kalium.entity.Insumo;
 import com.laboQuimica.kalium.entity.TipoInsumo;
 import com.laboQuimica.kalium.service.InsumoService;
@@ -97,6 +98,11 @@ public class InsumoController {
     @GetMapping("/tipos")
     public ResponseEntity<List<TipoInsumo>> obtenerTodosTipos() {
         return ResponseEntity.ok(insumoService.obtenerTodosTipos());
+    }
+    
+    @GetMapping("/tipos/stock")
+    public ResponseEntity<List<TipoInsumoStockDTO>> obtenerTodosTiposConStock() {
+        return ResponseEntity.ok(insumoService.obtenerTodosTiposConStock());
     }
     
     @GetMapping("/tipos/categoria/{idCategoria}")

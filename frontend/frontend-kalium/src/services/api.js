@@ -34,8 +34,20 @@ export const insumoService = {
   
   // Tipos de Insumo
   getTiposInsumo: () => api.get('/insumos/tipos'),
+  getTiposInsumoConStock: () => api.get('/insumos/tipos/stock'),
   getTiposPorCategoria: (idCategoria) => api.get(`/insumos/tipos/categoria/${idCategoria}`),
   createTipoInsumo: (tipoData) => api.post('/insumos/tipos', tipoData),
+};
+
+// Servicios para Quimicos
+export const quimicoService = {
+  getQuimicos: () => api.get('/quimicos'),
+  getQuimicoById: (id) => api.get(`/quimicos/${id}`),
+  getQuimicosPorTipo: (idTipo) => api.get(`/quimicos/tipo/${idTipo}`),
+  createQuimico: (quimicoData) => api.post('/quimicos', quimicoData),
+  updateQuimico: (id, quimicoData) => api.put(`/quimicos/${id}`, quimicoData),
+  cambiarEstado: (idQuimico, idEstado) => api.patch(`/quimicos/${idQuimico}/estado/${idEstado}`),
+  deleteQuimico: (id) => api.delete(`/quimicos/${id}`),
 };
 
 // Servicios para Pedidos
@@ -64,6 +76,17 @@ export const entregaService = {
   createEntregaQuimico: (entregaQuimicoData) => api.post('/entregas/quimicos', entregaQuimicoData),
   updateEntrega: (id, entregaData) => api.put(`/entregas/${id}`, entregaData),
   deleteEntrega: (id) => api.delete(`/entregas/${id}`),
+};
+
+// Servicios para Reportes
+export const reporteService = {
+  getReporteInventario: (fechaInicio, fechaFin, categoria) => {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+    if (categoria) params.append('categoria', categoria);
+    return api.get(`/reportes/inventario?${params.toString()}`);
+  },
 };
 
 // Servicios generales

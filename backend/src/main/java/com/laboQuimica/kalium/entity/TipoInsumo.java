@@ -27,4 +27,7 @@ public class TipoInsumo {
     @ManyToOne
     @JoinColumn(name = "IDUnidad", nullable = false)
     private Unidad unidad;
+
+    @Column(name = "EsQuimico", nullable = false, length = 1)
+    private Boolean esQuimico;
 }

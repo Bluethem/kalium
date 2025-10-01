@@ -17,7 +17,7 @@ const ListaInsumos = () => {
   const cargarTiposInsumo = async () => {
     try {
       setLoading(true);
-      const response = await insumoService.getTiposInsumo();
+      const response = await insumoService.getTiposInsumoConStock();
       setTiposInsumo(response.data);
       setError('');
     } catch (err) {
@@ -96,10 +96,16 @@ const ListaInsumos = () => {
                   Nombre
                 </th>
                 <th className="px-6 py-3" scope="col">
+                  Tipo
+                </th>
+                <th className="px-6 py-3" scope="col">
                   Descripción
                 </th>
                 <th className="px-6 py-3" scope="col">
                   Categoría
+                </th>
+                <th className="px-6 py-3" scope="col">
+                  Cantidad
                 </th>
                 <th className="px-6 py-3" scope="col">
                   Unidad
@@ -112,7 +118,7 @@ const ListaInsumos = () => {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {filteredInsumos.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                     No se encontraron insumos
                   </td>
                 </tr>
@@ -125,11 +131,25 @@ const ListaInsumos = () => {
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                       {insumo.nombreTipoInsumo}
                     </td>
+                    <td className="px-6 py-4">
+                      {insumo.esQuimico ? (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                          Químico
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                          Insumo
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {insumo.descripcion}
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {insumo.categoria?.nombreCategoria || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-semibold">
+                      {insumo.cantidadTotal || '0'}
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {insumo.unidad?.unidad || 'N/A'}
