@@ -5,43 +5,22 @@ import NuevoInsumo from './pages/Insumos/NuevoInsumo';
 import DetalleInsumo from './pages/Insumos/DetalleInsumo';
 import Reportes from './pages/Reportes/Reportes';
 import Header from './components/Layout/Header';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Usuarios from './pages/Usuarios';
+import Cuenta from './pages/Cuenta';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={
-          <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-            <Header />
-            <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="text-center">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                  Bienvenido a Kalium
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-8">
-                  Sistema de Gestión de Laboratorio Químico
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">inventory_2</span>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Insumos</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Gestiona el inventario de insumos del laboratorio</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">shopping_cart</span>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Pedidos</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Administra pedidos de materiales</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                    <span className="material-symbols-outlined text-[rgb(44,171,91)] text-5xl mb-4">description</span>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Reportes</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Genera informes detallados</p>
-                  </div>
-                </div>
-              </div>
-            </main>
-          </div>
-        } />
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/usuarios" element={<Usuarios />} />
+        <Route path="/cuenta" element={<Cuenta />} />
         <Route path="/insumos" element={<ListaInsumos />} />
         <Route path="/insumos/nuevo" element={<NuevoInsumo />} />
         <Route path="/insumos/:id" element={<DetalleInsumo />} />
