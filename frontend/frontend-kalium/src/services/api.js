@@ -95,4 +95,30 @@ export const generalService = {
   healthCheck: () => api.get('/health'),
 };
 
+// En frontend/frontend-kalium/src/services/api.js
+
+// Agregar al final del archivo:
+
+// Servicios para Instructores
+export const instructorService = {
+  getInstructores: () => api.get('/instructores'),
+  getInstructorById: (id) => api.get(`/instructores/${id}`),
+};
+
+// Servicios para Cursos
+export const cursoService = {
+  getCursos: () => api.get('/cursos'),
+  getCursoById: (id) => api.get(`/cursos/${id}`),
+};
+
+// Servicios para Tipos de Pedido
+export const tipoPedidoService = {
+  getTiposPedido: () => api.get('/tipos-pedido'),
+};
+
+// Servicios para Pedido Detalle
+export const pedidoDetalleService = {
+  createPedidoDetalle: (detalleData) => api.post('/pedidos-detalle', detalleData),
+};
+
 export default api;

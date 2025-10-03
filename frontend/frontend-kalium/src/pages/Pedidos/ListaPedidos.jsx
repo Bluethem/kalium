@@ -1,0 +1,265 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Header from '../../components/Layout/Header';
+import { pedidoService } from '../../services/api';
+
+const ListaPedidos = () => {
+  const navigate = useNavigate();
+  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filtros, setFiltros] = useState({
+    estado: '',
+    curso: '',
+    tipoPedido: ''
+  });
+
+  useEffect(() => {
+    cargarPedidos();
+  }, []);
+
+  const cargarPedidos = async () => {
+    try {
+      setLoading(true);
+      const response = await pedidoService.getPedidos();
+      setPedidos(response.data);
+    } catch (error) {
+      console.error('Error al cargar pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAprobar = async (idPedido) => {
+    try {
+      // Asumiendo que estado 2 = Aprobado
+      await pedidoService.cambiarEstado(idPedido, 2);
+      cargarPedidos();
+    } catch (error) {
+      console.error('Error al aprobar pedido:', error);
+      alert('No se pudo aprobar el pedido');
+    }
+  };
+
+  const handleRechazar = async (idPedido) => {
+    if (!window.confirm('¿Está seguro de rechazar este pedido?')) return;
+    
+    try {
+      // Asumiendo que estado 3 = Rechazado
+      await pedidoService.cambiarEstado(idPedido, 3);
+      cargarPedidos();
+    } catch (error) {
+      console.error('Error al rechazar pedido:', error);
+      alert('No se pudo rechazar el pedido');
+    }
+  };
+
+  const getEstadoBadge = (estado) => {
+    const estados = {
+      'Pendiente': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'Aprobado': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Rechazado': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'En Proceso': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    };
+    return estados[estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando pedidos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+      <Header />
+
+      <main className="flex-1 p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl">
+          {/* Header */}
+          <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Gestión de Pedidos
+            </h2>
+            <button
+              onClick={() => navigate('/pedidos/nuevo')}
+              className="flex items-center gap-2 rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-opacity-90"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              Nuevo Pedido
+            </button>
+          </div>
+
+          {/* Filtros */}
+          <div className="mb-6 flex flex-wrap items-center gap-4">
+            <div className="relative">
+              <select
+                value={filtros.estado}
+                onChange={(e) => setFiltros({...filtros, estado: e.target.value})}
+                className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <option value="">Todos los estados</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
+                expand_more
+              </span>
+            </div>
+
+            <div className="relative">
+              <select
+                value={filtros.curso}
+                onChange={(e) => setFiltros({...filtros, curso: e.target.value})}
+                className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <option value="">Todos los cursos</option>
+                <option value="quimica">Química Orgánica</option>
+                <option value="bioquimica">Bioquímica</option>
+                <option value="microbiologia">Microbiología</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
+                expand_more
+              </span>
+            </div>
+
+            <div className="relative">
+              <select
+                value={filtros.tipoPedido}
+                onChange={(e) => setFiltros({...filtros, tipoPedido: e.target.value})}
+                className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <option value="">Tipo de pedido</option>
+                <option value="normal">Normal</option>
+                <option value="urgente">Urgente</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
+                expand_more
+              </span>
+            </div>
+          </div>
+
+          {/* Tabla */}
+          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+              <thead className="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    ID del pedido
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Grupos
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Instructor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Curso
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Entrega
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                {pedidos.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      No hay pedidos registrados
+                    </td>
+                  </tr>
+                ) : (
+                  pedidos.map((pedido) => (
+                    <tr key={pedido.idPedido} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                        #{String(pedido.idPedido).padStart(5, '0')}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {pedido.fechaPedido ? new Date(pedido.fechaPedido).toLocaleDateString('es-ES') : 'N/A'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {pedido.cantGrupos}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {pedido.instructor?.usuario?.nombre} {pedido.instructor?.usuario?.apellido}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getEstadoBadge(pedido.estPedido?.nombreEstPedido)}`}>
+                          {pedido.estPedido?.nombreEstPedido || 'Sin estado'}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {pedido.curso?.nombreCurso || 'N/A'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {pedido.tipoPedido?.nombrePedido || 'N/A'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {pedido.horario?.horaInicio ? new Date(pedido.horario.horaInicio).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
+                        {pedido.estPedido?.nombreEstPedido === 'Pendiente' ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleAprobar(pedido.idPedido)}
+                              className="flex items-center gap-1 rounded-md bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400"
+                            >
+                              <span className="material-symbols-outlined text-sm">check_circle</span>
+                              Aprobar
+                            </button>
+                            <button
+                              onClick={() => handleRechazar(pedido.idPedido)}
+                              className="flex items-center gap-1 rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400"
+                            >
+                              <span className="material-symbols-outlined text-sm">cancel</span>
+                              Rechazar
+                            </button>
+                            <button
+                              onClick={() => navigate(`/pedidos/${pedido.idPedido}`)}
+                              className="text-[rgb(44,171,91)] hover:underline"
+                            >
+                              Ver
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => navigate(`/pedidos/${pedido.idPedido}`)}
+                            className="text-[rgb(44,171,91)] hover:underline"
+                          >
+                            Ver detalle
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default ListaPedidos;

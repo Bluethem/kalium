@@ -61,7 +61,7 @@ INSERT INTO Insumo (IDInsumo, IDEstInsumo, IDTipoInsumo, FechaIngreso) VALUES
 (3, 1, 5, '2025-09-10'), -- Balanza Disponible (Cantidad 1)
 (4, 1, 6, '2025-09-10'), -- Guantes Disponibles (Cantidad 1)
 (5, 1, 5, '2025-09-10'), -- Balanza Disponible (Cantidad 1)
-(6, 1, 4, '2025-09-10'), -- Probeta Disponible (Cantidad 1)
+(6, 1, 4, '2025-09-10'); -- Probeta Disponible (Cantidad 1)
 
 -- 9. Insertar Químicos
 INSERT INTO Quimico (IDQuimico, CantQuimico, IDTipoInsumo, FechaIngreso) VALUES
