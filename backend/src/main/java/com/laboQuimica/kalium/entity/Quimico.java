@@ -13,6 +13,7 @@ import lombok.*;
 public class Quimico {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // ← AGREGAR
     @Column(name = "IDQuimico")
     private Integer idQuimico;
     

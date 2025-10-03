@@ -11,6 +11,7 @@ import lombok.*;
 public class TipoInsumo {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // ← AGREGAR ESTA LÍNEA
     @Column(name = "IDTipoInsumo")
     private Integer idTipoInsumo;
     

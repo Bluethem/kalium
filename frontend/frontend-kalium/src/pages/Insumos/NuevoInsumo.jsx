@@ -6,14 +6,24 @@ import axios from 'axios';
 
 const NuevoInsumo = () => {
   const navigate = useNavigate();
-  const [tipoSeleccionado, setTipoSeleccionado] = useState('fisico');
+  const [tipoSeleccionado, setTipoSeleccionado] = useState('fisico'); 
   const [tiposInsumo, setTiposInsumo] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [unidades, setUnidades] = useState([]);
   const [estadosInsumo, setEstadosInsumo] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [accionRealizada, setAccionRealizada] = useState('');
+  
+  // Estado para controlar si se está creando un nuevo tipo
+  const [crearNuevoTipo, setCrearNuevoTipo] = useState(false);
+  const [nuevoTipo, setNuevoTipo] = useState({
+    nombreTipoInsumo: '',
+    descripcion: '',
+    idCategoria: '',
+    idUnidad: ''
+  });
   
   // Form data para insumo físico
   const [formInsumo, setFormInsumo] = useState({
@@ -35,31 +45,100 @@ const NuevoInsumo = () => {
 
   const cargarDatos = async () => {
     try {
-      const [tiposRes, estadosRes] = await Promise.all([
+      const [tiposRes, estadosRes, categoriasRes, unidadesRes] = await Promise.all([
         insumoService.getTiposInsumo(),
-        axios.get('http://localhost:8080/api/estados-insumo')
+        axios.get('http://localhost:8080/api/estados-insumo'),
+        axios.get('http://localhost:8080/api/categorias'),
+        axios.get('http://localhost:8080/api/unidades')
       ]);
       setTiposInsumo(tiposRes.data);
       setEstadosInsumo(estadosRes.data);
+      setCategorias(categoriasRes.data);
+      setUnidades(unidadesRes.data);
     } catch (error) {
       console.error('Error al cargar datos:', error);
+      setErrorMessage('Error al cargar los datos iniciales');
+      setShowError(true);
     }
   };
 
   const handleChangeInsumo = (e) => {
     const { name, value } = e.target;
-    setFormInsumo(prev => ({
+    if (value === 'nuevo') {
+      setCrearNuevoTipo(true);
+      setFormInsumo(prev => ({ ...prev, [name]: '' }));
+    } else {
+      setFormInsumo(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleChangeQuimico = (e) => {
+    const { name, value } = e.target;
+    if (value === 'nuevo') {
+      setCrearNuevoTipo(true);
+      setFormQuimico(prev => ({ ...prev, [name]: '' }));
+    } else {
+      setFormQuimico(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleChangeNuevoTipo = (e) => {
+    const { name, value } = e.target;
+    setNuevoTipo(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handleChangeQuimico = (e) => {
-    const { name, value } = e.target;
-    setFormQuimico(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const crearTipoInsumo = async () => {
+    try {
+      // Validar campos del nuevo tipo
+      if (!nuevoTipo.nombreTipoInsumo.trim()) {
+        throw new Error('El nombre del tipo de insumo es requerido');
+      }
+      if (!nuevoTipo.descripcion.trim()) {
+        throw new Error('La descripción es requerida');
+      }
+      if (!nuevoTipo.idCategoria) {
+        throw new Error('Debe seleccionar una categoría');
+      }
+      if (!nuevoTipo.idUnidad) {
+        throw new Error('Debe seleccionar una unidad');
+      }
+
+      const nuevoTipoData = {
+        nombreTipoInsumo: nuevoTipo.nombreTipoInsumo,
+        descripcion: nuevoTipo.descripcion,
+        categoria: { idCategoria: parseInt(nuevoTipo.idCategoria) },
+        unidad: { idUnidad: parseInt(nuevoTipo.idUnidad) },
+        esQuimico: tipoSeleccionado === 'quimico'
+      };
+
+      const response = await insumoService.createTipoInsumo(nuevoTipoData);
+      
+      // Actualizar lista de tipos
+      await cargarDatos();
+      
+      // Asignar el nuevo tipo al formulario correspondiente
+      if (tipoSeleccionado === 'quimico') {
+        setFormQuimico(prev => ({ ...prev, idTipoInsumo: response.data.idTipoInsumo }));
+      } else {
+        setFormInsumo(prev => ({ ...prev, idTipoInsumo: response.data.idTipoInsumo }));
+      }
+      
+      // Resetear formulario de nuevo tipo
+      setCrearNuevoTipo(false);
+      setNuevoTipo({
+        nombreTipoInsumo: '',
+        descripcion: '',
+        idCategoria: '',
+        idUnidad: ''
+      });
+      
+      return response.data.idTipoInsumo;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const handleSubmitInsumo = async (e) => {
@@ -67,9 +146,20 @@ const NuevoInsumo = () => {
     setLoading(true);
   
     try {
+      let idTipoInsumoFinal = formInsumo.idTipoInsumo;
+
+      // Si se está creando un nuevo tipo, crearlo primero
+      if (crearNuevoTipo) {
+        idTipoInsumoFinal = await crearTipoInsumo();
+      }
+
+      if (!idTipoInsumoFinal) {
+        throw new Error('Debe seleccionar o crear un tipo de insumo');
+      }
+
       const insumoData = {
         estInsumo: { idEstInsumo: parseInt(formInsumo.idEstInsumo) },
-        tipoInsumo: { idTipoInsumo: parseInt(formInsumo.idTipoInsumo) },
+        tipoInsumo: { idTipoInsumo: parseInt(idTipoInsumoFinal) },
         fechaIngreso: formInsumo.fechaIngreso
       };
   
@@ -89,9 +179,20 @@ const NuevoInsumo = () => {
     setLoading(true);
   
     try {
+      let idTipoInsumoFinal = formQuimico.idTipoInsumo;
+
+      // Si se está creando un nuevo tipo, crearlo primero
+      if (crearNuevoTipo) {
+        idTipoInsumoFinal = await crearTipoInsumo();
+      }
+
+      if (!idTipoInsumoFinal) {
+        throw new Error('Debe seleccionar o crear un tipo de químico');
+      }
+
       const quimicoData = {
         cantQuimico: parseFloat(formQuimico.cantQuimico),
-        tipoInsumo: { idTipoInsumo: parseInt(formQuimico.idTipoInsumo) },
+        tipoInsumo: { idTipoInsumo: parseInt(idTipoInsumoFinal) },
         fechaIngreso: formQuimico.fechaIngreso
       };
   
@@ -116,7 +217,7 @@ const NuevoInsumo = () => {
       <Header />
 
       <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-lg space-y-8">
+        <div className="w-full max-w-2xl space-y-8">
           <div>
             <h2 className="text-center text-3xl font-bold text-gray-900 dark:text-white">
               Agregar Insumo / Químico
@@ -136,7 +237,10 @@ const NuevoInsumo = () => {
                     name="tipo_insumo"
                     value="fisico"
                     checked={tipoSeleccionado === 'fisico'}
-                    onChange={(e) => setTipoSeleccionado(e.target.value)}
+                    onChange={(e) => {
+                      setTipoSeleccionado(e.target.value);
+                      setCrearNuevoTipo(false);
+                    }}
                     className="peer hidden"
                   />
                   <label
@@ -154,7 +258,10 @@ const NuevoInsumo = () => {
                     name="tipo_insumo"
                     value="quimico"
                     checked={tipoSeleccionado === 'quimico'}
-                    onChange={(e) => setTipoSeleccionado(e.target.value)}
+                    onChange={(e) => {
+                      setTipoSeleccionado(e.target.value);
+                      setCrearNuevoTipo(false);
+                    }}
                     className="peer hidden"
                   />
                   <label
@@ -184,26 +291,128 @@ const NuevoInsumo = () => {
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="tipo-insumo-fisico" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Tipo de Insumo
-                    </label>
-                    <select
-                      id="tipo-insumo-fisico"
-                      name="idTipoInsumo"
-                      value={formInsumo.idTipoInsumo}
-                      onChange={handleChangeInsumo}
-                      required
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md"
-                    >
-                      <option value="">Seleccionar tipo</option>
-                      {tiposFiltrados.map(tipo => (
-                        <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
-                          {tipo.nombreTipoInsumo}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {!crearNuevoTipo ? (
+                    <div>
+                      <label htmlFor="tipo-insumo-fisico" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Tipo de Insumo
+                      </label>
+                      <select
+                        id="tipo-insumo-fisico"
+                        name="idTipoInsumo"
+                        value={formInsumo.idTipoInsumo}
+                        onChange={handleChangeInsumo}
+                        required
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md"
+                      >
+                        <option value="">Seleccionar tipo</option>
+                        {tiposFiltrados.map(tipo => (
+                          <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
+                            {tipo.nombreTipoInsumo}
+                          </option>
+                        ))}
+                        <option value="nuevo">➕ Crear nuevo tipo de insumo</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                            Crear Nuevo Tipo de Insumo
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCrearNuevoTipo(false);
+                              setNuevoTipo({
+                                nombreTipoInsumo: '',
+                                descripcion: '',
+                                idCategoria: '',
+                                idUnidad: ''
+                              });
+                            }}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                          >
+                            <span className="material-symbols-outlined text-sm">close</span>
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label htmlFor="nombre-nuevo-tipo" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Nombre del Tipo *
+                            </label>
+                            <input
+                              type="text"
+                              id="nombre-nuevo-tipo"
+                              name="nombreTipoInsumo"
+                              value={nuevoTipo.nombreTipoInsumo}
+                              onChange={handleChangeNuevoTipo}
+                              placeholder="Ej: Matraz Erlenmeyer"
+                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="descripcion-nuevo-tipo" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Descripción *
+                            </label>
+                            <textarea
+                              id="descripcion-nuevo-tipo"
+                              name="descripcion"
+                              value={nuevoTipo.descripcion}
+                              onChange={handleChangeNuevoTipo}
+                              placeholder="Ej: Recipiente de vidrio cónico para experimentos"
+                              rows="2"
+                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label htmlFor="categoria-nuevo-tipo" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Categoría *
+                              </label>
+                              <select
+                                id="categoria-nuevo-tipo"
+                                name="idCategoria"
+                                value={nuevoTipo.idCategoria}
+                                onChange={handleChangeNuevoTipo}
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                              >
+                                <option value="">Seleccionar</option>
+                                {categorias.map(cat => (
+                                  <option key={cat.idCategoria} value={cat.idCategoria}>
+                                    {cat.nombreCategoria}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label htmlFor="unidad-nuevo-tipo" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Unidad *
+                              </label>
+                              <select
+                                id="unidad-nuevo-tipo"
+                                name="idUnidad"
+                                value={nuevoTipo.idUnidad}
+                                onChange={handleChangeNuevoTipo}
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                              >
+                                <option value="">Seleccionar</option>
+                                {unidades.map(unidad => (
+                                  <option key={unidad.idUnidad} value={unidad.idUnidad}>
+                                    {unidad.unidad}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div>
                     <label htmlFor="estado-insumo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -278,26 +487,128 @@ const NuevoInsumo = () => {
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="tipo-quimico" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Tipo de Químico
-                    </label>
-                    <select
-                      id="tipo-quimico"
-                      name="idTipoInsumo"
-                      value={formQuimico.idTipoInsumo}
-                      onChange={handleChangeQuimico}
-                      required
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md"
-                    >
-                      <option value="">Seleccionar tipo</option>
-                      {tiposFiltrados.map(tipo => (
-                        <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
-                          {tipo.nombreTipoInsumo} ({tipo.unidad?.unidad})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {!crearNuevoTipo ? (
+                    <div>
+                      <label htmlFor="tipo-quimico" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Tipo de Químico
+                      </label>
+                      <select
+                        id="tipo-quimico"
+                        name="idTipoInsumo"
+                        value={formQuimico.idTipoInsumo}
+                        onChange={handleChangeQuimico}
+                        required
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md"
+                      >
+                        <option value="">Seleccionar tipo</option>
+                        {tiposFiltrados.map(tipo => (
+                          <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
+                            {tipo.nombreTipoInsumo} ({tipo.unidad?.unidad})
+                          </option>
+                        ))}
+                        <option value="nuevo">➕ Crear nuevo tipo de químico</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-md p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-200">
+                            Crear Nuevo Tipo de Químico
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCrearNuevoTipo(false);
+                              setNuevoTipo({
+                                nombreTipoInsumo: '',
+                                descripcion: '',
+                                idCategoria: '',
+                                idUnidad: ''
+                              });
+                            }}
+                            className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
+                          >
+                            <span className="material-symbols-outlined text-sm">close</span>
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label htmlFor="nombre-nuevo-quimico" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Nombre del Químico *
+                            </label>
+                            <input
+                              type="text"
+                              id="nombre-nuevo-quimico"
+                              name="nombreTipoInsumo"
+                              value={nuevoTipo.nombreTipoInsumo}
+                              onChange={handleChangeNuevoTipo}
+                              placeholder="Ej: Ácido Clorhídrico"
+                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="descripcion-nuevo-quimico" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Descripción *
+                            </label>
+                            <textarea
+                              id="descripcion-nuevo-quimico"
+                              name="descripcion"
+                              value={nuevoTipo.descripcion}
+                              onChange={handleChangeNuevoTipo}
+                              placeholder="Ej: Solución acuosa de HCl"
+                              rows="2"
+                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label htmlFor="categoria-nuevo-quimico" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Categoría *
+                              </label>
+                              <select
+                                id="categoria-nuevo-quimico"
+                                name="idCategoria"
+                                value={nuevoTipo.idCategoria}
+                                onChange={handleChangeNuevoTipo}
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                              >
+                                <option value="">Seleccionar</option>
+                                {categorias.map(cat => (
+                                  <option key={cat.idCategoria} value={cat.idCategoria}>
+                                    {cat.nombreCategoria}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label htmlFor="unidad-nuevo-quimico" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Unidad *
+                              </label>
+                              <select
+                                id="unidad-nuevo-quimico"
+                                name="idUnidad"
+                                value={nuevoTipo.idUnidad}
+                                onChange={handleChangeNuevoTipo}
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                              >
+                                <option value="">Seleccionar</option>
+                                {unidades.map(unidad => (
+                                  <option key={unidad.idUnidad} value={unidad.idUnidad}>
+                                    {unidad.unidad}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div>
                     <label htmlFor="cantidad-quimico" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -331,7 +642,7 @@ const NuevoInsumo = () => {
                       value={formQuimico.fechaIngreso}
                       onChange={handleChangeQuimico}
                       required
-                      className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm"
+                      className="mt-1block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm"
                     />
                   </div>
                 </div>
