@@ -13,7 +13,12 @@ import java.util.List;
 public interface InsumoRepository extends JpaRepository<Insumo, Integer> {
     List<Insumo> findByEstInsumo(EstInsumo estInsumo);
     List<Insumo> findByTipoInsumo(TipoInsumo tipoInsumo);
-    
+
+    List<Insumo> findByTipoInsumoAndEstInsumoOrderByFechaIngresoAsc(TipoInsumo tipoInsumo, EstInsumo estInsumo);
+
     @Query("SELECT COUNT(i) FROM Insumo i WHERE i.tipoInsumo.idTipoInsumo = :idTipoInsumo")
     Long countByTipoInsumo(@Param("idTipoInsumo") Integer idTipoInsumo);
+
+    @Query("SELECT COUNT(i) FROM Insumo i WHERE i.tipoInsumo.idTipoInsumo = :idTipoInsumo AND i.estInsumo.idEstInsumo = :idEstInsumo")
+    Long countByTipoInsumoAndEstado(@Param("idTipoInsumo") Integer idTipoInsumo, @Param("idEstInsumo") Integer idEstInsumo);
 }

@@ -12,6 +12,7 @@ import java.time.LocalDate;
 public class Pedido {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDPedido")
     private Integer idPedido;
     

@@ -6,19 +6,31 @@ const Header = ({ minimal = false }) => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [tipoUsuario, setTipoUsuario] = useState('');
 
   useEffect(() => {
-    // Cargar correo desde localStorage al montar y cuando cambie la ruta
+    // Cargar correo y detectar tipo de usuario desde localStorage
     try {
       const u = localStorage.getItem('usuario');
       if (u) {
         const parsed = JSON.parse(u);
         setUserEmail(parsed?.correo || '');
+        
+        // Detectar tipo de usuario basado en la ruta actual o localStorage
+        if (location.pathname.includes('dashboard-instructor') || 
+            location.pathname.includes('pedidos-instructor') ||
+            location.pathname.includes('pedidos/nuevo')) {
+          setTipoUsuario('instructor');
+        } else {
+          setTipoUsuario('administrador');
+        }
       } else {
         setUserEmail('');
+        setTipoUsuario('');
       }
     } catch {
       setUserEmail('');
+      setTipoUsuario('');
     }
   }, [location.pathname]);
 
@@ -37,46 +49,79 @@ const Header = ({ minimal = false }) => {
 
       {!minimal && (
         <nav className="flex flex-1 justify-center items-center gap-8 text-sm font-medium text-gray-600 dark:text-gray-300">
-          <Link
-            to="/dashboard"
-            className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
-              isActive('/dashboard') ? 'text-[rgb(44,171,91)] font-bold' : ''
-            }`}
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/usuarios"
-            className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
-              isActive('/usuarios') ? 'text-[rgb(44,171,91)] font-bold' : ''
-            }`}
-          >
-            Usuarios
-          </Link>
-          <Link
-            to="/insumos"
-            className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
-              isActive('/insumos') ? 'text-[rgb(44,171,91)] font-bold' : ''
-            }`}
-          >
-            Insumos
-          </Link>
-          <Link
-            to="/pedidos"
-            className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
-              isActive('/pedidos') ? 'text-[rgb(44,171,91)] font-bold' : ''
-            }`}
-          >
-            Pedidos
-          </Link>
-          <Link
-            to="/reportes"
-            className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
-              isActive('/reportes') ? 'text-[rgb(44,171,91)] font-bold' : ''
-            }`}
-          >
-            Reportes
-          </Link>
+          {tipoUsuario === 'instructor' ? (
+            // Navegación para Instructores
+            <>
+              <Link
+                to="/dashboard-instructor"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/dashboard-instructor') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/pedidos-instructor"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/pedidos-instructor') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Mis Pedidos
+              </Link>
+              <Link
+                to="/pedidos/nuevo"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/pedidos/nuevo') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Crear Pedido
+              </Link>
+            </>
+          ) : (
+            // Navegación para Administradores
+            <>
+              <Link
+                to="/dashboard"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/dashboard') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/usuarios"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/usuarios') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Usuarios
+              </Link>
+              <Link
+                to="/insumos"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/insumos') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Insumos
+              </Link>
+              <Link
+                to="/pedidos"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/pedidos') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Pedidos
+              </Link>
+              <Link
+                to="/reportes"
+                className={`hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors ${
+                  isActive('/reportes') ? 'text-[rgb(44,171,91)] font-bold' : ''
+                }`}
+              >
+                Reportes
+              </Link>
+            </>
+          )}
         </nav>
       )}
 

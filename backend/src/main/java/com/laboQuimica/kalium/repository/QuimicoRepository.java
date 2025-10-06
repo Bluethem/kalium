@@ -14,6 +14,8 @@ public interface QuimicoRepository extends JpaRepository<Quimico, Integer> {
     
     List<Quimico> findByTipoInsumo(TipoInsumo tipoInsumo);
     
+    List<Quimico> findByTipoInsumoOrderByFechaIngresoAsc(TipoInsumo tipoInsumo);
+
     @Query("SELECT COALESCE(SUM(q.cantQuimico), 0.0) FROM Quimico q WHERE q.tipoInsumo.idTipoInsumo = :idTipoInsumo")
     Float sumCantidadByTipoInsumo(@Param("idTipoInsumo") Integer idTipoInsumo);
 }

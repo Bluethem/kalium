@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Layout/Header';
+import axios from 'axios';
 
 function Login() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     const correo = e.target.email.value;
     const contrasena = e.target.password.value;
+    setLoading(true);
 
     try {
       const res = await fetch('http://localhost:8080/api/usuarios/login', {
@@ -20,14 +23,58 @@ function Login() {
       if (res.ok) {
         const user = await res.json();
         localStorage.setItem('usuario', JSON.stringify(user));
-        navigate('/dashboard');
+        
+        // Detectar el tipo de usuario
+        const tipoUsuario = await detectarTipoUsuario(user.idUsuario);
+        
+        // Redirigir según el tipo de usuario
+        if (tipoUsuario === 'instructor') {
+          navigate('/dashboard-instructor');
+        } else if (tipoUsuario === 'administrador') {
+          navigate('/dashboard');
+        } else {
+          // Usuario sin rol específico, redirige al dashboard por defecto
+          navigate('/dashboard');
+        }
       } else {
         const msg = await res.text();
         alert(msg || 'Error de inicio de sesión');
+        setLoading(false);
       }
     } catch (err) {
       alert('No se pudo conectar con el servidor');
       console.error(err);
+      setLoading(false);
+    }
+  }
+
+  // Función para detectar si el usuario es Administrador o Instructor
+  async function detectarTipoUsuario(idUsuario) {
+    try {
+      // Verificar si es instructor
+      const instructoresRes = await axios.get('http://localhost:8080/api/instructores');
+      const esInstructor = (instructoresRes.data || []).some(
+        inst => inst.usuario?.idUsuario === idUsuario
+      );
+      
+      if (esInstructor) {
+        return 'instructor';
+      }
+      
+      // Verificar si es administrador
+      const administradoresRes = await axios.get('http://localhost:8080/api/administradores');
+      const esAdministrador = (administradoresRes.data || []).some(
+        admin => admin.usuario?.idUsuario === idUsuario
+      );
+      
+      if (esAdministrador) {
+        return 'administrador';
+      }
+      
+      return 'usuario'; // Usuario sin rol específico
+    } catch (error) {
+      console.error('Error al detectar tipo de usuario:', error);
+      return 'usuario';
     }
   }
 
@@ -73,10 +120,11 @@ function Login() {
             </div>
             <div className="pt-2">
               <button
-                className="flex w-full justify-center rounded-md bg-[rgb(44,171,91)] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(44,171,91)]"
+                className="flex w-full justify-center rounded-md bg-[rgb(44,171,91)] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(44,171,91)] disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
+                disabled={loading}
               >
-                Iniciar Sesión
+                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </button>
             </div>
           </form>
