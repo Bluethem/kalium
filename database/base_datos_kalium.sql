@@ -8,6 +8,13 @@ CREATE DATABASE kaliumdb;
 
 USE kaliumdb;
 
+CREATE TABLE Rol (
+  IDRol INT NOT NULL AUTO_INCREMENT,
+  NombreRol VARCHAR(50) NOT NULL UNIQUE,
+  Descripcion VARCHAR(255),
+  PRIMARY KEY (IDRol)
+);
+
 CREATE TABLE Usuario
 (
   IDUsuario INT NOT NULL AUTO_INCREMENT,
@@ -15,8 +22,10 @@ CREATE TABLE Usuario
   Apellido VARCHAR(100) NOT NULL,
   Correo VARCHAR(100) NOT NULL,
   Contrasena VARCHAR(100) NOT NULL,
+  IDRol INT NOT NULL,
   PRIMARY KEY (IDUsuario),
-  UNIQUE (Correo)
+  UNIQUE (Correo),
+  FOREIGN KEY (IDRol) REFERENCES Rol(IDRol)
 );
 
 CREATE TABLE Administrador
@@ -104,6 +113,7 @@ CREATE TABLE TipoInsumo
   IDCategoria INT NOT NULL,
   IDUnidad INT NOT NULL,
   EsQuimico TINYINT(1) NOT NULL DEFAULT 0, -- 1 = químico, 0 = insumo físico
+  stockMinimo INT NOT NULL DEFAULT 0,
   PRIMARY KEY (IDTipoInsumo),
   FOREIGN KEY (IDCategoria) REFERENCES Categoria(IDCategoria),
   FOREIGN KEY (IDUnidad) REFERENCES Unidad(IDUnidad)
@@ -257,4 +267,17 @@ CREATE TABLE EntregaQuimico
   PRIMARY KEY (IDEntregaQuimico),
   FOREIGN KEY (IDEntrega) REFERENCES Entrega(IDEntrega),
   FOREIGN KEY (IDQuimico) REFERENCES Quimico(IDQuimico)
+);
+
+CREATE TABLE Notificacion (
+  IDNotificacion INT NOT NULL AUTO_INCREMENT,
+  Titulo VARCHAR(100) NOT NULL,
+  Mensaje VARCHAR(255) NOT NULL,
+  Tipo VARCHAR(50) NOT NULL, -- 'BAJO_STOCK', 'PEDIDO_PENDIENTE', 'INCIDENTE', etc.
+  Leida TINYINT(1) NOT NULL DEFAULT 0,
+  FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  IDUsuario INT NOT NULL,
+  DatosExtra JSON, -- Para guardar información adicional (ej: idTipoInsumo)
+  PRIMARY KEY (IDNotificacion),
+  FOREIGN KEY (IDUsuario) REFERENCES Usuario(IDUsuario)
 );
