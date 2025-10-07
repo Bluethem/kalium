@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const NuevoInsumo = () => {
   const navigate = useNavigate();
-  const [tipoSeleccionado, setTipoSeleccionado] = useState('fisico'); 
+  const [tipoSeleccionado, setTipoSeleccionado] = useState('fisico');
   const [tiposInsumo, setTiposInsumo] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [unidades, setUnidades] = useState([]);
@@ -15,21 +15,25 @@ const NuevoInsumo = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [insumosCreados, setInsumosCreados] = useState(0); // Contador de éxito
   
   // Estado para controlar si se está creando un nuevo tipo
   const [crearNuevoTipo, setCrearNuevoTipo] = useState(false);
+  // Línea 22-27: Actualizar el estado nuevoTipo
   const [nuevoTipo, setNuevoTipo] = useState({
     nombreTipoInsumo: '',
     descripcion: '',
     idCategoria: '',
-    idUnidad: ''
+    idUnidad: '',
+    stockMinimo: 0  // ✅ NUEVO CAMPO
   });
-  
-  // Form data para insumo físico
+    
+  // Form data para insumo físico - AÑADIDO cantidadInstancias
   const [formInsumo, setFormInsumo] = useState({
     idTipoInsumo: '',
     idEstInsumo: '',
-    fechaIngreso: new Date().toISOString().split('T')[0]
+    fechaIngreso: new Date().toISOString().split('T')[0],
+    cantidadInstancias: 1 // ← NUEVO
   });
 
   // Form data para químico
@@ -92,7 +96,6 @@ const NuevoInsumo = () => {
 
   const crearTipoInsumo = async () => {
     try {
-      // Validar campos del nuevo tipo
       if (!nuevoTipo.nombreTipoInsumo.trim()) {
         throw new Error('El nombre del tipo de insumo es requerido');
       }
@@ -106,41 +109,40 @@ const NuevoInsumo = () => {
         throw new Error('Debe seleccionar una unidad');
       }
 
-      const nuevoTipoData = {
-        nombreTipoInsumo: nuevoTipo.nombreTipoInsumo,
-        descripcion: nuevoTipo.descripcion,
-        categoria: { idCategoria: parseInt(nuevoTipo.idCategoria) },
-        unidad: { idUnidad: parseInt(nuevoTipo.idUnidad) },
-        esQuimico: tipoSeleccionado === 'quimico'
-      };
+    // Línea 110-116: Actualizar crearTipoInsumo
+    const nuevoTipoData = {
+      nombreTipoInsumo: nuevoTipo.nombreTipoInsumo,
+      descripcion: nuevoTipo.descripcion,
+      categoria: { idCategoria: parseInt(nuevoTipo.idCategoria) },
+      unidad: { idUnidad: parseInt(nuevoTipo.idUnidad) },
+      esQuimico: tipoSeleccionado === 'quimico',
+      stockMinimo: parseInt(nuevoTipo.stockMinimo) || 0  // ✅ NUEVO CAMPO
+    };
 
-      const response = await insumoService.createTipoInsumo(nuevoTipoData);
-      
-      // Actualizar lista de tipos
+    const response = await insumoService.createTipoInsumo(nuevoTipoData);
       await cargarDatos();
-      
-      // Asignar el nuevo tipo al formulario correspondiente
       if (tipoSeleccionado === 'quimico') {
         setFormQuimico(prev => ({ ...prev, idTipoInsumo: response.data.idTipoInsumo }));
       } else {
         setFormInsumo(prev => ({ ...prev, idTipoInsumo: response.data.idTipoInsumo }));
       }
       
-      // Resetear formulario de nuevo tipo
-      setCrearNuevoTipo(false);
-      setNuevoTipo({
-        nombreTipoInsumo: '',
-        descripcion: '',
-        idCategoria: '',
-        idUnidad: ''
-      });
+    // Línea 129-134: Actualizar reset de nuevoTipo
+    setNuevoTipo({
+      nombreTipoInsumo: '',
+      descripcion: '',
+      idCategoria: '',
+      idUnidad: '',
+      stockMinimo: 0  // ✅ NUEVO CAMPO
+    });
       
-      return response.data.idTipoInsumo;
+    return response.data.idTipoInsumo;
     } catch (error) {
       throw error;
     }
   };
 
+  // ✅ FUNCIÓN ACTUALIZADA - Crea múltiples instancias
   const handleSubmitInsumo = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -148,7 +150,6 @@ const NuevoInsumo = () => {
     try {
       let idTipoInsumoFinal = formInsumo.idTipoInsumo;
 
-      // Si se está creando un nuevo tipo, crearlo primero
       if (crearNuevoTipo) {
         idTipoInsumoFinal = await crearTipoInsumo();
       }
@@ -157,13 +158,25 @@ const NuevoInsumo = () => {
         throw new Error('Debe seleccionar o crear un tipo de insumo');
       }
 
-      const insumoData = {
-        estInsumo: { idEstInsumo: parseInt(formInsumo.idEstInsumo) },
-        tipoInsumo: { idTipoInsumo: parseInt(idTipoInsumoFinal) },
-        fechaIngreso: formInsumo.fechaIngreso
-      };
-  
-      await insumoService.createInsumo(insumoData);
+      const cantidad = parseInt(formInsumo.cantidadInstancias);
+      if (cantidad < 1 || cantidad > 1000) {
+        throw new Error('La cantidad debe estar entre 1 y 1000');
+      }
+
+      // Crear múltiples insumos en un loop
+      let creados = 0;
+      for (let i = 0; i < cantidad; i++) {
+        const insumoData = {
+          estInsumo: { idEstInsumo: parseInt(formInsumo.idEstInsumo) },
+          tipoInsumo: { idTipoInsumo: parseInt(idTipoInsumoFinal) },
+          fechaIngreso: formInsumo.fechaIngreso
+        };
+        
+        await insumoService.createInsumo(insumoData);
+        creados++;
+      }
+
+      setInsumosCreados(creados);
       setShowSuccess(true);
     } catch (error) {
       console.error('Error al crear insumo:', error);
@@ -181,7 +194,6 @@ const NuevoInsumo = () => {
     try {
       let idTipoInsumoFinal = formQuimico.idTipoInsumo;
 
-      // Si se está creando un nuevo tipo, crearlo primero
       if (crearNuevoTipo) {
         idTipoInsumoFinal = await crearTipoInsumo();
       }
@@ -197,6 +209,7 @@ const NuevoInsumo = () => {
       };
   
       await quimicoService.createQuimico(quimicoData);
+      setInsumosCreados(1);
       setShowSuccess(true);
     } catch (error) {
       console.error('Error al crear químico:', error);
@@ -207,7 +220,6 @@ const NuevoInsumo = () => {
     }
   };
 
-  // Filtrar tipos de insumo según el tipo seleccionado
   const tiposFiltrados = tiposInsumo.filter(tipo => 
     tipoSeleccionado === 'fisico' ? !tipo.esQuimico : tipo.esQuimico
   );
@@ -286,8 +298,8 @@ const NuevoInsumo = () => {
                       type="text"
                       id="id-insumo"
                       disabled
-                      placeholder="Autogenerado"
-                      className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm"
+                      placeholder="Autogenerado para cada instancia"
+                      className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm text-gray-500 dark:text-gray-400"
                     />
                   </div>
 
@@ -302,7 +314,7 @@ const NuevoInsumo = () => {
                         value={formInsumo.idTipoInsumo}
                         onChange={handleChangeInsumo}
                         required
-                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md"
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md text-gray-900 dark:text-white"
                       >
                         <option value="">Seleccionar tipo</option>
                         {tiposFiltrados.map(tipo => (
@@ -349,7 +361,7 @@ const NuevoInsumo = () => {
                               value={nuevoTipo.nombreTipoInsumo}
                               onChange={handleChangeNuevoTipo}
                               placeholder="Ej: Matraz Erlenmeyer"
-                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white"
                             />
                           </div>
 
@@ -364,7 +376,7 @@ const NuevoInsumo = () => {
                               onChange={handleChangeNuevoTipo}
                               placeholder="Ej: Recipiente de vidrio cónico para experimentos"
                               rows="2"
-                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                              className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white"
                             />
                           </div>
 
@@ -378,7 +390,7 @@ const NuevoInsumo = () => {
                                 name="idCategoria"
                                 value={nuevoTipo.idCategoria}
                                 onChange={handleChangeNuevoTipo}
-                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white"
                               >
                                 <option value="">Seleccionar</option>
                                 {categorias.map(cat => (
@@ -398,7 +410,7 @@ const NuevoInsumo = () => {
                                 name="idUnidad"
                                 value={nuevoTipo.idUnidad}
                                 onChange={handleChangeNuevoTipo}
-                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white"
                               >
                                 <option value="">Seleccionar</option>
                                 {unidades.map(unidad => (
@@ -408,11 +420,48 @@ const NuevoInsumo = () => {
                                 ))}
                               </select>
                             </div>
+                            <div>
+                              <label htmlFor="stockMinimo-tipo" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Stock Mínimo *
+                              </label>
+                              <input
+                                type="number"
+                                id="stockMinimo-tipo"
+                                name="stockMinimo"
+                                value={nuevoTipo.stockMinimo}
+                                onChange={handleChangeNuevoTipo}
+                                min="0"
+                                placeholder="Ej: 10"
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </>
                   )}
+
+                  {/* ✅ CAMPO NUEVO - Cantidad de Instancias */}
+                  <div>
+                    <label htmlFor="cantidadInstancias" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Cantidad de Instancias a Crear
+                    </label>
+                    <input
+                      type="number"
+                      id="cantidadInstancias"
+                      name="cantidadInstancias"
+                      value={formInsumo.cantidadInstancias}
+                      onChange={handleChangeInsumo}
+                      min="1"
+                      max="1000"
+                      required
+                      placeholder="Ej: 50"
+                      className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm text-gray-900 dark:text-white"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Se crearán {formInsumo.cantidadInstancias} insumo(s) físico(s) idéntico(s)
+                    </p>
+                  </div>
 
                   <div>
                     <label htmlFor="estado-insumo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -424,7 +473,7 @@ const NuevoInsumo = () => {
                       value={formInsumo.idEstInsumo}
                       onChange={handleChangeInsumo}
                       required
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md"
+                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm rounded-md text-gray-900 dark:text-white"
                     >
                       <option value="">Seleccionar estado</option>
                       {estadosInsumo.map(estado => (
@@ -446,7 +495,7 @@ const NuevoInsumo = () => {
                       value={formInsumo.fechaIngreso}
                       onChange={handleChangeInsumo}
                       required
-                      className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm"
+                      className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-[#14378f] focus:border-[#14378f] sm:text-sm text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -604,6 +653,21 @@ const NuevoInsumo = () => {
                                 ))}
                               </select>
                             </div>
+                            <div>
+                              <label htmlFor="stockMinimo-quimico" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Stock Mínimo *
+                              </label>
+                              <input
+                                type="number"
+                                id="stockMinimo-quimico"
+                                name="stockMinimo"
+                                value={nuevoTipo.stockMinimo}
+                                onChange={handleChangeNuevoTipo}
+                                min="0"
+                                placeholder="Ej: 100"
+                                className="block w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -666,7 +730,7 @@ const NuevoInsumo = () => {
               </form>
             )}
 
-            {/* Modal de Éxito */}
+            {/* Modal de Éxito - ACTUALIZADO */}
             {showSuccess && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md text-center">
@@ -677,12 +741,12 @@ const NuevoInsumo = () => {
                       </span>
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                      {tipoSeleccionado === 'quimico' ? 'Químico registrado con éxito' : 'Insumo registrado con éxito'}
+                      {tipoSeleccionado === 'quimico' ? 'Químico registrado con éxito' : 'Insumos registrados con éxito'}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-6">
                       {tipoSeleccionado === 'quimico' 
                         ? 'El nuevo químico ha sido agregado a tu inventario.' 
-                        : 'El nuevo insumo ha sido agregado a tu inventario.'}
+                        : `Se han creado ${insumosCreados} insumo(s) físico(s) en tu inventario.`}
                     </p>
                     <button
                       onClick={() => {
@@ -709,12 +773,11 @@ const NuevoInsumo = () => {
                   </div>
                   <div className="mt-4">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Error al agregar {tipoSeleccionado === 'quimico' ? 'químico' : 'insumo'}
+                      Error al agregar {tipoSeleccionado === 'quimico' ? 'químico' : 'insumos'}
                     </h3>
                     <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                       <p>
-                        No se pudo registrar {tipoSeleccionado === 'quimico' ? 'el químico' : 'el insumo'} en el inventario. 
-                        Por favor, verifique los datos e intente nuevamente.
+                        No se pudieron registrar los insumos. Por favor, verifique los datos e intente nuevamente.
                       </p>
                       {errorMessage && (
                         <p className="mt-2 text-xs text-red-600 dark:text-red-400">{errorMessage}</p>

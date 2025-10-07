@@ -1,8 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Layout/Header';
+import { notificacionService } from '../services/api';
 
 function Dashboard() {
+  useEffect(() => {
+    const verificarStockInicial = async () => {
+      try {
+        const response = await notificacionService.verificarStock();
+        console.log('✅ Stock verificado:', response.data);
+      } catch (error) {
+        console.error('Error al verificar stock:', error);
+      }
+    };
+    
+    verificarStockInicial();
+  }, []);
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
       <Header />

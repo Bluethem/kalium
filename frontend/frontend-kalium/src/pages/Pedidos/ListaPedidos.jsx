@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
 import { pedidoService } from '../../services/api';
@@ -29,9 +29,67 @@ const ListaPedidos = () => {
     }
   };
 
+  // ✅ FILTRADO FUNCIONAL - Aplicar filtros a los pedidos
+  const pedidosFiltrados = useMemo(() => {
+    return pedidos.filter(pedido => {
+      // Filtro por estado
+      if (filtros.estado) {
+        const estadoNombre = pedido.estPedido?.nombreEstPedido?.toLowerCase();
+        if (estadoNombre !== filtros.estado.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Filtro por curso
+      if (filtros.curso) {
+        const cursoNombre = pedido.curso?.nombreCurso?.toLowerCase();
+        if (!cursoNombre?.includes(filtros.curso.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Filtro por tipo de pedido
+      if (filtros.tipoPedido) {
+        const tipoPedidoNombre = pedido.tipoPedido?.nombrePedido?.toLowerCase();
+        if (!tipoPedidoNombre?.includes(filtros.tipoPedido.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [pedidos, filtros]);
+
+  // ✅ Extraer opciones únicas de cursos y tipos de pedido
+  const cursosUnicos = useMemo(() => {
+    const cursos = pedidos
+      .map(p => p.curso)
+      .filter(c => c && c.nombreCurso);
+    const uniqueCursos = Array.from(new Set(cursos.map(c => c.idCurso)))
+      .map(id => cursos.find(c => c.idCurso === id));
+    return uniqueCursos;
+  }, [pedidos]);
+
+  const tiposPedidoUnicos = useMemo(() => {
+    const tipos = pedidos
+      .map(p => p.tipoPedido)
+      .filter(t => t && t.nombrePedido);
+    const uniqueTipos = Array.from(new Set(tipos.map(t => t.idTipoPedido)))
+      .map(id => tipos.find(t => t.idTipoPedido === id));
+    return uniqueTipos;
+  }, [pedidos]);
+
+  // ✅ Función para limpiar filtros
+  const limpiarFiltros = () => {
+    setFiltros({
+      estado: '',
+      curso: '',
+      tipoPedido: ''
+    });
+  };
+
   const handleAprobar = async (idPedido) => {
     try {
-      // Asumiendo que estado 2 = Aprobado
       await pedidoService.cambiarEstado(idPedido, 2);
       cargarPedidos();
     } catch (error) {
@@ -44,7 +102,6 @@ const ListaPedidos = () => {
     if (!window.confirm('¿Está seguro de rechazar este pedido?')) return;
     
     try {
-      // Asumiendo que estado 3 = Rechazado
       await pedidoService.cambiarEstado(idPedido, 3);
       cargarPedidos();
     } catch (error) {
@@ -62,6 +119,9 @@ const ListaPedidos = () => {
     };
     return estados[estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
   };
+
+  // ✅ Verificar si hay filtros activos
+  const hayFiltrosActivos = filtros.estado || filtros.curso || filtros.tipoPedido;
 
   if (loading) {
     return (
@@ -98,53 +158,80 @@ const ListaPedidos = () => {
           </div>
 
           {/* Filtros */}
-          <div className="mb-6 flex flex-wrap items-center gap-4">
-            <div className="relative">
-              <select
-                value={filtros.estado}
-                onChange={(e) => setFiltros({...filtros, estado: e.target.value})}
-                className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <option value="">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="aprobado">Aprobado</option>
-                <option value="rechazado">Rechazado</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
-                expand_more
-              </span>
+          <div className="mb-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="relative">
+                <select
+                  value={filtros.estado}
+                  onChange={(e) => setFiltros({...filtros, estado: e.target.value})}
+                  className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="aprobado">Aprobado</option>
+                  <option value="rechazado">Rechazado</option>
+                  <option value="en proceso">En Proceso</option>
+                </select>
+                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
+                  expand_more
+                </span>
+              </div>
+
+              <div className="relative">
+                <select
+                  value={filtros.curso}
+                  onChange={(e) => setFiltros({...filtros, curso: e.target.value})}
+                  className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <option value="">Todos los cursos</option>
+                  {cursosUnicos.map(curso => (
+                    <option key={curso.idCurso} value={curso.nombreCurso}>
+                      {curso.nombreCurso}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
+                  expand_more
+                </span>
+              </div>
+
+              <div className="relative">
+                <select
+                  value={filtros.tipoPedido}
+                  onChange={(e) => setFiltros({...filtros, tipoPedido: e.target.value})}
+                  className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <option value="">Todos los tipos</option>
+                  {tiposPedidoUnicos.map(tipo => (
+                    <option key={tipo.idTipoPedido} value={tipo.nombrePedido}>
+                      {tipo.nombrePedido}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
+                  expand_more
+                </span>
+              </div>
+
+              {/* Botón limpiar filtros */}
+              {hayFiltrosActivos && (
+                <button
+                  onClick={limpiarFiltros}
+                  className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">filter_alt_off</span>
+                  Limpiar filtros
+                </button>
+              )}
             </div>
 
-            <div className="relative">
-              <select
-                value={filtros.curso}
-                onChange={(e) => setFiltros({...filtros, curso: e.target.value})}
-                className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <option value="">Todos los cursos</option>
-                <option value="quimica">Química Orgánica</option>
-                <option value="bioquimica">Bioquímica</option>
-                <option value="microbiologia">Microbiología</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
-                expand_more
-              </span>
-            </div>
-
-            <div className="relative">
-              <select
-                value={filtros.tipoPedido}
-                onChange={(e) => setFiltros({...filtros, tipoPedido: e.target.value})}
-                className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <option value="">Tipo de pedido</option>
-                <option value="normal">Normal</option>
-                <option value="urgente">Urgente</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
-                expand_more
-              </span>
-            </div>
+            {/* Contador de resultados */}
+            {hayFiltrosActivos && (
+              <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                Mostrando <span className="font-semibold">{pedidosFiltrados.length}</span> de{' '}
+                <span className="font-semibold">{pedidos.length}</span> pedidos
+              </div>
+            )}
           </div>
 
           {/* Tabla */}
@@ -182,14 +269,16 @@ const ListaPedidos = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                {pedidos.length === 0 ? (
+                {pedidosFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                      No hay pedidos registrados
+                      {hayFiltrosActivos 
+                        ? 'No se encontraron pedidos con los filtros aplicados' 
+                        : 'No hay pedidos registrados'}
                     </td>
                   </tr>
                 ) : (
-                  pedidos.map((pedido) => (
+                  pedidosFiltrados.map((pedido) => (
                     <tr key={pedido.idPedido} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                         #{String(pedido.idPedido).padStart(5, '0')}

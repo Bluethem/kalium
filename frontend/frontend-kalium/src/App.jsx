@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Cuenta from './pages/Cuenta';
 import DetallePedido from './pages/Pedidos/DetallePedido';
+import ListaNotificaciones from './pages/Notificaciones/ListaNotificaciones'; // ✅ NUEVO
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/pedidos/nuevo" element={<NuevoPedido />} />
         <Route path="/pedidos/:id" element={<DetallePedido />} />
         <Route path="/reportes" element={<Reportes />} />
+        <Route path="/notificaciones" element={<ListaNotificaciones />} /> {/* ✅ NUEVO */}
       </Routes>
     </Router>
   );

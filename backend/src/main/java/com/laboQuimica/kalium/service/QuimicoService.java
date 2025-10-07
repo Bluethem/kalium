@@ -21,6 +21,9 @@ public class QuimicoService {
     @Autowired
     private TipoInsumoRepository tipoInsumoRepository;
     
+    @Autowired
+    private NotificacionService notificacionService;
+    
     public List<Quimico> obtenerTodos() {
         return quimicoRepository.findAll();
     }
@@ -36,7 +39,12 @@ public class QuimicoService {
     }
     
     public Quimico guardar(Quimico quimico) {
-        return quimicoRepository.save(quimico);
+        Quimico quimicoGuardado = quimicoRepository.save(quimico);
+        
+        // ✅ Verificar stock después de guardar
+        verificarStockBajo(quimico.getTipoInsumo().getIdTipoInsumo());
+        
+        return quimicoGuardado;
     }
     
     public Quimico actualizar(Integer id, Quimico quimicoActualizado) {
@@ -45,12 +53,61 @@ public class QuimicoService {
                 quimico.setCantQuimico(quimicoActualizado.getCantQuimico());
                 quimico.setTipoInsumo(quimicoActualizado.getTipoInsumo());
                 quimico.setFechaIngreso(quimicoActualizado.getFechaIngreso());
-                return quimicoRepository.save(quimico);
+                Quimico guardado = quimicoRepository.save(quimico);
+                
+                // ✅ Verificar stock después de actualizar
+                verificarStockBajo(guardado.getTipoInsumo().getIdTipoInsumo());
+                
+                return guardado;
             })
             .orElseThrow(() -> new RuntimeException("Químico no encontrado con id: " + id));
     }
     
     public void eliminar(Integer id) {
-        quimicoRepository.deleteById(id);
+        Optional<Quimico> quimicoOpt = quimicoRepository.findById(id);
+        if (quimicoOpt.isPresent()) {
+            Integer idTipoInsumo = quimicoOpt.get().getTipoInsumo().getIdTipoInsumo();
+            quimicoRepository.deleteById(id);
+            
+            // ✅ Verificar stock después de eliminar
+            verificarStockBajo(idTipoInsumo);
+        }
+    }
+    
+    /**
+     * ✅ Verificar si el stock de un químico está bajo y crear notificaciones
+     */
+    private void verificarStockBajo(Integer idTipoInsumo) {
+        try {
+            TipoInsumo tipoInsumo = tipoInsumoRepository.findById(idTipoInsumo)
+                .orElse(null);
+            
+            if (tipoInsumo == null || !tipoInsumo.getEsQuimico()) return;
+            
+            Integer stockMinimo = tipoInsumo.getStockMinimo();
+            if (stockMinimo == null || stockMinimo <= 0) return;
+            
+            // Sumar cantidades de químicos
+            Float cantTotal = quimicoRepository.sumCantidadByTipoInsumo(idTipoInsumo);
+            double stockActual = (cantTotal != null) ? cantTotal.doubleValue() : 0.0;
+            String unidad = tipoInsumo.getUnidad().getUnidad();
+            
+            // Si el stock está bajo el mínimo, crear notificación
+            if (stockActual < stockMinimo) {
+                String mensaje = String.format(
+                    "Stock bajo: %s - Actual: %.2f %s / Mínimo: %d %s",
+                    tipoInsumo.getNombreTipoInsumo(),
+                    stockActual,
+                    unidad,
+                    stockMinimo,
+                    unidad
+                );
+                
+                notificacionService.crearNotificacionBajoStock(idTipoInsumo, mensaje);
+            }
+        } catch (Exception e) {
+            // No fallar la operación principal si hay error en notificaciones
+            System.err.println("Error al verificar stock bajo: " + e.getMessage());
+        }
     }
 }

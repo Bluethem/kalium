@@ -121,4 +121,19 @@ export const pedidoDetalleService = {
   createPedidoDetalle: (detalleData) => api.post('/pedidos-detalle', detalleData),
 };
 
+// Agregar antes de export default api;
+
+// Servicios para Notificaciones
+export const notificacionService = {
+  getNotificacionesPorUsuario: (idUsuario) => api.get(`/notificaciones/usuario/${idUsuario}`),
+  getNotificacionesNoLeidas: (idUsuario) => api.get(`/notificaciones/usuario/${idUsuario}/no-leidas`),
+  getContadorNoLeidas: (idUsuario) => api.get(`/notificaciones/usuario/${idUsuario}/count`),
+  getResumen: (idUsuario) => api.get(`/notificaciones/usuario/${idUsuario}/resumen`),
+  marcarComoLeida: (idNotificacion) => api.patch(`/notificaciones/${idNotificacion}/leer`),
+  marcarTodasComoLeidas: (idUsuario) => api.patch(`/notificaciones/usuario/${idUsuario}/leer-todas`),
+  eliminarNotificacion: (idNotificacion) => api.delete(`/notificaciones/${idNotificacion}`),
+  limpiarLeidas: (idUsuario) => api.delete(`/notificaciones/usuario/${idUsuario}/limpiar`),
+  verificarStock: () => api.post('/notificaciones/verificar-stock'),
+};
+
 export default api;

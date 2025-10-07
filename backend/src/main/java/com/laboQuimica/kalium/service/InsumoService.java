@@ -30,6 +30,9 @@ public class InsumoService {
     @Autowired
     private QuimicoRepository quimicoRepository;
     
+    @Autowired
+    private NotificacionService notificacionService;
+    
     public List<Insumo> obtenerTodos() {
         return insumoRepository.findAll();
     }
@@ -51,7 +54,12 @@ public class InsumoService {
     }
     
     public Insumo guardar(Insumo insumo) {
-        return insumoRepository.save(insumo);
+        Insumo insumoGuardado = insumoRepository.save(insumo);
+        
+        // ✅ Verificar stock después de guardar
+        verificarStockBajo(insumo.getTipoInsumo().getIdTipoInsumo());
+        
+        return insumoGuardado;
     }
     
     public Insumo actualizar(Integer id, Insumo insumoActualizado) {
@@ -59,7 +67,12 @@ public class InsumoService {
             .map(insumo -> {
                 insumo.setEstInsumo(insumoActualizado.getEstInsumo());
                 insumo.setTipoInsumo(insumoActualizado.getTipoInsumo());
-                return insumoRepository.save(insumo);
+                Insumo guardado = insumoRepository.save(insumo);
+                
+                // ✅ Verificar stock después de actualizar
+                verificarStockBajo(guardado.getTipoInsumo().getIdTipoInsumo());
+                
+                return guardado;
             })
             .orElseThrow(() -> new RuntimeException("Insumo no encontrado con id: " + id));
     }
@@ -72,11 +85,23 @@ public class InsumoService {
             .orElseThrow(() -> new RuntimeException("Estado no encontrado con id: " + idEstado));
         
         insumo.setEstInsumo(estado);
-        return insumoRepository.save(insumo);
+        Insumo guardado = insumoRepository.save(insumo);
+        
+        // ✅ Verificar stock después de cambiar estado
+        verificarStockBajo(guardado.getTipoInsumo().getIdTipoInsumo());
+        
+        return guardado;
     }
     
     public void eliminar(Integer id) {
-        insumoRepository.deleteById(id);
+        Optional<Insumo> insumoOpt = insumoRepository.findById(id);
+        if (insumoOpt.isPresent()) {
+            Integer idTipoInsumo = insumoOpt.get().getTipoInsumo().getIdTipoInsumo();
+            insumoRepository.deleteById(id);
+            
+            // ✅ Verificar stock después de eliminar
+            verificarStockBajo(idTipoInsumo);
+        }
     }
     
     // Métodos para TipoInsumo
@@ -95,6 +120,9 @@ public class InsumoService {
             dto.setCategoria(tipo.getCategoria());
             dto.setUnidad(tipo.getUnidad());
             dto.setEsQuimico(tipo.getEsQuimico());
+            dto.setStockMinimo(tipo.getStockMinimo()); // ✅ NUEVO
+            
+            double stockActual = 0;
             
             if (tipo.getEsQuimico()) {
                 // Para químicos: sumar cantidades
@@ -102,13 +130,18 @@ public class InsumoService {
                 if (cantidadTotal == null) cantidadTotal = 0.0f;
                 dto.setCantidadTotal(String.format("%.2f", cantidadTotal));
                 dto.setCantidadNumerica(cantidadTotal.doubleValue());
+                stockActual = cantidadTotal.doubleValue();
             } else {
                 // Para insumos: contar unidades
                 Long cantidad = insumoRepository.countByTipoInsumo(tipo.getIdTipoInsumo());
                 if (cantidad == null) cantidad = 0L;
                 dto.setCantidadTotal(cantidad.toString());
                 dto.setCantidadNumerica(cantidad.doubleValue());
+                stockActual = cantidad.doubleValue();
             }
+            
+            // ✅ NUEVO: Verificar si está en stock bajo
+            dto.setStockBajo(stockActual < tipo.getStockMinimo());
             
             return dto;
         }).collect(Collectors.toList());
@@ -122,5 +155,50 @@ public class InsumoService {
     
     public TipoInsumo guardarTipo(TipoInsumo tipoInsumo) {
         return tipoInsumoRepository.save(tipoInsumo);
+    }
+    
+    /**
+     * ✅ Verificar si el stock de un tipo de insumo está bajo y crear notificaciones
+     */
+    private void verificarStockBajo(Integer idTipoInsumo) {
+        try {
+            TipoInsumo tipoInsumo = tipoInsumoRepository.findById(idTipoInsumo)
+                .orElse(null);
+            
+            if (tipoInsumo == null) return;
+            
+            Integer stockMinimo = tipoInsumo.getStockMinimo();
+            if (stockMinimo == null || stockMinimo <= 0) return;
+            
+            double stockActual = 0;
+            String unidad = tipoInsumo.getUnidad().getUnidad();
+            
+            if (tipoInsumo.getEsQuimico()) {
+                // Para químicos: sumar cantidades
+                Float cantTotal = quimicoRepository.sumCantidadByTipoInsumo(idTipoInsumo);
+                stockActual = (cantTotal != null) ? cantTotal.doubleValue() : 0.0;
+            } else {
+                // Para insumos: contar unidades disponibles (estado disponible = 1)
+                Long cantidad = insumoRepository.countByTipoInsumo(idTipoInsumo);
+                stockActual = (cantidad != null) ? cantidad.doubleValue() : 0.0;
+            }
+            
+            // Si el stock está bajo el mínimo, crear notificación
+            if (stockActual < stockMinimo) {
+                String mensaje = String.format(
+                    "Stock bajo: %s - Actual: %.2f %s / Mínimo: %d %s",
+                    tipoInsumo.getNombreTipoInsumo(),
+                    stockActual,
+                    unidad,
+                    stockMinimo,
+                    unidad
+                );
+                
+                notificacionService.crearNotificacionBajoStock(idTipoInsumo, mensaje);
+            }
+        } catch (Exception e) {
+            // No fallar la operación principal si hay error en notificaciones
+            System.err.println("Error al verificar stock bajo: " + e.getMessage());
+        }
     }
 }
