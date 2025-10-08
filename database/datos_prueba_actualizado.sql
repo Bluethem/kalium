@@ -1,291 +1,427 @@
 -- ============================================
 -- SCRIPT DE DATOS DE PRUEBA PARA KALIUM
--- Actualizado para coincidir con el nuevo esquema
+-- CORREGIDO - Sin IDs manuales, usa AUTO_INCREMENT
 -- ============================================
 
 USE kaliumdb;
-    
--- 1. Insertar Roles
-INSERT INTO Rol (IDRol, NombreRol, Descripcion) VALUES
-(1, 'ADMIN_SISTEMA', 'Administrador de sistemas - Gestiona usuarios y permisos'),
-(2, 'ADMIN_LABORATORIO', 'Administrador de laboratorio - Gestiona inventario, pedidos y entregas'),
-(3, 'INSTRUCTOR', 'Instructor - Crea pedidos y consulta información'),
-(4, 'ESTUDIANTE', 'Estudiante - Consulta entregas (futuro)');
 
--- 2. Insertar Usuarios
-INSERT INTO Usuario (IDUsuario, Nombre, Apellido, Correo, Contrasena, IDRol) VALUES
-(1, 'Juan', 'Pérez', 'juan.perez@lab.com', 'password123', 1),
-(2, 'María', 'García', 'maria.garcia@lab.com', 'password123', 2),
-(3, 'Carlos', 'López', 'carlos.lopez@lab.com', 'password123', 3),
-(4, 'Ana', 'Martínez', 'ana.martinez@lab.com', 'password123', 3);
+-- Limpiar datos existentes (opcional, solo si quieres empezar desde cero)
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- TRUNCATE TABLE Notificacion;
+-- TRUNCATE TABLE DetalleExperimento;
+-- TRUNCATE TABLE Experimento;
+-- TRUNCATE TABLE Incidentes;
+-- TRUNCATE TABLE EstIncidente;
+-- TRUNCATE TABLE DevolucionDetalle;
+-- TRUNCATE TABLE Devolucion;
+-- TRUNCATE TABLE EstDevolucion;
+-- TRUNCATE TABLE EntregaQuimico;
+-- TRUNCATE TABLE EntregaInsumo;
+-- TRUNCATE TABLE Entrega;
+-- TRUNCATE TABLE Quimico;
+-- TRUNCATE TABLE Insumo;
+-- TRUNCATE TABLE EstInsumo;
+-- TRUNCATE TABLE PedidoDetalle;
+-- TRUNCATE TABLE Pedido;
+-- TRUNCATE TABLE Horario;
+-- TRUNCATE TABLE TipoPedido;
+-- TRUNCATE TABLE Curso;
+-- TRUNCATE TABLE EstPedido;
+-- TRUNCATE TABLE Estudiante;
+-- TRUNCATE TABLE TipoInsumo;
+-- TRUNCATE TABLE Unidad;
+-- TRUNCATE TABLE Categoria;
+-- TRUNCATE TABLE Instructor;
+-- TRUNCATE TABLE Administrador;
+-- TRUNCATE TABLE Usuario;
+-- TRUNCATE TABLE Rol;
+-- SET FOREIGN_KEY_CHECKS = 1;
 
--- 3. Insertar Administradores
-INSERT INTO Administrador (IDAdministrador, IDUsuario) VALUES
-(1, 1);
+-- ============================================
+-- 1. ROLES
+-- ============================================
+INSERT INTO Rol (NombreRol, Descripcion) VALUES
+('ADMIN_SISTEMA', 'Administrador de sistemas - Gestiona usuarios y permisos'),
+('ADMIN_LABORATORIO', 'Administrador de laboratorio - Gestiona inventario, pedidos y entregas'),
+('INSTRUCTOR', 'Instructor - Crea pedidos y consulta información'),
+('ESTUDIANTE', 'Estudiante - Consulta entregas (futuro)');
 
--- 4. Insertar Instructores
-INSERT INTO Instructor (IDInstructor, IDUsuario) VALUES
-(1, 2),
-(2, 3);
+-- ============================================
+-- 2. USUARIOS
+-- ============================================
+-- Nota: Las contraseñas están en texto plano por ahora
+-- Después implementaremos BCrypt
+INSERT INTO Usuario (Nombre, Apellido, Correo, Contrasena, IDRol) VALUES
+('Juan', 'Pérez', 'juan.perez@lab.com', 'password123', 1),
+('María', 'García', 'maria.garcia@lab.com', 'password123', 2),
+('Carlos', 'López', 'carlos.lopez@lab.com', 'password123', 3),
+('Ana', 'Martínez', 'ana.martinez@lab.com', 'password123', 3);
 
--- 5. Insertar Categorías
-INSERT INTO Categoria (IDCategoria, NombreCategoria) VALUES
-(1, 'Químicos'),
-(2, 'Material de Vidrio'),
-(3, 'Equipos de Laboratorio'),
-(4, 'Material de Seguridad');
+-- ============================================
+-- 3. ADMINISTRADORES
+-- ============================================
+-- Insertar administradores (IDUsuario 1 = Juan Pérez)
+INSERT INTO Administrador (IDUsuario) VALUES (1);
 
--- 6. Insertar Unidades
-INSERT INTO Unidad (IDUnidad, Unidad) VALUES
-(1, 'ml'),
-(2, 'g'),
-(3, 'unidad'),
-(4, 'kg'),
-(5, 'L');
+-- ============================================
+-- 4. INSTRUCTORES
+-- ============================================
+-- Insertar instructores (IDUsuario 2 y 3 = María García y Carlos López)
+INSERT INTO Instructor (IDUsuario) VALUES (2), (3);
 
--- 7. Insertar Tipos de Insumo
-INSERT INTO TipoInsumo (IDTipoInsumo, NombreTipoInsumo, Descripcion, IDCategoria, IDUnidad, EsQuimico, stockMinimo) VALUES
-(1, 'Ácido Sulfúrico', 'Ácido fuerte utilizado en múltiples reacciones químicas', 1, 1, 1, 100),
-(2, 'Hidróxido de Sodio', 'Base fuerte para neutralización y síntesis', 1, 2, 1, 100),
-(3, 'Matraz Erlenmeyer', 'Matraz cónico de vidrio para mezclas', 2, 3, 0, 3),
-(4, 'Probeta Graduada', 'Instrumento para medir volúmenes de líquidos', 2, 3, 0, 5),
-(5, 'Balanza Analítica', 'Equipo de precisión para medir masas', 3, 3, 0, 2),
-(6, 'Guantes de Nitrilo', 'Protección para manos en laboratorio', 4, 3, 0, 5),
-(7, 'Etanol', 'Alcohol etílico para limpieza y reacciones', 1, 1, 1, 100),
-(8, 'Cloruro de Sodio', 'Sal común para preparación de soluciones', 1, 2, 1, 200);
+-- ============================================
+-- 5. CATEGORÍAS
+-- ============================================
+INSERT INTO Categoria (NombreCategoria) VALUES
+('Químicos'),
+('Material de Vidrio'),
+('Equipos de Laboratorio'),
+('Material de Seguridad');
 
--- 8. Insertar Estados de Insumo
-INSERT INTO EstInsumo (IDEstInsumo, NombreEstInsumo) VALUES
-(1, 'Disponible'),
-(2, 'En Uso'),
-(3, 'Agotado'),
-(4, 'En Mantenimiento');
+-- ============================================
+-- 6. UNIDADES
+-- ============================================
+INSERT INTO Unidad (Unidad) VALUES
+('ml'),
+('g'),
+('unidad'),
+('kg'),
+('L');
 
--- 9. Insertar Insumos
-INSERT INTO Insumo (IDInsumo, IDEstInsumo, IDTipoInsumo, FechaIngreso) VALUES
-(1, 1, 3, '2025-09-10'),
-(2, 2, 4, '2025-09-10'),
-(3, 1, 5, '2025-09-10'),
-(4, 1, 6, '2025-09-10'),
-(5, 1, 5, '2025-09-10'),
-(6, 1, 4, '2025-09-10');
+-- ============================================
+-- 7. TIPOS DE INSUMO
+-- ============================================
+-- Nota: IDCategoria y IDUnidad dependen del orden de inserción
+-- 1=Químicos, 2=Vidrio, 3=Equipos, 4=Seguridad
+-- 1=ml, 2=g, 3=unidad, 4=kg, 5=L
+INSERT INTO TipoInsumo (NombreTipoInsumo, Descripcion, IDCategoria, IDUnidad, EsQuimico, stockMinimo) VALUES
+('Ácido Sulfúrico', 'Ácido fuerte utilizado en múltiples reacciones químicas', 1, 1, 1, 100),
+('Hidróxido de Sodio', 'Base fuerte para neutralización y síntesis', 1, 2, 1, 100),
+('Matraz Erlenmeyer', 'Matraz cónico de vidrio para mezclas', 2, 3, 0, 3),
+('Probeta Graduada', 'Instrumento para medir volúmenes de líquidos', 2, 3, 0, 5),
+('Balanza Analítica', 'Equipo de precisión para medir masas', 3, 3, 0, 2),
+('Guantes de Nitrilo', 'Protección para manos en laboratorio', 4, 3, 0, 50),
+('Etanol', 'Alcohol etílico para limpieza y reacciones', 1, 1, 1, 500),
+('Cloruro de Sodio', 'Sal común para preparación de soluciones', 1, 2, 1, 200);
 
--- 10. Insertar Químicos
-INSERT INTO Quimico (IDQuimico, CantQuimico, IDTipoInsumo, FechaIngreso) VALUES
-(1, 500.5, 1, '2025-09-10'),
-(2, 250.0, 2, '2025-09-10'),
-(3, 1000.0, 7, '2025-09-10'),
-(4, 500.0, 8, '2025-09-10');
+-- ============================================
+-- 8. ESTADOS DE INSUMO
+-- ============================================
+INSERT INTO EstInsumo (NombreEstInsumo) VALUES
+('Disponible'),
+('En Uso'),
+('Agotado'),
+('En Mantenimiento');
 
--- 11. Insertar Estudiantes
-INSERT INTO Estudiante (IDEstudiante, Nombre, Apellido) VALUES
-(1, 'Pedro', 'Ramírez'),
-(2, 'Laura', 'Torres'),
-(3, 'Miguel', 'Fernández'),
-(4, 'Sofía', 'Morales');
+-- ============================================
+-- 9. INSUMOS FÍSICOS
+-- ============================================
+-- Solo para TipoInsumo donde EsQuimico=0 (IDs 3,4,5,6)
+-- Los triggers validarán que no se inserten químicos aquí
+INSERT INTO Insumo (IDEstInsumo, IDTipoInsumo, FechaIngreso) VALUES
+-- Matraz Erlenmeyer (IDTipoInsumo=3, necesita mínimo 3)
+(1, 3, '2024-01-10'),
 
--- 12. Insertar Estados de Pedido
-INSERT INTO EstPedido (IDEstPedido, NombreEstPedido) VALUES
-(1, 'Pendiente'),
-(2, 'Aprobado'),
-(3, 'En Preparación'),
-(4, 'Entregado'),
-(5, 'Cancelado');
+-- Probeta Graduada (IDTipoInsumo=4, necesita mínimo 5)
+(1, 4, '2024-01-10'),
+(1, 4, '2024-01-15'),
+(1, 4, '2024-01-20'),
+(1, 4, '2024-02-01'),
+(1, 4, '2024-02-05'),
 
--- 13. Insertar Cursos
-INSERT INTO Curso (IDCurso, NombreCurso) VALUES
-(1, 'Química General I'),
-(2, 'Química Orgánica'),
-(3, 'Química Analítica'),
-(4, 'Bioquímica');
+-- Balanza Analítica (IDTipoInsumo=5, necesita mínimo 2)
+(1, 5, '2024-01-10'),
+(1, 5, '2024-01-15'),
 
--- 14. Insertar Tipos de Pedido
-INSERT INTO TipoPedido (IDTipoPedido, NombrePedido) VALUES
-(1, 'Práctica de Laboratorio'),
-(2, 'Experimento de Investigación'),
-(3, 'Demostración');
+-- Guantes de Nitrilo (IDTipoInsumo=6, necesita mínimo 50)
+(1, 6, '2024-03-01'),
+(1, 6, '2024-03-01'),
+(1, 6, '2024-03-01'),
+(1, 6, '2024-03-01'),
+(1, 6, '2024-03-01');
 
--- 15. Insertar Horarios
-INSERT INTO Horario (IDHorario, FechaEntrega, HoraInicio) VALUES
-(1, '2025-09-10', '2025-09-10 08:00:00'),
-(2, '2025-09-11', '2025-09-11 10:00:00'),
-(3, '2025-09-11', '2025-09-11 12:00:00'),
-(4, '2025-09-11', '2025-09-11 14:00:00'),
-(5, '2025-09-11', '2025-09-11 16:00:00'),
-(6, '2025-09-11', '2025-09-11 18:00:00');
+-- ============================================
+-- 10. QUÍMICOS
+-- ============================================
+-- Solo para TipoInsumo donde EsQuimico=1 (IDs 1,2,7,8)
+-- Los triggers validarán que solo se inserten químicos aquí
+INSERT INTO Quimico (CantQuimico, IDTipoInsumo, FechaIngreso) VALUES
+-- Ácido Sulfúrico (IDTipoInsumo=1, necesita mínimo 100ml)
+(500.5, 1, '2024-01-10'),
 
--- 16. Insertar Pedidos
-INSERT INTO Pedido (IDPedido, FechaPedido, CantGrupos, IDInstructor, IDEstPedido, IDCurso, IDTipoPedido, IDHorario) VALUES
-(1, '2025-09-05', 5, 1, 2, 1, 1, 1),
-(2, '2025-09-06', 3, 2, 3, 2, 1, 2);
+-- Hidróxido de Sodio (IDTipoInsumo=2, necesita mínimo 100g)
+(250.0, 2, '2024-01-10'),
 
--- 17. Insertar Detalles de Pedido
-INSERT INTO PedidoDetalle (IDPedidoDetalle, CantInsumo, IDPedido, IDTipoInsumo) VALUES
-(1, 10, 1, 1),
-(2, 5, 1, 3),
-(3, 8, 2, 2),
-(4, 3, 2, 5);
+-- Etanol (IDTipoInsumo=7, necesita mínimo 500ml)
+(1000.0, 7, '2024-01-15'),
 
--- 18. Insertar Entregas
-INSERT INTO Entrega (IDEntrega, FechaEntrega, HoraEntrega, IDPedido, IDEstudiante) VALUES
-(1, '2025-09-10', '2025-09-10 08:30:00', 1, 1),
-(2, '2025-09-11', '2025-09-11 10:15:00', 2, 2);
+-- Cloruro de Sodio (IDTipoInsumo=8, necesita mínimo 200g)
+(500.0, 8, '2024-01-15');
 
--- 19. Insertar Entregas de Insumos
-INSERT INTO EntregaInsumo (IDEntregaInsumo, IDEntrega, IDInsumo) VALUES
-(1, 1, 1),
-(2, 1, 3),
-(3, 2, 2),
-(4, 2, 5);
+-- ============================================
+-- 11. ESTUDIANTES
+-- ============================================
+INSERT INTO Estudiante (Nombre, Apellido) VALUES
+('Pedro', 'Ramírez'),
+('Laura', 'Torres'),
+('Miguel', 'Fernández'),
+('Sofía', 'Morales');
 
--- 20. Insertar Entregas de Químicos
-INSERT INTO EntregaQuimico (IDEntregaQuimico, IDEntrega, IDQuimico) VALUES
-(1, 1, 1),
-(2, 2, 2);
+-- ============================================
+-- 12. ESTADOS DE PEDIDO
+-- ============================================
+INSERT INTO EstPedido (NombreEstPedido) VALUES
+('Pendiente'),
+('Aprobado'),
+('En Preparación'),
+('Entregado'),
+('Cancelado');
 
--- 21. Insertar Estados de Devolución
-INSERT INTO EstDevolucion (IDEstDevolucion, EstadoDevolucion) VALUES
-(1, 'Completa'),
-(2, 'Incompleta'),
-(3, 'Con Daños');
+-- ============================================
+-- 13. CURSOS
+-- ============================================
+INSERT INTO Curso (NombreCurso) VALUES
+('Química General I'),
+('Química Orgánica'),
+('Química Analítica'),
+('Bioquímica');
 
--- 22. Insertar Devoluciones
-INSERT INTO Devolucion (IDDevolucion, FechaDevolucion, HoraDevolucion, IDPedido, IDEstDevolucion, IDEntrega) VALUES
-(1, '2025-09-10', '2025-09-10 16:00:00', 1, 1, 1),
-(2, '2025-09-11', '2025-09-11 17:30:00', 2, 2, 2);
+-- ============================================
+-- 14. TIPOS DE PEDIDO
+-- ============================================
+INSERT INTO TipoPedido (NombrePedido) VALUES
+('Práctica de Laboratorio'),
+('Experimento de Investigación'),
+('Demostración');
 
--- 23. Insertar Detalles de Devolución
-INSERT INTO DevolucionDetalle (IDDevolucionDetalle, IDDevolucion, IDInsumo) VALUES
-(1, 1, 1),
-(2, 1, 3),
-(3, 2, 2);
+-- ============================================
+-- 15. HORARIOS
+-- ============================================
+INSERT INTO Horario (FechaEntrega, HoraInicio) VALUES
+('2025-01-15', '2025-01-15 08:00:00'),
+('2025-01-16', '2025-01-16 10:00:00'),
+('2025-01-17', '2025-01-17 14:00:00'),
+('2025-01-18', '2025-01-18 16:00:00'),
+('2025-01-19', '2025-01-19 08:00:00'),
+('2025-01-20', '2025-01-20 10:00:00');
 
--- 24. Insertar Estados de Incidente
-INSERT INTO EstIncidente (IDEstIncidente, EstadoIncidente) VALUES
-(1, 'Reportado'),
-(2, 'En Revisión'),
-(3, 'Resuelto');
+-- ============================================
+-- 16. PEDIDOS
+-- ============================================
+-- IDInstructor: 1=María García (ID Usuario 2), 2=Carlos López (ID Usuario 3)
+-- IDEstPedido: 1=Pendiente, 2=Aprobado, 3=En Preparación
+-- IDCurso: 1=Química General I, 2=Química Orgánica
+-- IDTipoPedido: 1=Práctica de Laboratorio
+-- IDHorario: 1-6 (horarios insertados arriba)
+INSERT INTO Pedido (FechaPedido, CantGrupos, IDInstructor, IDEstPedido, IDCurso, IDTipoPedido, IDHorario) VALUES
+('2025-01-05', 5, 1, 1, 1, 1, 1), -- Pedido Pendiente de María
+('2025-01-06', 3, 2, 2, 2, 1, 2), -- Pedido Aprobado de Carlos
+('2025-01-07', 4, 1, 3, 1, 1, 3); -- Pedido En Preparación de María
 
--- 25. Insertar Incidentes
-INSERT INTO Incidentes (IDIncidentes, Descripcion, FechaIncidente, FechaSolucion, IDDevolucion, IDEstudiante, IDEstIncidente) VALUES
-(1, 'Matraz roto durante la práctica', '2025-09-10', '2025-09-11', 1, 1, 3),
-(2, 'Falta de reactivo en la devolución', '2025-09-11', NULL, 2, 2, 2);
+-- ============================================
+-- 17. DETALLES DE PEDIDO
+-- ============================================
+-- IDPedido: 1, 2, 3 (pedidos insertados arriba)
+-- IDTipoInsumo: 1=Ácido Sulfúrico, 2=Hidróxido, 3=Matraz, 5=Balanza
+INSERT INTO PedidoDetalle (CantInsumo, IDPedido, IDTipoInsumo) VALUES
+-- Pedido 1
+(10, 1, 1), -- 10ml de Ácido Sulfúrico
+(5, 1, 3),  -- 5 Matraces
 
--- 26. Insertar Experimentos
-INSERT INTO Experimento (IDExperimento, NombreExperimento) VALUES
-(1, 'Titulación Ácido-Base'),
-(2, 'Síntesis de Aspirina'),
-(3, 'Destilación Simple');
+-- Pedido 2
+(8, 2, 2),  -- 8g de Hidróxido
+(3, 2, 5),  -- 3 Balanzas
 
--- 27. Insertar Detalles de Experimento
-INSERT INTO DetalleExperimento (IDDetalleExperimento, CantInsumoExperimento, IDTipoInsumo, IDExperimento) VALUES
-(1, 50, 1, 1),
-(2, 25, 2, 1),
-(3, 100, 7, 3);
+-- Pedido 3
+(15, 3, 7), -- 15ml de Etanol
+(2, 3, 4);  -- 2 Probetas
 
--- 28. Insertar Notificaciones
+-- ============================================
+-- 18. ENTREGAS
+-- ============================================
+-- Solo para pedidos aprobados o en preparación
+-- IDPedido: 2 (Aprobado), 3 (En Preparación)
+-- IDEstudiante: 1=Pedro, 2=Laura
+INSERT INTO Entrega (FechaEntrega, HoraEntrega, IDPedido, IDEstudiante) VALUES
+('2025-01-16', '2025-01-16 10:30:00', 2, 1), -- Entrega del Pedido 2 a Pedro
+('2025-01-17', '2025-01-17 14:15:00', 3, 2); -- Entrega del Pedido 3 a Laura
+
+-- ============================================
+-- 19. ENTREGAS DE INSUMOS
+-- ============================================
+-- IDEntrega: 1, 2
+-- IDInsumo: Basados en los IDs generados automáticamente
+-- Asumiendo que los IDs se generaron en orden: 1-10
+INSERT INTO EntregaInsumo (IDEntrega, IDInsumo) VALUES
+(1, 5), -- Balanza para Pedido 2
+(2, 2); -- Probeta para Pedido 3
+
+-- ============================================
+-- 20. ENTREGAS DE QUÍMICOS
+-- ============================================
+-- IDEntrega: 1, 2
+-- IDQuimico: Basados en los IDs generados automáticamente (1-4)
+INSERT INTO EntregaQuimico (IDEntrega, IDQuimico) VALUES
+(1, 2), -- Hidróxido para Pedido 2
+(2, 3); -- Etanol para Pedido 3
+
+-- ============================================
+-- 21. ESTADOS DE DEVOLUCIÓN
+-- ============================================
+INSERT INTO EstDevolucion (EstadoDevolucion) VALUES
+('Completa'),
+('Incompleta'),
+('Con Daños');
+
+-- ============================================
+-- 22. DEVOLUCIONES
+-- ============================================
+-- IDDevolucion generado automáticamente
+-- IDPedido: 2 (ya entregado)
+-- IDEstDevolucion: 1=Completa, 2=Incompleta
+-- IDEntrega: 1, 2
+INSERT INTO Devolucion (FechaDevolucion, HoraDevolucion, IDPedido, IDEstDevolucion, IDEntrega) VALUES
+('2025-01-16', '2025-01-16 18:00:00', 2, 1, 1),
+('2025-01-17', '2025-01-17 19:30:00', 3, 2, 2);
+
+-- ============================================
+-- 23. DETALLES DE DEVOLUCIÓN
+-- ============================================
+-- IDDevolucion: 1, 2
+-- IDInsumo: 5, 2
+INSERT INTO DevolucionDetalle (IDDevolucion, IDInsumo) VALUES
+(1, 5), -- Balanza devuelta
+(2, 2); -- Probeta devuelta
+
+-- ============================================
+-- 24. ESTADOS DE INCIDENTE
+-- ============================================
+INSERT INTO EstIncidente (EstadoIncidente) VALUES
+('Reportado'),
+('En Revisión'),
+('Resuelto');
+
+-- ============================================
+-- 25. INCIDENTES
+-- ============================================
+-- IDDevolucion: 1, 2
+-- IDEstudiante: 1=Pedro, 2=Laura
+-- IDEstIncidente: 1=Reportado, 2=En Revisión, 3=Resuelto
+INSERT INTO Incidentes (Descripcion, FechaIncidente, FechaSolucion, IDDevolucion, IDEstudiante, IDEstIncidente) VALUES
+('Matraz roto durante la práctica', '2025-01-16', '2025-01-17', 1, 1, 3),
+('Falta de reactivo en la devolución', '2025-01-17', NULL, 2, 2, 2);
+
+-- ============================================
+-- 26. EXPERIMENTOS
+-- ============================================
+INSERT INTO Experimento (NombreExperimento) VALUES
+('Titulación Ácido-Base'),
+('Síntesis de Aspirina'),
+('Destilación Simple');
+
+-- ============================================
+-- 27. DETALLES DE EXPERIMENTO
+-- ============================================
+-- IDExperimento: 1, 2, 3
+-- IDTipoInsumo: 1=Ácido Sulfúrico, 2=Hidróxido, 7=Etanol
+INSERT INTO DetalleExperimento (CantInsumoExperimento, IDTipoInsumo, IDExperimento) VALUES
+(50, 1, 1),  -- 50ml Ácido para Titulación
+(25, 2, 1),  -- 25g Hidróxido para Titulación
+(100, 7, 3); -- 100ml Etanol para Destilación
+
+-- ============================================
+-- 28. NOTIFICACIONES
+-- ============================================
+-- IDUsuario: 2 = María García (ADMIN_LABORATORIO)
+-- Todas las notificaciones van a los administradores de laboratorio
 INSERT INTO Notificacion (Titulo, Mensaje, Tipo, Leida, FechaCreacion, IDUsuario, DatosExtra) VALUES
-('Stock bajo: Ácido Sulfúrico', 
- 'El insumo Ácido Sulfúrico ha alcanzado el nivel mínimo de stock (500.5 ml restantes).', 
- 'BAJO_STOCK', 
- 0, 
- '2025-09-10 09:00:00',
- 2, 
- JSON_OBJECT('idTipoInsumo', 1, 'stockRestante', 500.5)),
-
-('Stock bajo: Hidróxido de Sodio', 
- 'El insumo Hidróxido de Sodio ha alcanzado el nivel mínimo de stock (250 g restantes).', 
- 'BAJO_STOCK', 
- 0, 
- '2025-09-10 09:30:00',
- 2, 
- JSON_OBJECT('idTipoInsumo', 2, 'stockRestante', 250)),
-
-('Nuevo pedido pendiente', 
- 'El pedido #1 de Química General I requiere aprobación.', 
- 'PEDIDO_PENDIENTE', 
- 0, 
- '2025-09-05 14:30:00',
- 2, 
- JSON_OBJECT('idPedido', 1, 'idInstructor', 1)),
-
-('Incidente reportado', 
- 'El estudiante Pedro Ramírez reportó un matraz roto durante la práctica.', 
- 'INCIDENTE', 
- 0, 
- '2025-09-10 16:30:00',
- 2, 
- JSON_OBJECT('idIncidente', 1, 'idEstudiante', 1)),
-
+-- Notificación de stock bajo - Matraz Erlenmeyer
 ('Stock bajo: Matraz Erlenmeyer', 
  'El insumo Matraz Erlenmeyer está por debajo del stock mínimo (1 disponible, mínimo: 3).', 
  'BAJO_STOCK', 
  0, 
- '2025-09-10 10:00:00',
+ '2025-01-10 10:00:00',
  2, 
- JSON_OBJECT('idTipoInsumo', 3, 'stockRestante', 1));
+ JSON_OBJECT('idTipoInsumo', 3, 'stockRestante', 1, 'stockMinimo', 3)),
 
+-- Notificación de stock bajo - Guantes
+('Stock bajo: Guantes de Nitrilo', 
+ 'El insumo Guantes de Nitrilo está por debajo del stock mínimo (5 disponibles, mínimo: 50).', 
+ 'BAJO_STOCK', 
+ 0, 
+ '2025-01-10 10:05:00',
+ 2, 
+ JSON_OBJECT('idTipoInsumo', 6, 'stockRestante', 5, 'stockMinimo', 50)),
 
-SELECT 'Datos de prueba insertados correctamente!' AS Resultado;
-SELECT COUNT(*) AS TotalTiposInsumo FROM TipoInsumo;
-SELECT COUNT(*) AS TotalInsumos FROM Insumo;
-SELECT COUNT(*) AS TotalUsuarios FROM Usuario;
+-- Notificación de nuevo pedido pendiente
+('Nuevo pedido pendiente', 
+ 'El pedido de Química General I del instructor María García requiere aprobación.', 
+ 'PEDIDO_PENDIENTE', 
+ 0, 
+ '2025-01-05 14:30:00',
+ 2, 
+ JSON_OBJECT('idPedido', 1, 'idInstructor', 1, 'nombreInstructor', 'María García')),
 
--- =========================
--- TRIGGERS PARA VALIDACION
--- =========================
+-- Notificación de incidente reportado
+('Incidente reportado', 
+ 'El estudiante Pedro Ramírez reportó: Matraz roto durante la práctica.', 
+ 'INCIDENTE', 
+ 0, 
+ '2025-01-16 18:30:00',
+ 2, 
+ JSON_OBJECT('idIncidente', 1, 'idEstudiante', 1, 'nombreEstudiante', 'Pedro Ramírez'));
 
--- Insumo: no permitir si TipoInsumo es quimico
-CREATE TRIGGER trg_insumo_before_insert
-BEFORE INSERT ON Insumo
-FOR EACH ROW
-BEGIN
-  DECLARE vEsQuimico TINYINT DEFAULT 0;
-  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
-  IF vEsQuimico = 1 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo es quimico, no puede insertarse en Insumo';
-  END IF;
-END;
-//
+-- ============================================
+-- VERIFICACIÓN DE DATOS
+-- ============================================
+SELECT '✅ Datos de prueba insertados correctamente!' AS Resultado;
 
-CREATE TRIGGER trg_insumo_before_update
-BEFORE UPDATE ON Insumo
-FOR EACH ROW
-BEGIN
-  DECLARE vEsQuimico TINYINT DEFAULT 0;
-  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
-  IF vEsQuimico = 1 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo es quimico, no puede asignarse en Insumo';
-  END IF;
-END;
-//
+SELECT 
+    'Roles' AS Tabla, 
+    COUNT(*) AS Total 
+FROM Rol
+UNION ALL
+SELECT 'Usuarios', COUNT(*) FROM Usuario
+UNION ALL
+SELECT 'Categorías', COUNT(*) FROM Categoria
+UNION ALL
+SELECT 'Unidades', COUNT(*) FROM Unidad
+UNION ALL
+SELECT 'Tipos de Insumo', COUNT(*) FROM TipoInsumo
+UNION ALL
+SELECT 'Insumos Físicos', COUNT(*) FROM Insumo
+UNION ALL
+SELECT 'Químicos', COUNT(*) FROM Quimico
+UNION ALL
+SELECT 'Estudiantes', COUNT(*) FROM Estudiante
+UNION ALL
+SELECT 'Pedidos', COUNT(*) FROM Pedido
+UNION ALL
+SELECT 'Detalles de Pedido', COUNT(*) FROM PedidoDetalle
+UNION ALL
+SELECT 'Entregas', COUNT(*) FROM Entrega
+UNION ALL
+SELECT 'Notificaciones', COUNT(*) FROM Notificacion;
 
--- Quimico: solo permitir si TipoInsumo es quimico
-CREATE TRIGGER trg_quimico_before_insert
-BEFORE INSERT ON Quimico
-FOR EACH ROW
-BEGIN
-  DECLARE vEsQuimico TINYINT DEFAULT 0;
-  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
-  IF vEsQuimico = 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo no es quimico, no puede insertarse en Quimico';
-  END IF;
-  IF NEW.CantQuimico < 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: CantQuimico no puede ser negativa';
-  END IF;
-END;
-//
-
-CREATE TRIGGER trg_quimico_before_update
-BEFORE UPDATE ON Quimico
-FOR EACH ROW
-BEGIN
-  DECLARE vEsQuimico TINYINT DEFAULT 0;
-  SELECT EsQuimico INTO vEsQuimico FROM TipoInsumo WHERE IDTipoInsumo = NEW.IDTipoInsumo;
-  IF vEsQuimico = 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: TipoInsumo no es quimico, no puede actualizarse en Quimico';
-  END IF;
-  IF NEW.CantQuimico < 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: CantQuimico no puede ser negativa';
-  END IF;
-END;
+-- Verificar stock actual vs mínimo
+SELECT 
+    ti.NombreTipoInsumo,
+    ti.EsQuimico,
+    CASE 
+        WHEN ti.EsQuimico = 1 THEN COALESCE(SUM(q.CantQuimico), 0)
+        ELSE COUNT(i.IDInsumo)
+    END AS StockActual,
+    ti.stockMinimo AS StockMinimo,
+    CASE 
+        WHEN ti.EsQuimico = 1 THEN 
+            CASE WHEN COALESCE(SUM(q.CantQuimico), 0) < ti.stockMinimo THEN '⚠️ BAJO' ELSE '✅ OK' END
+        ELSE 
+            CASE WHEN COUNT(i.IDInsumo) < ti.stockMinimo THEN '⚠️ BAJO' ELSE '✅ OK' END
+    END AS Estado,
+    ti.Unidad AS Unidad
+FROM TipoInsumo ti
+LEFT JOIN Quimico q ON ti.IDTipoInsumo = q.IDTipoInsumo AND ti.EsQuimico = 1
+LEFT JOIN Insumo i ON ti.IDTipoInsumo = i.IDTipoInsumo AND ti.EsQuimico = 0
+LEFT JOIN Unidad u ON ti.IDUnidad = u.IDUnidad
+GROUP BY ti.IDTipoInsumo, ti.NombreTipoInsumo, ti.EsQuimico, ti.stockMinimo, u.Unidad
+ORDER BY ti.NombreTipoInsumo;
