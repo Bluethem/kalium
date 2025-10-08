@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { notificacionService } from '../../services/api';
 import NotificacionPanel from '../../pages/Notificaciones/NotificacionPanel';
@@ -26,15 +26,8 @@ const Header = ({ minimal = false }) => {
     }
   }, [location.pathname]);
 
-  useEffect(() => {
-    if (userId) {
-      cargarContadorNotificaciones();
-      const interval = setInterval(cargarContadorNotificaciones, 30000); // cada 30s
-      return () => clearInterval(interval);
-    }
-  }, [userId]);
-
-  const cargarContadorNotificaciones = async () => {
+  // ✅ useCallback para evitar recrear la función en cada render
+  const cargarContadorNotificaciones = useCallback(async () => {
     if (!userId) return;
     try {
       const response = await notificacionService.getContadorNoLeidas(userId);
@@ -42,7 +35,15 @@ const Header = ({ minimal = false }) => {
     } catch (error) {
       console.error('Error al cargar contador:', error);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      cargarContadorNotificaciones();
+      const interval = setInterval(cargarContadorNotificaciones, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [userId, cargarContadorNotificaciones]);
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -92,10 +93,12 @@ const Header = ({ minimal = false }) => {
                 </span>
               )}
             </button>
+            {/* ✅ PASAR callback para actualizar contador */}
             <NotificacionPanel 
               isOpen={notifOpen} 
               onClose={() => setNotifOpen(false)} 
               idUsuario={userId}
+              onNotificacionActualizada={cargarContadorNotificaciones} // ✅ NUEVO
             />
           </div>
 

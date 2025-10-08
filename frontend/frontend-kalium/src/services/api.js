@@ -116,9 +116,13 @@ export const tipoPedidoService = {
   getTiposPedido: () => api.get('/tipos-pedido'),
 };
 
-// Servicios para Pedido Detalle
+// Servicios para Pedido Detalle (ya existe pero lo completo)
 export const pedidoDetalleService = {
+  getPedidoDetalles: () => api.get('/pedidos-detalle'),
+  getPedidoDetalleById: (id) => api.get(`/pedidos-detalle/${id}`),
   createPedidoDetalle: (detalleData) => api.post('/pedidos-detalle', detalleData),
+  updatePedidoDetalle: (id, detalleData) => api.put(`/pedidos-detalle/${id}`, detalleData),
+  deletePedidoDetalle: (id) => api.delete(`/pedidos-detalle/${id}`),
 };
 
 // Agregar antes de export default api;
@@ -134,6 +138,16 @@ export const notificacionService = {
   eliminarNotificacion: (idNotificacion) => api.delete(`/notificaciones/${idNotificacion}`),
   limpiarLeidas: (idUsuario) => api.delete(`/notificaciones/usuario/${idUsuario}/limpiar`),
   verificarStock: () => api.post('/notificaciones/verificar-stock'),
+};
+
+// Servicios para Horarios
+export const horarioService = {
+  getHorarios: () => api.get('/horarios'),
+  getHorarioById: (id) => api.get(`/horarios/${id}`),
+  getHorariosDisponibles: () => api.get('/horarios/disponibles'),
+  createHorario: (horarioData) => api.post('/horarios', horarioData),
+  updateHorario: (id, horarioData) => api.put(`/horarios/${id}`, horarioData),
+  deleteHorario: (id) => api.delete(`/horarios/${id}`),
 };
 
 export default api;

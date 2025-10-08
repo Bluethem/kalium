@@ -10,7 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 public class PedidoDetalle {
     
-    @Id
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDPedidoDetalle")
     private Integer idPedidoDetalle;
     

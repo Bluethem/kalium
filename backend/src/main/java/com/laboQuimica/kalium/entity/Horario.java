@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class Horario {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDHorario")
     private Integer idHorario;
     

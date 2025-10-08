@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
-import { pedidoService, insumoService } from '../../services/api';
+import { pedidoService, insumoService, horarioService, pedidoDetalleService } from '../../services/api';
 import axios from 'axios';
 
 const NuevoPedido = () => {
@@ -110,13 +110,22 @@ const NuevoPedido = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     try {
       if (items.length === 0) {
         throw new Error('Debe agregar al menos un ítem al pedido');
       }
-
-      // Crear el pedido
+  
+      // ✅ PASO 1: Crear el horario PRIMERO
+      const horarioData = {
+        fechaEntrega: formPedido.fechaEntrega,
+        horaInicio: formPedido.horaEntrega // Esto debe ser datetime-local
+      };
+      
+      const horarioRes = await horarioService.createHorario(horarioData);
+      const idHorarioCreado = horarioRes.data.idHorario;
+  
+      // ✅ PASO 2: Crear el pedido con el ID del horario
       const pedidoData = {
         fechaPedido: formPedido.fechaPedido,
         cantGrupos: parseInt(formPedido.cantGrupos),
@@ -124,23 +133,20 @@ const NuevoPedido = () => {
         estPedido: { idEstPedido: 1 }, // Pendiente
         curso: { idCurso: parseInt(formPedido.idCurso) },
         tipoPedido: { idTipoPedido: parseInt(formPedido.idTipoPedido) },
-        horario: {
-          fechaEntrega: formPedido.fechaEntrega,
-          horaInicio: formPedido.horaEntrega
-        }
+        horario: { idHorario: idHorarioCreado } // ✅ Usar el ID generado
       };
-
+  
       const pedidoRes = await pedidoService.createPedido(pedidoData);
       
-      // Crear detalles del pedido
+      // ✅ PASO 3: Crear detalles del pedido
       for (const item of items) {
-        await axios.post('http://localhost:8080/api/pedidos-detalle', {
+        await pedidoDetalleService.createPedidoDetalle({
           cantInsumo: parseInt(item.cantInsumo),
           pedido: { idPedido: pedidoRes.data.idPedido },
           tipoInsumo: { idTipoInsumo: parseInt(item.idTipoInsumo) }
         });
       }
-
+  
       setShowSuccess(true);
     } catch (error) {
       console.error('Error al crear pedido:', error);

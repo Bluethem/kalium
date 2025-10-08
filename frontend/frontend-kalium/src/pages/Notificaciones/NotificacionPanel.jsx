@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ AGREGAR
+import { useNavigate } from 'react-router-dom';
 import { notificacionService } from '../../services/api';
 
-const NotificacionPanel = ({ isOpen, onClose, idUsuario }) => {
-  const navigate = useNavigate(); // ✅ AGREGAR
+const NotificacionPanel = ({ isOpen, onClose, idUsuario, onNotificacionActualizada }) => {
+  const navigate = useNavigate();
   const [notificaciones, setNotificaciones] = useState([]);
   const [loading, setLoading] = useState(false);
   const [resumen, setResumen] = useState(null);
@@ -45,28 +45,52 @@ const NotificacionPanel = ({ isOpen, onClose, idUsuario }) => {
     }
   };
 
+  // ✅ ARREGLADO - Actualizar panel Y notificar al Header
   const handleMarcarLeida = async (idNotificacion) => {
     try {
       await notificacionService.marcarComoLeida(idNotificacion);
-      cargarNotificaciones();
+      
+      // ✅ Recargar notificaciones del panel
+      await cargarNotificaciones();
+      
+      // ✅ Notificar al Header para actualizar contador
+      if (onNotificacionActualizada) {
+        onNotificacionActualizada();
+      }
     } catch (error) {
       console.error('Error al marcar notificación:', error);
     }
   };
 
+  // ✅ ARREGLADO - Actualizar panel Y notificar al Header
   const handleMarcarTodasLeidas = async () => {
     try {
       await notificacionService.marcarTodasComoLeidas(idUsuario);
-      cargarNotificaciones();
+      
+      // ✅ Recargar notificaciones del panel
+      await cargarNotificaciones();
+      
+      // ✅ Notificar al Header para actualizar contador
+      if (onNotificacionActualizada) {
+        onNotificacionActualizada();
+      }
     } catch (error) {
       console.error('Error al marcar todas:', error);
     }
   };
 
+  // ✅ ARREGLADO - Actualizar panel Y notificar al Header
   const handleEliminar = async (idNotificacion) => {
     try {
       await notificacionService.eliminarNotificacion(idNotificacion);
-      cargarNotificaciones();
+      
+      // ✅ Recargar notificaciones del panel
+      await cargarNotificaciones();
+      
+      // ✅ Notificar al Header para actualizar contador
+      if (onNotificacionActualizada) {
+        onNotificacionActualizada();
+      }
     } catch (error) {
       console.error('Error al eliminar notificación:', error);
     }
@@ -162,7 +186,14 @@ const NotificacionPanel = ({ isOpen, onClose, idUsuario }) => {
         ) : notificaciones.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
             <span className="material-symbols-outlined text-4xl mb-2">notifications_off</span>
-            <p className="text-sm">No tienes notificaciones nuevas</p>
+            <p className="text-sm mb-4">No tienes notificaciones nuevas</p>
+            <button
+              onClick={handleVerTodas}
+              className="text-sm text-[rgb(44,171,91)] hover:underline font-medium flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-base">visibility</span>
+              Ver todas las notificaciones
+            </button>
           </div>
         ) : (
           notificaciones.map((notif) => (
@@ -206,12 +237,6 @@ const NotificacionPanel = ({ isOpen, onClose, idUsuario }) => {
                     >
                       Marcar leída
                     </button>
-                    <button
-                      onClick={handleVerTodas}
-                      className="text-sm text-[rgb(44,171,91)] hover:underline font-medium"
-                    >
-                      Ver todas las notificaciones
-                    </button>
                   </div>
                 </div>
               </div>
@@ -224,17 +249,7 @@ const NotificacionPanel = ({ isOpen, onClose, idUsuario }) => {
       {notificaciones.length > 0 && (
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-center">
           <button
-            onClick={() => {/* TODO: Navegar a página de notificaciones */}}
-            className="text-sm text-[rgb(44,171,91)] hover:underline"
-          >
-            Ver todas las notificaciones
-          </button>
-        </div>
-      )}
-      {notificaciones.length > 0 && (
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-center">
-          <button
-            onClick={handleVerTodas} // ✅ ACTUALIZAR
+            onClick={handleVerTodas}
             className="text-sm text-[rgb(44,171,91)] hover:underline font-medium"
           >
             Ver todas las notificaciones
