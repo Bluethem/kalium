@@ -150,4 +150,31 @@ export const horarioService = {
   deleteHorario: (id) => api.delete(`/horarios/${id}`),
 };
 
+// Servicios para Incidentes
+export const incidenteService = {
+  getIncidentes: () => api.get('/incidentes'),
+  getIncidenteById: (id) => api.get(`/incidentes/${id}`),
+  getIncidentesPorEstado: (idEstado) => api.get(`/incidentes/estado/${idEstado}`),
+  getIncidentesPorEstudiante: (idEstudiante) => api.get(`/incidentes/estudiante/${idEstudiante}`),
+  getIncidentesPorDevolucion: (idDevolucion) => api.get(`/incidentes/devolucion/${idDevolucion}`),
+  createIncidente: (incidenteData) => api.post('/incidentes', incidenteData),
+  updateIncidente: (id, incidenteData) => api.put(`/incidentes/${id}`, incidenteData),
+  cambiarEstado: (idIncidente, idEstado) => api.patch(`/incidentes/${idIncidente}/estado/${idEstado}`),
+  resolverIncidente: (id) => api.patch(`/incidentes/${id}/resolver`),
+  deleteIncidente: (id) => api.delete(`/incidentes/${id}`),
+  getEstadosIncidente: () => api.get('/incidentes/estados'),
+};
+
+// Servicios para Estudiantes
+export const estudianteService = {
+  getEstudiantes: () => api.get('/estudiantes'),
+  getEstudianteById: (id) => api.get(`/estudiantes/${id}`),
+};
+
+// Servicios para Devoluciones (básicos por ahora)
+export const devolucionService = {
+  getDevoluciones: () => api.get('/devoluciones'),
+  getDevolucionById: (id) => api.get(`/devoluciones/${id}`),
+};
+
 export default api;

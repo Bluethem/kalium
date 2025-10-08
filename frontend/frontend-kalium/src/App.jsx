@@ -5,6 +5,7 @@ import NuevoInsumo from './pages/Insumos/NuevoInsumo';
 import DetalleInsumo from './pages/Insumos/DetalleInsumo';
 import ListaPedidos from './pages/Pedidos/ListaPedidos';
 import NuevoPedido from './pages/Pedidos/NuevoPedido';
+import DetallePedido from './pages/Pedidos/DetallePedido';
 import Reportes from './pages/Reportes/Reportes';
 import Header from './components/Layout/Header';
 import Login from './pages/Login';
@@ -12,8 +13,10 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Cuenta from './pages/Cuenta';
-import DetallePedido from './pages/Pedidos/DetallePedido';
-import ListaNotificaciones from './pages/Notificaciones/ListaNotificaciones'; // ✅ NUEVO
+import ListaNotificaciones from './pages/Notificaciones/ListaNotificaciones';
+import ListaIncidentes from './pages/Incidentes/ListaIncidentes'; // ✅ NUEVO
+import DetalleIncidente from './pages/Incidentes/DetalleIncidente'; // ✅ NUEVO
+import NuevoIncidente from './pages/Incidentes/NuevoIncidente'; // ✅ NUEVO
 
 function App() {
   return (
@@ -32,7 +35,10 @@ function App() {
         <Route path="/pedidos/nuevo" element={<NuevoPedido />} />
         <Route path="/pedidos/:id" element={<DetallePedido />} />
         <Route path="/reportes" element={<Reportes />} />
-        <Route path="/notificaciones" element={<ListaNotificaciones />} /> {/* ✅ NUEVO */}
+        <Route path="/notificaciones" element={<ListaNotificaciones />} />
+        <Route path="/incidentes" element={<ListaIncidentes />} />
+        <Route path="/incidentes/nuevo" element={<NuevoIncidente />} />
+        <Route path="/incidentes/:id" element={<DetalleIncidente />} />
       </Routes>
     </Router>
   );

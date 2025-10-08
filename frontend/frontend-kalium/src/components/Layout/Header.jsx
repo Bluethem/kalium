@@ -26,7 +26,6 @@ const Header = ({ minimal = false }) => {
     }
   }, [location.pathname]);
 
-  // ✅ useCallback para evitar recrear la función en cada render
   const cargarContadorNotificaciones = useCallback(async () => {
     if (!userId) return;
     try {
@@ -72,6 +71,10 @@ const Header = ({ minimal = false }) => {
           <Link to="/pedidos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/pedidos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
             Pedidos
           </Link>
+          {/* ✅ NUEVO ENLACE DE INCIDENTES */}
+          <Link to="/incidentes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/incidentes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Incidentes
+          </Link>
           <Link to="/reportes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/reportes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
             Reportes
           </Link>
@@ -80,7 +83,6 @@ const Header = ({ minimal = false }) => {
 
       {!minimal && (
         <div className="relative flex items-center gap-4">
-          {/* Botón de notificaciones */}
           <div className="relative">
             <button 
               onClick={() => setNotifOpen(!notifOpen)}
@@ -93,12 +95,11 @@ const Header = ({ minimal = false }) => {
                 </span>
               )}
             </button>
-            {/* ✅ PASAR callback para actualizar contador */}
             <NotificacionPanel 
               isOpen={notifOpen} 
               onClose={() => setNotifOpen(false)} 
               idUsuario={userId}
-              onNotificacionActualizada={cargarContadorNotificaciones} // ✅ NUEVO
+              onNotificacionActualizada={cargarContadorNotificaciones}
             />
           </div>
 

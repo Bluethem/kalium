@@ -16,6 +16,7 @@ function Dashboard() {
     
     verificarStockInicial();
   }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
       <Header />
@@ -53,6 +54,17 @@ function Dashboard() {
               </div>
               <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Pedidos</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Revisar solicitudes</p>
+            </div>
+          </Link>
+
+          {/* ✅ NUEVA TARJETA DE INCIDENTES */}
+          <Link to="/incidentes" className="group block rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+            <div className="flex flex-col items-center justify-center">
+              <div className="flex size-16 items-center justify-center rounded-full bg-[#eef7f2] dark:bg-gray-700 text-[rgb(44,171,91)] group-hover:bg-[rgb(44,171,91)] group-hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-4xl">warning</span>
+              </div>
+              <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Incidentes</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestionar incidencias</p>
             </div>
           </Link>
 

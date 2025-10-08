@@ -156,6 +156,11 @@ public class NotificacionService {
         
         notificacionRepository.deleteAll(notificaciones);
     }
+
+    // Agregar este método a tu NotificacionService.java existente
+    public Notificacion guardar(Notificacion notificacion) {
+        return notificacionRepository.save(notificacion);
+    }
     
     // ===== Métodos auxiliares =====
     
