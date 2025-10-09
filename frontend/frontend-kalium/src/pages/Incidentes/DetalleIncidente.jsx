@@ -9,7 +9,10 @@ const DetalleIncidente = () => {
   const [incidente, setIncidente] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModalResolver, setShowModalResolver] = useState(false);
+  const [showModalRevision, setShowModalRevision] = useState(false);
+  const [showModalCancelar, setShowModalCancelar] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     cargarIncidente();
@@ -33,6 +36,7 @@ const DetalleIncidente = () => {
     try {
       await incidenteService.resolverIncidente(id);
       setShowModalResolver(false);
+      setSuccessMessage('El incidente ha sido marcado como resuelto exitosamente.');
       setShowSuccess(true);
       await cargarIncidente();
     } catch (error) {
@@ -41,11 +45,38 @@ const DetalleIncidente = () => {
     }
   };
 
+  const handlePonerEnRevision = async () => {
+    try {
+      await incidenteService.cambiarEstado(id, 2); // 2 = En Revisión
+      setShowModalRevision(false);
+      setSuccessMessage('El incidente ha sido puesto en revisión exitosamente.');
+      setShowSuccess(true);
+      await cargarIncidente();
+    } catch (error) {
+      console.error('Error al poner en revisión:', error);
+      alert('No se pudo cambiar el estado del incidente');
+    }
+  };
+
+  const handleCancelar = async () => {
+    try {
+      await incidenteService.cambiarEstado(id, 4); // 4 = Cancelado
+      setShowModalCancelar(false);
+      setSuccessMessage('El incidente ha sido cancelado exitosamente.');
+      setShowSuccess(true);
+      await cargarIncidente();
+    } catch (error) {
+      console.error('Error al cancelar incidente:', error);
+      alert('No se pudo cancelar el incidente');
+    }
+  };
+
   const getEstadoBadge = (estado) => {
     const estados = {
       'Reportado': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
       'En Revisión': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
       'Resuelto': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Cancelado': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
     };
     return estados[estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
   };
@@ -75,7 +106,12 @@ const DetalleIncidente = () => {
     );
   }
 
-  const esResuelto = incidente.estIncidente?.estadoIncidente === 'Resuelto';
+  const estadoActual = incidente.estIncidente?.estadoIncidente;
+  const esResuelto = estadoActual === 'Resuelto';
+  const esCancelado = estadoActual === 'Cancelado';
+  const esReportado = estadoActual === 'Reportado';
+  const esEnRevision = estadoActual === 'En Revisión';
+  const puedeModificar = !esResuelto && !esCancelado;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
@@ -110,21 +146,46 @@ const DetalleIncidente = () => {
                     Información del Incidente
                   </h3>
                   <div className="flex items-center gap-2 mb-4">
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getEstadoBadge(incidente.estIncidente?.estadoIncidente)}`}>
-                      {incidente.estIncidente?.estadoIncidente || 'Sin estado'}
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getEstadoBadge(estadoActual)}`}>
+                      {estadoActual || 'Sin estado'}
                     </span>
                   </div>
                 </div>
 
-                {/* Botón de acción si no está resuelto */}
-                {!esResuelto && (
-                  <button
-                    onClick={() => setShowModalResolver(true)}
-                    className="flex items-center gap-2 rounded-lg bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400"
-                  >
-                    <span className="material-symbols-outlined text-base">check_circle</span>
-                    Marcar como Resuelto
-                  </button>
+                {/* Botones de acción según el estado */}
+                {puedeModificar && (
+                  <div className="flex gap-2">
+                    {/* Botón Poner en Revisión - solo si está Reportado */}
+                    {esReportado && (
+                      <button
+                        onClick={() => setShowModalRevision(true)}
+                        className="flex items-center gap-2 rounded-lg bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400"
+                      >
+                        <span className="material-symbols-outlined text-base">rate_review</span>
+                        En Revisión
+                      </button>
+                    )}
+
+                    {/* Botón Resolver - si está Reportado o En Revisión */}
+                    {(esReportado || esEnRevision) && (
+                      <button
+                        onClick={() => setShowModalResolver(true)}
+                        className="flex items-center gap-2 rounded-lg bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400"
+                      >
+                        <span className="material-symbols-outlined text-base">check_circle</span>
+                        Resolver
+                      </button>
+                    )}
+
+                    {/* Botón Cancelar - siempre disponible si no está Resuelto ni Cancelado */}
+                    <button
+                      onClick={() => setShowModalCancelar(true)}
+                      className="flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400"
+                    >
+                      <span className="material-symbols-outlined text-base">cancel</span>
+                      Cancelar
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -193,7 +254,7 @@ const DetalleIncidente = () => {
                     Estado del Incidente
                   </p>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {incidente.estIncidente?.estadoIncidente || 'Sin estado'}
+                    {estadoActual || 'Sin estado'}
                   </p>
                 </div>
               </div>
@@ -211,6 +272,41 @@ const DetalleIncidente = () => {
           </div>
         </div>
       </main>
+
+      {/* Modal Poner en Revisión */}
+      {showModalRevision && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-800">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 mb-4">
+                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">
+                  rate_review
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Poner en Revisión
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                ¿Desea marcar este incidente como "En Revisión"?
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowModalRevision(false)}
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handlePonerEnRevision}
+                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Confirmar Resolver */}
       {showModalResolver && (
@@ -247,6 +343,41 @@ const DetalleIncidente = () => {
         </div>
       )}
 
+      {/* Modal Confirmar Cancelar */}
+      {showModalCancelar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-800">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50 mb-4">
+                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-3xl">
+                  cancel
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Cancelar Incidente
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                ¿Está seguro de cancelar este incidente? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowModalCancelar(false)}
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  No, volver
+                </button>
+                <button
+                  onClick={handleCancelar}
+                  className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                >
+                  Sí, cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Éxito */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -258,10 +389,10 @@ const DetalleIncidente = () => {
                 </span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Incidente Resuelto
+                ¡Éxito!
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                El incidente ha sido marcado como resuelto exitosamente.
+                {successMessage}
               </p>
               <button
                 onClick={() => setShowSuccess(false)}

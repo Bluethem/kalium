@@ -78,6 +78,9 @@ const Header = ({ minimal = false }) => {
           <Link to="/reportes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/reportes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
             Reportes
           </Link>
+          <Link to="/entregas" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/entregas') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Entregas
+          </Link>
         </nav>
       )}
 

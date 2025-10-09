@@ -63,19 +63,20 @@ export const pedidoService = {
   deletePedido: (id) => api.delete(`/pedidos/${id}`),
 };
 
-// Servicios para Entregas
-export const entregaService = {
+export const entregasService = {
   getEntregas: () => api.get('/entregas'),
   getEntregaById: (id) => api.get(`/entregas/${id}`),
   getEntregasPorPedido: (idPedido) => api.get(`/entregas/pedido/${idPedido}`),
   getEntregasPorEstudiante: (idEstudiante) => api.get(`/entregas/estudiante/${idEstudiante}`),
   getInsumosPorEntrega: (id) => api.get(`/entregas/${id}/insumos`),
   getQuimicosPorEntrega: (id) => api.get(`/entregas/${id}/quimicos`),
-  createEntrega: (entregaData) => api.post('/entregas', entregaData),
-  createEntregaInsumo: (entregaInsumoData) => api.post('/entregas/insumos', entregaInsumoData),
-  createEntregaQuimico: (entregaQuimicoData) => api.post('/entregas/quimicos', entregaQuimicoData),
-  updateEntrega: (id, entregaData) => api.put(`/entregas/${id}`, entregaData),
+  createEntrega: (data) => api.post('/entregas', data),
+  agregarInsumo: (data) => api.post('/entregas/insumos', data),
+  agregarQuimico: (data) => api.post('/entregas/quimicos', data),
+  updateEntrega: (id, data) => api.put(`/entregas/${id}`, data),
   deleteEntrega: (id) => api.delete(`/entregas/${id}`),
+  eliminarInsumo: (id) => api.delete(`/entregas/insumos/${id}`),
+  eliminarQuimico: (id) => api.delete(`/entregas/quimicos/${id}`),
 };
 
 // Servicios para Reportes
@@ -163,6 +164,21 @@ export const incidenteService = {
   resolverIncidente: (id) => api.patch(`/incidentes/${id}/resolver`),
   deleteIncidente: (id) => api.delete(`/incidentes/${id}`),
   getEstadosIncidente: () => api.get('/incidentes/estados'),
+  ponerEnRevision: (id) => api.patch(`/incidentes/${id}/estado/2`),
+  cancelarIncidente: (id) => api.patch(`/incidentes/${id}/cancelar`),
+};
+
+// Servicios para Entregas
+export const entregaService = {
+  getEntregas: () => api.get('/entregas'),
+  getEntregaById: (id) => api.get(`/entregas/${id}`),
+  getEntregasPorPedido: (idPedido) => api.get(`/entregas/pedido/${idPedido}`),
+  getEntregasPorEstudiante: (idEstudiante) => api.get(`/entregas/estudiante/${idEstudiante}`),
+  getInsumosPorEntrega: (id) => api.get(`/entregas/${id}/insumos`),
+  getQuimicosPorEntrega: (id) => api.get(`/entregas/${id}/quimicos`),
+  createEntrega: (data) => api.post('/entregas', data),
+  updateEntrega: (id, data) => api.put(`/entregas/${id}`, data),
+  deleteEntrega: (id) => api.delete(`/entregas/${id}`),
 };
 
 // Servicios para Estudiantes

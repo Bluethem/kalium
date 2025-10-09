@@ -223,4 +223,32 @@ public class IncidenteService {
             System.err.println("Error al crear notificación de incidente: " + e.getMessage());
         }
     }
+
+    /**
+     * Cambiar incidente a "En Revisión"
+    */
+    public Incidentes ponerEnRevision(Integer idIncidente) {
+        Incidentes incidente = incidentesRepository.findById(idIncidente)
+            .orElseThrow(() -> new RuntimeException("Incidente no encontrado con id: " + idIncidente));
+        
+        EstIncidente estadoRevision = estIncidenteRepository.findById(2) // En Revisión
+            .orElseThrow(() -> new RuntimeException("Estado 'En Revisión' no encontrado"));
+        
+        incidente.setEstIncidente(estadoRevision);
+        return incidentesRepository.save(incidente);
+    }
+
+    /**
+     * Cancelar un incidente
+     */
+    public Incidentes cancelarIncidente(Integer idIncidente) {
+        Incidentes incidente = incidentesRepository.findById(idIncidente)
+            .orElseThrow(() -> new RuntimeException("Incidente no encontrado con id: " + idIncidente));
+        
+        EstIncidente estadoCancelado = estIncidenteRepository.findById(4) // Cancelado
+            .orElseThrow(() -> new RuntimeException("Estado 'Cancelado' no encontrado"));
+        
+        incidente.setEstIncidente(estadoCancelado);
+        return incidentesRepository.save(incidente);
+    }
 }

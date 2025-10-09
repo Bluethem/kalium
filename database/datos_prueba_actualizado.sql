@@ -299,7 +299,8 @@ INSERT INTO DevolucionDetalle (IDDevolucion, IDInsumo) VALUES
 INSERT INTO EstIncidente (EstadoIncidente) VALUES
 ('Reportado'),
 ('En Revisión'),
-('Resuelto');
+('Resuelto'),
+('Cancelado');
 
 -- ============================================
 -- 25. INCIDENTES

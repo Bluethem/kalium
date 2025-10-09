@@ -17,6 +17,8 @@ import ListaNotificaciones from './pages/Notificaciones/ListaNotificaciones';
 import ListaIncidentes from './pages/Incidentes/ListaIncidentes'; // ✅ NUEVO
 import DetalleIncidente from './pages/Incidentes/DetalleIncidente'; // ✅ NUEVO
 import NuevoIncidente from './pages/Incidentes/NuevoIncidente'; // ✅ NUEVO
+import ListaEntregas from './pages/Entregas/ListaEntregas';
+import DetalleEntrega from './pages/Entregas/DetalleEntrega';
 
 function App() {
   return (
@@ -39,6 +41,9 @@ function App() {
         <Route path="/incidentes" element={<ListaIncidentes />} />
         <Route path="/incidentes/nuevo" element={<NuevoIncidente />} />
         <Route path="/incidentes/:id" element={<DetalleIncidente />} />
+        <Route path="/entregas" element={<ListaEntregas />} />
+        <Route path="/entregas/nueva" element={<NuevaEntrega />} />
+        <Route path="/entregas/:id" element={<DetalleEntrega />} />
       </Routes>
     </Router>
   );

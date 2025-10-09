@@ -145,6 +145,20 @@ public class IncidenteController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /*
+     Cancelar un incidente
+      PATCH /api/incidentes/{id}/cancelar
+    */
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<?> cancelar(@PathVariable Integer id) {
+        try {
+            Incidentes incidenteCancelado = incidenteService.cancelarIncidente(id);
+            return ResponseEntity.ok(incidenteCancelado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
     
     /**
      * Eliminar un incidente
