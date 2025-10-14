@@ -1,37 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
-import { entregaService } from '../../services/api';
+import { devolucionService } from '../../services/api';
 
-const DetalleEntrega = () => {
+const DetalleDevolucion = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [entrega, setEntrega] = useState(null);
-  const [insumos, setInsumos] = useState([]);
-  const [quimicos, setQuimicos] = useState([]);
+  const [devolucion, setDevolucion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModalEliminar, setShowModalEliminar] = useState(false);
 
   useEffect(() => {
-    cargarDatos();
+    cargarDevolucion();
   }, [id]);
 
-  const cargarDatos = async () => {
+  const cargarDevolucion = async () => {
     try {
       setLoading(true);
-      const [entregaRes, insumosRes, quimicosRes] = await Promise.all([
-        entregaService.getEntregaById(id),
-        entregaService.getInsumosPorEntrega(id),
-        entregaService.getQuimicosPorEntrega(id)
-      ]);
-      
-      setEntrega(entregaRes.data);
-      setInsumos(insumosRes.data);
-      setQuimicos(quimicosRes.data);
+      const response = await devolucionService.getDevolucionById(id);
+      setDevolucion(response.data);
     } catch (error) {
-      console.error('Error al cargar datos:', error);
-      alert('No se pudo cargar la entrega');
-      navigate('/entregas');
+      console.error('Error al cargar devolución:', error);
+      alert('No se pudo cargar la devolución');
+      navigate('/devoluciones');
     } finally {
       setLoading(false);
     }
@@ -39,12 +30,21 @@ const DetalleEntrega = () => {
 
   const handleEliminar = async () => {
     try {
-      await entregaService.deleteEntrega(id);
-      navigate('/entregas');
+      await devolucionService.deleteDevolucion(id);
+      navigate('/devoluciones');
     } catch (error) {
-      console.error('Error al eliminar entrega:', error);
-      alert('No se pudo eliminar la entrega');
+      console.error('Error al eliminar devolución:', error);
+      alert('No se pudo eliminar la devolución');
     }
+  };
+
+  const getEstadoBadge = (estado) => {
+    const estados = {
+      'Completa': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Incompleta': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Con Daños': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    };
+    return estados[estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
   };
 
   if (loading) {
@@ -53,20 +53,20 @@ const DetalleEntrega = () => {
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2cab5b] mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando detalle de la entrega...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando detalle de la devolución...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!entrega) {
+  if (!devolucion) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
         <Header />
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-600 dark:text-gray-400">Entrega no encontrada</p>
+          <p className="text-gray-600 dark:text-gray-400">Devolución no encontrada</p>
         </div>
       </div>
     );
@@ -81,17 +81,17 @@ const DetalleEntrega = () => {
           {/* Header */}
           <div className="mb-6 flex items-center gap-4">
             <button
-              onClick={() => navigate('/entregas')}
+              onClick={() => navigate('/devoluciones')}
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
             >
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
             <div className="flex-1">
               <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                Detalle de Entrega #ENT{String(entrega.idEntrega).padStart(3, '0')}
+                Detalle de Devolución #DEV{String(devolucion.idDevolucion).padStart(3, '0')}
               </h2>
               <p className="text-gray-500 dark:text-gray-400">
-                Información completa de la entrega
+                Información completa de la devolución
               </p>
             </div>
             <button
@@ -106,18 +106,23 @@ const DetalleEntrega = () => {
           {/* Información General */}
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 mb-6">
             <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                Información General
-              </h3>
+              <div className="flex items-start justify-between">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Información General
+                </h3>
+                <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getEstadoBadge(devolucion.estDevolucion?.estadoDevolucion)}`}>
+                  {devolucion.estDevolucion?.estadoDevolucion || 'Sin estado'}
+                </span>
+              </div>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Fecha de Entrega
+                    Fecha de Devolución
                   </p>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {entrega.fechaEntrega ? new Date(entrega.fechaEntrega).toLocaleDateString('es-ES', {
+                    {devolucion.fechaDevolucion ? new Date(devolucion.fechaDevolucion).toLocaleDateString('es-ES', {
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric'
@@ -127,10 +132,10 @@ const DetalleEntrega = () => {
 
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Hora de Entrega
+                    Hora de Devolución
                   </p>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {entrega.horaEntrega ? new Date(entrega.horaEntrega).toLocaleTimeString('es-ES', {
+                    {devolucion.horaDevolucion ? new Date(devolucion.horaDevolucion).toLocaleTimeString('es-ES', {
                       hour: '2-digit',
                       minute: '2-digit'
                     }) : 'N/A'}
@@ -142,92 +147,44 @@ const DetalleEntrega = () => {
                     Pedido Asociado
                   </p>
                   <button
-                    onClick={() => navigate(`/pedidos/${entrega.pedido?.idPedido}`)}
+                    onClick={() => navigate(`/pedidos/${devolucion.pedido?.idPedido}`)}
                     className="text-base font-semibold text-[rgb(44,171,91)] hover:underline"
                   >
-                    #PED{String(entrega.pedido?.idPedido || 0).padStart(3, '0')}
+                    #PED{String(devolucion.pedido?.idPedido || 0).padStart(3, '0')}
                   </button>
                 </div>
 
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Estudiante
+                    Entrega Asociada
+                  </p>
+                  <button
+                    onClick={() => navigate(`/entregas/${devolucion.entrega?.idEntrega}`)}
+                    className="text-base font-semibold text-[rgb(44,171,91)] hover:underline"
+                  >
+                    #ENT{String(devolucion.entrega?.idEntrega || 0).padStart(3, '0')}
+                  </button>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Estado
                   </p>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {entrega.estudiante?.nombre} {entrega.estudiante?.apellido}
+                    {devolucion.estDevolucion?.estadoDevolucion || 'Sin estado'}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Insumos Entregados */}
-          {insumos.length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 mb-6">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Insumos Entregados ({insumos.length})
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  {insumos.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {item.insumo?.tipoInsumo?.nombreTipoInsumo || 'N/A'}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          ID: #{item.insumo?.idInsumo}
-                        </p>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                        {item.insumo?.estInsumo?.nombreEstInsumo || 'Disponible'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Químicos Entregados */}
-          {quimicos.length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 mb-6">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Químicos Entregados ({quimicos.length})
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  {quimicos.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {item.quimico?.tipoInsumo?.nombreTipoInsumo || 'N/A'}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Cantidad: {item.quimico?.cantQuimico} {item.quimico?.tipoInsumo?.unidad?.unidad}
-                        </p>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                        Químico
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Botón volver */}
           <div className="flex justify-end">
             <button
-              onClick={() => navigate('/entregas')}
+              onClick={() => navigate('/devoluciones')}
               className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              Volver a Entregas
+              Volver a Devoluciones
             </button>
           </div>
         </div>
@@ -244,10 +201,10 @@ const DetalleEntrega = () => {
                 </span>
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Eliminar Entrega
+                Eliminar Devolución
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                ¿Está seguro de eliminar esta entrega? Esta acción no se puede deshacer.
+                ¿Está seguro de eliminar esta devolución? Esta acción no se puede deshacer.
               </p>
               <div className="flex gap-4">
                 <button
@@ -271,4 +228,4 @@ const DetalleEntrega = () => {
   );
 };
 
-export default DetalleEntrega;
+export default DetalleDevolucion;

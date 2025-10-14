@@ -77,6 +77,37 @@ function Dashboard() {
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Generar informes</p>
             </div>
           </Link>
+
+          <Link to="/entregas" className="group block rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+            <div className="flex flex-col items-center justify-center">
+              <div className="flex size-16 items-center justify-center rounded-full bg-[#eef7f2] dark:bg-gray-700 text-[rgb(44,171,91)] group-hover:bg-[rgb(44,171,91)] group-hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-4xl">local_shipping</span>
+              </div>
+              <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Entregas</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestion de entregas</p>
+            </div>
+          </Link>
+          
+          <Link to="/devoluciones" className="group block rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+            <div className="flex flex-col items-center justify-center">
+              <div className="flex size-16 items-center justify-center rounded-full bg-[#eef7f2] dark:bg-gray-700 text-[rgb(44,171,91)] group-hover:bg-[rgb(44,171,91)] group-hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-4xl">swap_horiz</span>
+              </div>
+              <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Devoluciones</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestion de devoluciones</p>
+            </div>
+          </Link>
+          
+          <Link to="/experimentos" className="group block rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+            <div className="flex flex-col items-center justify-center">
+              <div className="flex size-16 items-center justify-center rounded-full bg-[#eef7f2] dark:bg-gray-700 text-[rgb(44,171,91)] group-hover:bg-[rgb(44,171,91)] group-hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-4xl">science</span>
+              </div>
+              <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Experimentos</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestion de experimentos</p>
+            </div>
+          </Link>
+          
         </section>
       </main>
     </div>

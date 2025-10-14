@@ -71,8 +71,10 @@ export const entregasService = {
   getInsumosPorEntrega: (id) => api.get(`/entregas/${id}/insumos`),
   getQuimicosPorEntrega: (id) => api.get(`/entregas/${id}/quimicos`),
   createEntrega: (data) => api.post('/entregas', data),
-  agregarInsumo: (data) => api.post('/entregas/insumos', data),
-  agregarQuimico: (data) => api.post('/entregas/quimicos', data),
+
+  crearEntregaInsumo: (data) => api.post('/entregas/insumos', data),
+  crearEntregaQuimico: (data) => api.post('/entregas/quimicos', data),
+  
   updateEntrega: (id, data) => api.put(`/entregas/${id}`, data),
   deleteEntrega: (id) => api.delete(`/entregas/${id}`),
   eliminarInsumo: (id) => api.delete(`/entregas/insumos/${id}`),
@@ -95,10 +97,6 @@ export const generalService = {
   getMensaje: () => api.get('/mensaje'),
   healthCheck: () => api.get('/health'),
 };
-
-// En frontend/frontend-kalium/src/services/api.js
-
-// Agregar al final del archivo:
 
 // Servicios para Instructores
 export const instructorService = {
@@ -125,8 +123,6 @@ export const pedidoDetalleService = {
   updatePedidoDetalle: (id, detalleData) => api.put(`/pedidos-detalle/${id}`, detalleData),
   deletePedidoDetalle: (id) => api.delete(`/pedidos-detalle/${id}`),
 };
-
-// Agregar antes de export default api;
 
 // Servicios para Notificaciones
 export const notificacionService = {
@@ -187,10 +183,29 @@ export const estudianteService = {
   getEstudianteById: (id) => api.get(`/estudiantes/${id}`),
 };
 
-// Servicios para Devoluciones (básicos por ahora)
 export const devolucionService = {
   getDevoluciones: () => api.get('/devoluciones'),
   getDevolucionById: (id) => api.get(`/devoluciones/${id}`),
+  getDevolucionesPorPedido: (idPedido) => api.get(`/devoluciones/pedido/${idPedido}`),
+  getDevolucionesPorEstado: (idEstado) => api.get(`/devoluciones/estado/${idEstado}`),
+  createDevolucion: (data) => api.post('/devoluciones', data),
+  updateDevolucion: (id, data) => api.put(`/devoluciones/${id}`, data),
+  deleteDevolucion: (id) => api.delete(`/devoluciones/${id}`),
+};
+
+export const estDevolucionService = {
+  getEstados: () => api.get('/estados-devolucion'),
+};
+
+export const experimentoService = {
+  getExperimentos: () => api.get('/experimentos'),
+  getExperimentoById: (id) => api.get(`/experimentos/${id}`),
+  getDetallesExperimento: (id) => api.get(`/experimentos/${id}/detalles`),
+  createExperimento: (data) => api.post('/experimentos', data),
+  agregarDetalle: (data) => api.post('/experimentos/detalles', data),
+  updateExperimento: (id, data) => api.put(`/experimentos/${id}`, data),
+  deleteExperimento: (id) => api.delete(`/experimentos/${id}`),
+  eliminarDetalle: (id) => api.delete(`/experimentos/detalles/${id}`),
 };
 
 export default api;

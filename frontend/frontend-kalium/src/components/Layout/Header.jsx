@@ -81,6 +81,12 @@ const Header = ({ minimal = false }) => {
           <Link to="/entregas" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/entregas') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
             Entregas
           </Link>
+          <Link to="/devoluciones" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/devoluciones') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Devoluciones
+          </Link>
+          <Link to="/experimentos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/experimentos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Experimentos
+          </Link>
         </nav>
       )}
 

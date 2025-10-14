@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ListaInsumos from './pages/Insumos/ListaInsumos';
 import NuevoInsumo from './pages/Insumos/NuevoInsumo';
 import DetalleInsumo from './pages/Insumos/DetalleInsumo';
@@ -14,11 +14,18 @@ import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Cuenta from './pages/Cuenta';
 import ListaNotificaciones from './pages/Notificaciones/ListaNotificaciones';
-import ListaIncidentes from './pages/Incidentes/ListaIncidentes'; // ✅ NUEVO
-import DetalleIncidente from './pages/Incidentes/DetalleIncidente'; // ✅ NUEVO
-import NuevoIncidente from './pages/Incidentes/NuevoIncidente'; // ✅ NUEVO
+import ListaIncidentes from './pages/Incidentes/ListaIncidentes';
+import DetalleIncidente from './pages/Incidentes/DetalleIncidente';
+import NuevoIncidente from './pages/Incidentes/NuevoIncidente';
 import ListaEntregas from './pages/Entregas/ListaEntregas';
 import DetalleEntrega from './pages/Entregas/DetalleEntrega';
+import NuevaEntrega from './pages/Entregas/NuevaEntrega';
+import ListaDevoluciones from './pages/Devoluciones/ListaDevoluciones';
+import DetalleDevolucion from './pages/Devoluciones/DetalleDevolucion';
+import NuevaDevolucion from './pages/Devoluciones/NuevaDevolucion';
+import ListaExperimentos from './pages/Experimentos/ListaExperimentos';
+import DetalleExperimento from './pages/Experimentos/DetalleExperimento';
+import NuevoExperimento from './pages/Experimentos/NuevoExperimento';
 
 function App() {
   return (
@@ -44,6 +51,13 @@ function App() {
         <Route path="/entregas" element={<ListaEntregas />} />
         <Route path="/entregas/nueva" element={<NuevaEntrega />} />
         <Route path="/entregas/:id" element={<DetalleEntrega />} />
+        <Route path="/devoluciones" element={<ListaDevoluciones />} />
+        <Route path="/devoluciones/nueva" element={<NuevaDevolucion />} />
+        <Route path="/devoluciones/:id" element={<DetalleDevolucion />} />
+        <Route path="/experimentos" element={<ListaExperimentos />} />
+        <Route path="/experimentos/nuevo" element={<NuevoExperimento />} />
+        <Route path="/experimentos/:id" element={<DetalleExperimento />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
