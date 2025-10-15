@@ -280,9 +280,10 @@ INSERT INTO EntregaQuimico (IDEntrega, IDQuimico) VALUES
 -- 22. ESTADOS DE DEVOLUCIÓN
 -- ============================================
 INSERT INTO EstDevolucion (EstadoDevolucion) VALUES
-('Completa'),
-('Incompleta'),
-('Con Daños');
+('Pendiente'),
+('Aprobada'),
+('Rechazada'),
+('En revision');
 
 -- ============================================
 -- 23. DEVOLUCIONES
