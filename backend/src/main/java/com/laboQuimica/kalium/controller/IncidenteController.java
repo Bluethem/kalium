@@ -2,7 +2,9 @@ package com.laboQuimica.kalium.controller;
 
 import com.laboQuimica.kalium.entity.Incidentes;
 import com.laboQuimica.kalium.entity.EstIncidente;
+import com.laboQuimica.kalium.exception.ResourceNotFoundException;
 import com.laboQuimica.kalium.service.IncidenteService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/incidentes")
-@CrossOrigin(origins = "http://localhost:5173")
 public class IncidenteController {
     
     @Autowired
@@ -35,7 +36,7 @@ public class IncidenteController {
     public ResponseEntity<Incidentes> obtenerPorId(@PathVariable Integer id) {
         return incidenteService.obtenerPorId(id)
             .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+            .orElseThrow(() -> new ResourceNotFoundException("Incidente", "id", id));
     }
     
     /**
@@ -44,11 +45,7 @@ public class IncidenteController {
      */
     @GetMapping("/estado/{idEstado}")
     public ResponseEntity<List<Incidentes>> obtenerPorEstado(@PathVariable Integer idEstado) {
-        try {
-            return ResponseEntity.ok(incidenteService.obtenerPorEstado(idEstado));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(incidenteService.obtenerPorEstado(idEstado));
     }
     
     /**
@@ -57,11 +54,7 @@ public class IncidenteController {
      */
     @GetMapping("/estudiante/{idEstudiante}")
     public ResponseEntity<List<Incidentes>> obtenerPorEstudiante(@PathVariable Integer idEstudiante) {
-        try {
-            return ResponseEntity.ok(incidenteService.obtenerPorEstudiante(idEstudiante));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(incidenteService.obtenerPorEstudiante(idEstudiante));
     }
     
     /**
@@ -70,11 +63,7 @@ public class IncidenteController {
      */
     @GetMapping("/devolucion/{idDevolucion}")
     public ResponseEntity<List<Incidentes>> obtenerPorDevolucion(@PathVariable Integer idDevolucion) {
-        try {
-            return ResponseEntity.ok(incidenteService.obtenerPorDevolucion(idDevolucion));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(incidenteService.obtenerPorDevolucion(idDevolucion));
     }
     
     /**
@@ -91,14 +80,9 @@ public class IncidenteController {
      * }
      */
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Incidentes incidente) {
-        try {
-            Incidentes nuevoIncidente = incidenteService.guardar(incidente);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoIncidente);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al crear incidente: " + e.getMessage());
-        }
+    public ResponseEntity<Incidentes> crear(@Valid @RequestBody Incidentes incidente) {
+        Incidentes nuevoIncidente = incidenteService.guardar(incidente);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoIncidente);
     }
     
     /**
@@ -106,16 +90,9 @@ public class IncidenteController {
      * PUT /api/incidentes/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Incidentes incidente) {
-        try {
-            Incidentes incidenteActualizado = incidenteService.actualizar(id, incidente);
-            return ResponseEntity.ok(incidenteActualizado);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al actualizar incidente: " + e.getMessage());
-        }
+    public ResponseEntity<Incidentes> actualizar(@PathVariable Integer id, @Valid @RequestBody Incidentes incidente) {
+        Incidentes incidenteActualizado = incidenteService.actualizar(id, incidente);
+        return ResponseEntity.ok(incidenteActualizado);
     }
     
     /**
@@ -123,13 +100,9 @@ public class IncidenteController {
      * PATCH /api/incidentes/{idIncidente}/estado/{idEstado}
      */
     @PatchMapping("/{idIncidente}/estado/{idEstado}")
-    public ResponseEntity<?> cambiarEstado(@PathVariable Integer idIncidente, @PathVariable Integer idEstado) {
-        try {
-            Incidentes incidenteActualizado = incidenteService.cambiarEstado(idIncidente, idEstado);
-            return ResponseEntity.ok(incidenteActualizado);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<Incidentes> cambiarEstado(@PathVariable Integer idIncidente, @PathVariable Integer idEstado) {
+        Incidentes incidenteActualizado = incidenteService.cambiarEstado(idIncidente, idEstado);
+        return ResponseEntity.ok(incidenteActualizado);
     }
     
     /**
@@ -137,13 +110,9 @@ public class IncidenteController {
      * PATCH /api/incidentes/{id}/resolver
      */
     @PatchMapping("/{id}/resolver")
-    public ResponseEntity<?> resolver(@PathVariable Integer id) {
-        try {
-            Incidentes incidenteResuelto = incidenteService.resolverIncidente(id);
-            return ResponseEntity.ok(incidenteResuelto);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<Incidentes> resolver(@PathVariable Integer id) {
+        Incidentes incidenteResuelto = incidenteService.resolverIncidente(id);
+        return ResponseEntity.ok(incidenteResuelto);
     }
 
     /*
@@ -151,13 +120,9 @@ public class IncidenteController {
       PATCH /api/incidentes/{id}/cancelar
     */
     @PatchMapping("/{id}/cancelar")
-    public ResponseEntity<?> cancelar(@PathVariable Integer id) {
-        try {
-            Incidentes incidenteCancelado = incidenteService.cancelarIncidente(id);
-            return ResponseEntity.ok(incidenteCancelado);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<Incidentes> cancelar(@PathVariable Integer id) {
+        Incidentes incidenteCancelado = incidenteService.cancelarIncidente(id);
+        return ResponseEntity.ok(incidenteCancelado);
     }
     
     /**
@@ -165,14 +130,9 @@ public class IncidenteController {
      * DELETE /api/incidentes/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Integer id) {
-        try {
-            incidenteService.eliminar(id);
-            return ResponseEntity.ok().body("Incidente eliminado correctamente");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al eliminar incidente: " + e.getMessage());
-        }
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        incidenteService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
     
     /**

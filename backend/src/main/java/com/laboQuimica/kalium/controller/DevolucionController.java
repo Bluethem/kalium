@@ -2,7 +2,9 @@ package com.laboQuimica.kalium.controller;
 
 import com.laboQuimica.kalium.entity.Devolucion;
 import com.laboQuimica.kalium.entity.DevolucionDetalle;
+import com.laboQuimica.kalium.exception.ResourceNotFoundException;
 import com.laboQuimica.kalium.service.DevolucionService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/devoluciones")
-@CrossOrigin(origins = "http://localhost:5173")
 public class DevolucionController {
     
     @Autowired
@@ -20,103 +21,52 @@ public class DevolucionController {
     
     @GetMapping
     public ResponseEntity<List<Devolucion>> obtenerTodas() {
-        try {
-            List<Devolucion> devoluciones = devolucionService.obtenerTodas();
-            return ResponseEntity.ok(devoluciones);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return ResponseEntity.ok(devolucionService.obtenerTodas());
     }
     
     @GetMapping("/{id}")
     public ResponseEntity<Devolucion> obtenerPorId(@PathVariable Integer id) {
         return devolucionService.obtenerPorId(id)
             .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+            .orElseThrow(() -> new ResourceNotFoundException("Devolucion", "id", id));
     }
     
     @GetMapping("/pedido/{idPedido}")
     public ResponseEntity<List<Devolucion>> obtenerPorPedido(@PathVariable Integer idPedido) {
-        try {
-            List<Devolucion> devoluciones = devolucionService.obtenerPorPedido(idPedido);
-            return ResponseEntity.ok(devoluciones);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(devolucionService.obtenerPorPedido(idPedido));
     }
     
     @GetMapping("/estado/{idEstado}")
     public ResponseEntity<List<Devolucion>> obtenerPorEstado(@PathVariable Integer idEstado) {
-        try {
-            List<Devolucion> devoluciones = devolucionService.obtenerPorEstado(idEstado);
-            return ResponseEntity.ok(devoluciones);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(devolucionService.obtenerPorEstado(idEstado));
     }
     
     @GetMapping("/{id}/detalles")
     public ResponseEntity<List<DevolucionDetalle>> obtenerDetalles(@PathVariable Integer id) {
-        try {
-            List<DevolucionDetalle> detalles = devolucionService.obtenerDetalles(id);
-            return ResponseEntity.ok(detalles);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(devolucionService.obtenerDetalles(id));
     }
     
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Devolucion devolucion) {
-        try {
-            Devolucion nuevaDevolucion = devolucionService.guardar(devolucion);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaDevolucion);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al crear devolución: " + e.getMessage());
-        }
+    public ResponseEntity<Devolucion> crear(@Valid @RequestBody Devolucion devolucion) {
+        Devolucion nuevaDevolucion = devolucionService.guardar(devolucion);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaDevolucion);
     }
     
     @PostMapping("/detalles")
-    public ResponseEntity<?> agregarDetalle(@RequestBody DevolucionDetalle detalle) {
-        try {
-            DevolucionDetalle nuevoDetalle = devolucionService.agregarDetalle(detalle);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoDetalle);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al agregar detalle: " + e.getMessage());
-        }
+    public ResponseEntity<DevolucionDetalle> agregarDetalle(@Valid @RequestBody DevolucionDetalle detalle) {
+        DevolucionDetalle nuevoDetalle = devolucionService.agregarDetalle(detalle);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoDetalle);
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Devolucion devolucion) {
-        try {
-            Devolucion devolucionActualizada = devolucionService.actualizar(id, devolucion);
-            return ResponseEntity.ok(devolucionActualizada);
-        } catch (RuntimeException e) {
-            if (e.getMessage().contains("no encontrada")) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al actualizar devolución: " + e.getMessage());
-        }
+    public ResponseEntity<Devolucion> actualizar(@PathVariable Integer id, @Valid @RequestBody Devolucion devolucion) {
+        Devolucion devolucionActualizada = devolucionService.actualizar(id, devolucion);
+        return ResponseEntity.ok(devolucionActualizada);
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Integer id) {
-        try {
-            devolucionService.eliminar(id);
-            return ResponseEntity.ok().body("Devolución eliminada correctamente");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al eliminar devolución: " + e.getMessage());
-        }
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        devolucionService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }

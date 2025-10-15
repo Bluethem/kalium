@@ -34,6 +34,12 @@ public class DevolucionService {
     @Autowired
     private EstInsumoRepository estInsumoRepository;
     
+    @Autowired
+    private IncidenteService incidenteService;
+    
+    @Autowired
+    private EntregaInsumoRepository entregaInsumoRepository;
+    
     /**
      * Obtener todas las devoluciones
      */
@@ -155,6 +161,7 @@ public class DevolucionService {
     
     /**
      * Agregar un insumo a una devolución
+     * NUEVO: Maneja estados OK/Dañado y genera incidencias automáticamente
      */
     public DevolucionDetalle agregarDetalle(DevolucionDetalle detalle) {
         // Validaciones
@@ -174,15 +181,77 @@ public class DevolucionService {
         Insumo insumo = insumoRepository.findById(detalle.getInsumo().getIdInsumo())
             .orElseThrow(() -> new RuntimeException("Insumo no encontrado"));
         
-        // Cambiar el estado del insumo de "En Uso" a "Disponible" (ID = 1)
-        EstInsumo estadoDisponible = estInsumoRepository.findById(1)
-            .orElseThrow(() -> new RuntimeException("Estado 'Disponible' no encontrado"));
-        insumo.setEstInsumo(estadoDisponible);
+        // Determinar el estado del insumo según el estado devuelto
+        String estadoDevuelto = detalle.getEstadoInsumoDevuelto();
+        if (estadoDevuelto == null || estadoDevuelto.trim().isEmpty()) {
+            estadoDevuelto = "OK"; // Por defecto
+            detalle.setEstadoInsumoDevuelto(estadoDevuelto);
+        }
+        
+        // Cambiar estado del insumo según condición
+        if ("OK".equalsIgnoreCase(estadoDevuelto)) {
+            // Insumo devuelto en buen estado → Disponible (ID = 1)
+            EstInsumo estadoDisponible = estInsumoRepository.findById(1)
+                .orElseThrow(() -> new RuntimeException("Estado 'Disponible' no encontrado"));
+            insumo.setEstInsumo(estadoDisponible);
+            
+        } else if ("Dañado".equalsIgnoreCase(estadoDevuelto) || "Perdido".equalsIgnoreCase(estadoDevuelto)) {
+            // Insumo dañado o perdido → No Disponible (ID = 3)
+            // No contará en stock ni inventario disponible
+            EstInsumo estadoNoDisponible = estInsumoRepository.findById(3)
+                .orElseThrow(() -> new RuntimeException("Estado 'No Disponible' no encontrado"));
+            insumo.setEstInsumo(estadoNoDisponible);
+            
+            // ✅ Generar incidencia automáticamente
+            generarIncidenciaPorDanio(devolucion, insumo, detalle.getObservaciones());
+        }
+        
         insumoRepository.save(insumo);
+        
+        // Eliminar el registro de EntregaInsumo (ya no está en uso)
+        Entrega entrega = devolucion.getEntrega();
+        entregaInsumoRepository.findByEntrega(entrega).stream()
+            .filter(ei -> ei.getInsumo().getIdInsumo().equals(insumo.getIdInsumo()))
+            .forEach(entregaInsumoRepository::delete);
         
         detalle.setDevolucion(devolucion);
         detalle.setInsumo(insumo);
         
         return devolucionDetalleRepository.save(detalle);
+    }
+    
+    /**
+     * Genera una incidencia automáticamente cuando se detecta un daño
+     */
+    private void generarIncidenciaPorDanio(Devolucion devolucion, Insumo insumo, String observaciones) {
+        try {
+            Incidentes incidente = new Incidentes();
+            
+            // Descripción automática
+            String descripcion = String.format(
+                "Insumo dañado en devolución: %s (ID: %d). %s",
+                insumo.getTipoInsumo().getNombreTipoInsumo(),
+                insumo.getIdInsumo(),
+                observaciones != null ? observaciones : "Sin observaciones adicionales"
+            );
+            
+            incidente.setDescripcion(descripcion);
+            incidente.setFechaIncidente(java.time.LocalDate.now());
+            incidente.setDevolucion(devolucion);
+            
+            // Obtener estudiante desde la entrega
+            if (devolucion.getEntrega() != null && devolucion.getEntrega().getEstudiante() != null) {
+                incidente.setEstudiante(devolucion.getEntrega().getEstudiante());
+            }
+            
+            // Guardar usando el servicio (incluye notificaciones)
+            incidenteService.guardar(incidente);
+            
+            System.out.println("✅ Incidencia generada automáticamente: ID " + incidente.getIdIncidentes());
+            
+        } catch (Exception e) {
+            System.err.println("⚠️ Error al generar incidencia automática: " + e.getMessage());
+            // No lanzar excepción para no bloquear la devolución
+        }
     }
 }

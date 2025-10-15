@@ -24,13 +24,13 @@ const NuevoPedido = () => {
     idCurso: '',
     idTipoPedido: '',
     fechaEntrega: '',
-    horaEntrega: ''
+    horaEntrega: '08:00' // Hora por defecto
   });
 
   const [items, setItems] = useState([]);
   const [nuevoItem, setNuevoItem] = useState({
     idTipoInsumo: '',
-    cantInsumo: 1,
+    cantPorGrupo: 1, // Cantidad por grupo
     esQuimico: false
   });
 
@@ -77,30 +77,38 @@ const NuevoPedido = () => {
   };
 
   const agregarItem = () => {
-    if (!nuevoItem.idTipoInsumo || !nuevoItem.cantInsumo) {
-      alert('Complete todos los campos del ítem');
+    if (!nuevoItem.idTipoInsumo) {
+      alert('Seleccione un tipo de insumo');
       return;
     }
 
     const tipoInsumo = tiposInsumo.find(t => t.idTipoInsumo === parseInt(nuevoItem.idTipoInsumo));
     
-    // Validar stock disponible
-    const cantidadDisponible = parseFloat(tipoInsumo.cantidadNumerica || 0);
-    const cantidadSolicitada = parseFloat(nuevoItem.cantInsumo);
+    // Calcular cantidad total (cantPorGrupo × cantGrupos)
+    // Si no ingresó cantidad, usar 1 por defecto
+    const cantPorGrupo = parseFloat(nuevoItem.cantPorGrupo) || 1;
+    const cantGrupos = parseInt(formPedido.cantGrupos) || 1;
+    const cantidadTotal = cantPorGrupo * cantGrupos;
     
-    if (cantidadSolicitada > cantidadDisponible) {
-      setErrorMessage(`Stock insuficiente. Disponible: ${tipoInsumo.cantidadTotal} ${tipoInsumo.unidad?.unidad}`);
+    // Validar stock disponible contra la cantidad TOTAL
+    const cantidadDisponible = parseFloat(tipoInsumo.cantidadNumerica || 0);
+    
+    if (cantidadTotal > cantidadDisponible) {
+      setErrorMessage(`Stock insuficiente. Necesitas: ${cantidadTotal} ${tipoInsumo.unidad?.unidad} (${cantPorGrupo} × ${cantGrupos} grupos). Disponible: ${tipoInsumo.cantidadTotal} ${tipoInsumo.unidad?.unidad}`);
       setShowErrorStock(true);
       return;
     }
     
     setItems(prev => [...prev, {
-      ...nuevoItem,
+      idTipoInsumo: nuevoItem.idTipoInsumo,
+      cantPorGrupo: cantPorGrupo, // Guardar la cantidad usada (puede ser default 1)
+      cantidadTotal: cantidadTotal, // Para guardar en backend
       nombreTipoInsumo: tipoInsumo.nombreTipoInsumo,
-      unidad: tipoInsumo.unidad?.unidad
+      unidad: tipoInsumo.unidad?.unidad,
+      esQuimico: nuevoItem.esQuimico
     }]);
 
-    setNuevoItem({ idTipoInsumo: '', cantInsumo: 1, esQuimico: false });
+    setNuevoItem({ idTipoInsumo: '', cantPorGrupo: 1, esQuimico: false });
   };
 
   const eliminarItem = (index) => {
@@ -117,9 +125,10 @@ const NuevoPedido = () => {
       }
   
       // ✅ PASO 1: Crear el horario PRIMERO
+      // Combinar fecha y hora en formato LocalDateTime: "2025-01-20T14:30:00"
       const horarioData = {
-        fechaEntrega: formPedido.fechaEntrega,
-        horaInicio: formPedido.horaEntrega // Esto debe ser datetime-local
+        fechaEntrega: formPedido.fechaEntrega, // LocalDate: "2025-01-20"
+        horaInicio: `${formPedido.fechaEntrega}T${formPedido.horaEntrega}:00` // LocalDateTime: "2025-01-20T14:30:00"
       };
       
       const horarioRes = await horarioService.createHorario(horarioData);
@@ -141,9 +150,10 @@ const NuevoPedido = () => {
       // ✅ PASO 3: Crear detalles del pedido
       for (const item of items) {
         await pedidoDetalleService.createPedidoDetalle({
-          cantInsumo: parseInt(item.cantInsumo),
+          cantInsumo: parseFloat(item.cantidadTotal), // Usar la cantidad total ya calculada
           pedido: { idPedido: pedidoRes.data.idPedido },
-          tipoInsumo: { idTipoInsumo: parseInt(item.idTipoInsumo) }
+          tipoInsumo: { idTipoInsumo: parseInt(item.idTipoInsumo) },
+          estPedidoDetalle: { idEstPedidoDetalle: 1 } // 1 = Pendiente
         });
       }
   
@@ -269,11 +279,27 @@ const NuevoPedido = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="horaEntrega" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Horario de Entrega
+                  <label htmlFor="fechaEntrega" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Fecha de Entrega
                   </label>
                   <input
-                    type="datetime-local"
+                    type="date"
+                    id="fechaEntrega"
+                    name="fechaEntrega"
+                    value={formPedido.fechaEntrega}
+                    onChange={handleChangePedido}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="horaEntrega" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Hora de Entrega
+                  </label>
+                  <input
+                    type="time"
                     id="horaEntrega"
                     name="horaEntrega"
                     value={formPedido.horaEntrega}
@@ -289,51 +315,61 @@ const NuevoPedido = () => {
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
               <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Insumos y Químicos</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end mb-6">
-                <div>
-                  <label htmlFor="idTipoInsumo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tipo de Insumo
-                  </label>
-                  <select
-                    id="idTipoInsumo"
-                    name="idTipoInsumo"
-                    value={nuevoItem.idTipoInsumo}
-                    onChange={handleChangeItem}
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  >
-                    <option value="">Seleccionar</option>
-                    {tiposInsumo.map(tipo => (
-                      <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
-                        {tipo.nombreTipoInsumo} ({tipo.esQuimico ? 'Químico' : 'Físico'}) - Disponible: {tipo.cantidadTotal}
-                      </option>
-                    ))}
-                  </select>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="idTipoInsumo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tipo de Insumo
+                    </label>
+                    <select
+                      id="idTipoInsumo"
+                      name="idTipoInsumo"
+                      value={nuevoItem.idTipoInsumo}
+                      onChange={handleChangeItem}
+                      className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                    >
+                      <option value="">Seleccionar insumo</option>
+                      {tiposInsumo.map(tipo => (
+                        <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
+                          {tipo.nombreTipoInsumo} ({tipo.esQuimico ? 'Químico' : 'Físico'}) - Disp: {tipo.cantidadTotal}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="cantPorGrupo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Cantidad por Grupo
+                    </label>
+                    <input
+                      type="number"
+                      id="cantPorGrupo"
+                      name="cantPorGrupo"
+                      value={nuevoItem.cantPorGrupo}
+                      onChange={handleChangeItem}
+                      min="0.01"
+                      step={nuevoItem.esQuimico ? "0.01" : "1"}
+                      placeholder="Ej: 2"
+                      className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="cantInsumo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Cantidad
-                  </label>
-                  <input
-                    type="number"
-                    id="cantInsumo"
-                    name="cantInsumo"
-                    value={nuevoItem.cantInsumo}
-                    onChange={handleChangeItem}
-                    min="1"
-                    step={nuevoItem.esQuimico ? "0.01" : "1"}
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  />
-                </div>
-
-                <div>
+                <div className="flex flex-col justify-between">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span className="font-medium">Total a pedir:</span>
+                    <span className="block text-lg font-bold text-[rgb(44,171,91)] dark:text-white">
+                      {(parseFloat(nuevoItem.cantPorGrupo) * parseInt(formPedido.cantGrupos) || 0).toFixed(2)}
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={agregarItem}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-[rgb(44,171,91)]/10 px-4 py-2 text-sm font-semibold text-[rgb(44,171,91)] hover:bg-[rgb(44,171,91)]/20 dark:text-white"
+                    disabled={!nuevoItem.idTipoInsumo}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined text-base">add</span>
-                    Añadir Ítem
+                    Añadir
                   </button>
                 </div>
               </div>
@@ -350,7 +386,10 @@ const NuevoPedido = () => {
                         Tipo
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                        Cantidad
+                        Cant/Grupo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                        Total
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                         Acción
@@ -360,7 +399,7 @@ const NuevoPedido = () => {
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
                     {items.length === 0 ? (
                       <tr>
-                        <td colSpan="4" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                           No hay ítems agregados al pedido
                         </td>
                       </tr>
@@ -374,7 +413,11 @@ const NuevoPedido = () => {
                             {item.esQuimico ? 'Químico' : 'Físico'}
                           </td>
                           <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                            {item.cantInsumo} {item.unidad}
+                            {item.cantPorGrupo} {item.unidad}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                            {item.cantidadTotal} {item.unidad}
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">({item.cantPorGrupo} × {formPedido.cantGrupos})</span>
                           </td>
                           <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
                             <button

@@ -125,9 +125,17 @@ CREATE TABLE PedidoDetalle
   CantInsumo INT NOT NULL,
   IDPedido INT NOT NULL,
   IDTipoInsumo INT NOT NULL,
+  IDEstPedidoDetalle INT NOT NULL,
   PRIMARY KEY (IDPedidoDetalle),
   FOREIGN KEY (IDPedido) REFERENCES Pedido(IDPedido),
-  FOREIGN KEY (IDTipoInsumo) REFERENCES TipoInsumo(IDTipoInsumo)
+  FOREIGN KEY (IDTipoInsumo) REFERENCES TipoInsumo(IDTipoInsumo),
+  FOREIGN KEY (IDEstPedidoDetalle) REFERENCES EstPedidoDetalle(IDEstPedidoDetalle)
+);
+
+CREATE TABLE EstPedidoDetalle (
+  IDEstPedidoDetalle INT NOT NULL AUTO_INCREMENT,
+  NombreEstDetalle VARCHAR(50) NOT NULL,
+  PRIMARY KEY (IDEstPedidoDetalle)
 );
 
 CREATE TABLE EstInsumo
@@ -162,7 +170,7 @@ CREATE TABLE Entrega
   FechaEntrega DATE NOT NULL,
   HoraEntrega DATETIME NOT NULL,
   IDPedido INT NOT NULL,
-  IDEstudiante INT NOT NULL,
+  IDEstudiante INT NULL, -- Nullable: Se asigna después de generar la entrega
   PRIMARY KEY (IDEntrega),
   FOREIGN KEY (IDPedido) REFERENCES Pedido(IDPedido),
   FOREIGN KEY (IDEstudiante) REFERENCES Estudiante(IDEstudiante)
@@ -222,6 +230,8 @@ CREATE TABLE DevolucionDetalle
   IDDevolucionDetalle INT NOT NULL AUTO_INCREMENT,
   IDDevolucion INT NOT NULL,
   IDInsumo INT NOT NULL,
+  EstadoInsumoDevuelto VARCHAR(50) NOT NULL DEFAULT 'OK' COMMENT 'OK, Dañado, Perdido',
+  Observaciones VARCHAR(255) NULL COMMENT 'Observaciones sobre el estado del insumo',
   PRIMARY KEY (IDDevolucionDetalle),
   FOREIGN KEY (IDDevolucion) REFERENCES Devolucion(IDDevolucion),
   FOREIGN KEY (IDInsumo) REFERENCES Insumo(IDInsumo)

@@ -63,7 +63,7 @@ export const pedidoService = {
   deletePedido: (id) => api.delete(`/pedidos/${id}`),
 };
 
-export const entregasService = {
+export const entregaService = {
   getEntregas: () => api.get('/entregas'),
   getEntregaById: (id) => api.get(`/entregas/${id}`),
   getEntregasPorPedido: (idPedido) => api.get(`/entregas/pedido/${idPedido}`),
@@ -71,6 +71,10 @@ export const entregasService = {
   getInsumosPorEntrega: (id) => api.get(`/entregas/${id}/insumos`),
   getQuimicosPorEntrega: (id) => api.get(`/entregas/${id}/quimicos`),
   createEntrega: (data) => api.post('/entregas', data),
+  generarEntregasPorGrupos: (idPedido) => api.post(`/entregas/generar/${idPedido}`),
+  asignarEstudiante: (idEntrega, idEstudiante) => api.patch(`/entregas/${idEntrega}/estudiante/${idEstudiante}`),
+  verificarEntregasPorPedido: (idPedido) => api.get(`/entregas/verificar/${idPedido}`),
+  getEntregasPendientes: (idPedido) => api.get(`/entregas/pendientes/${idPedido}`),
 
   crearEntregaInsumo: (data) => api.post('/entregas/insumos', data),
   crearEntregaQuimico: (data) => api.post('/entregas/quimicos', data),
@@ -80,6 +84,9 @@ export const entregasService = {
   eliminarInsumo: (id) => api.delete(`/entregas/insumos/${id}`),
   eliminarQuimico: (id) => api.delete(`/entregas/quimicos/${id}`),
 };
+
+// Alias para compatibilidad con código existente
+export const entregasService = entregaService;
 
 // Servicios para Reportes
 export const reporteService = {
@@ -164,19 +171,6 @@ export const incidenteService = {
   cancelarIncidente: (id) => api.patch(`/incidentes/${id}/cancelar`),
 };
 
-// Servicios para Entregas
-export const entregaService = {
-  getEntregas: () => api.get('/entregas'),
-  getEntregaById: (id) => api.get(`/entregas/${id}`),
-  getEntregasPorPedido: (idPedido) => api.get(`/entregas/pedido/${idPedido}`),
-  getEntregasPorEstudiante: (idEstudiante) => api.get(`/entregas/estudiante/${idEstudiante}`),
-  getInsumosPorEntrega: (id) => api.get(`/entregas/${id}/insumos`),
-  getQuimicosPorEntrega: (id) => api.get(`/entregas/${id}/quimicos`),
-  createEntrega: (data) => api.post('/entregas', data),
-  updateEntrega: (id, data) => api.put(`/entregas/${id}`, data),
-  deleteEntrega: (id) => api.delete(`/entregas/${id}`),
-};
-
 // Servicios para Estudiantes
 export const estudianteService = {
   getEstudiantes: () => api.get('/estudiantes'),
@@ -188,7 +182,9 @@ export const devolucionService = {
   getDevolucionById: (id) => api.get(`/devoluciones/${id}`),
   getDevolucionesPorPedido: (idPedido) => api.get(`/devoluciones/pedido/${idPedido}`),
   getDevolucionesPorEstado: (idEstado) => api.get(`/devoluciones/estado/${idEstado}`),
+  getDetalles: (idDevolucion) => api.get(`/devoluciones/${idDevolucion}/detalles`),
   createDevolucion: (data) => api.post('/devoluciones', data),
+  agregarDetalle: (data) => api.post('/devoluciones/detalles', data),
   updateDevolucion: (id, data) => api.put(`/devoluciones/${id}`, data),
   deleteDevolucion: (id) => api.delete(`/devoluciones/${id}`),
 };
@@ -206,6 +202,24 @@ export const experimentoService = {
   updateExperimento: (id, data) => api.put(`/experimentos/${id}`, data),
   deleteExperimento: (id) => api.delete(`/experimentos/${id}`),
   eliminarDetalle: (id) => api.delete(`/experimentos/detalles/${id}`),
+};
+
+// Servicios para Categorías
+export const categoriaService = {
+  getCategorias: () => api.get('/categorias'),
+  getCategoriaById: (id) => api.get(`/categorias/${id}`),
+};
+
+// Servicios para Estados de Insumo
+export const estadoInsumoService = {
+  getEstados: () => api.get('/estados-insumo'),
+  getEstadoById: (id) => api.get(`/estados-insumo/${id}`),
+};
+
+// Servicios para Unidades
+export const unidadService = {
+  getUnidades: () => api.get('/unidades'),
+  getUnidadById: (id) => api.get(`/unidades/${id}`),
 };
 
 export default api;

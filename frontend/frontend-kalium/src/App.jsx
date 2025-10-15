@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import ListaInsumos from './pages/Insumos/ListaInsumos';
 import NuevoInsumo from './pages/Insumos/NuevoInsumo';
 import DetalleInsumo from './pages/Insumos/DetalleInsumo';
@@ -19,10 +20,9 @@ import DetalleIncidente from './pages/Incidentes/DetalleIncidente';
 import NuevoIncidente from './pages/Incidentes/NuevoIncidente';
 import ListaEntregas from './pages/Entregas/ListaEntregas';
 import DetalleEntrega from './pages/Entregas/DetalleEntrega';
-import NuevaEntrega from './pages/Entregas/NuevaEntrega';
+import GenerarEntregas from './pages/Entregas/GenerarEntregas';
 import ListaDevoluciones from './pages/Devoluciones/ListaDevoluciones';
 import DetalleDevolucion from './pages/Devoluciones/DetalleDevolucion';
-import NuevaDevolucion from './pages/Devoluciones/NuevaDevolucion';
 import ListaExperimentos from './pages/Experimentos/ListaExperimentos';
 import DetalleExperimento from './pages/Experimentos/DetalleExperimento';
 import NuevoExperimento from './pages/Experimentos/NuevoExperimento';
@@ -30,6 +30,41 @@ import NuevoExperimento from './pages/Experimentos/NuevoExperimento';
 function App() {
   return (
     <Router>
+      <Toaster 
+        position="top-right"
+        reverseOrder={false}
+        gutter={8}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            borderRadius: '8px',
+            fontSize: '14px',
+            padding: '12px 16px',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#2cab5b',
+              secondary: '#fff',
+            },
+            style: {
+              background: '#2cab5b',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
@@ -49,10 +84,9 @@ function App() {
         <Route path="/incidentes/nuevo" element={<NuevoIncidente />} />
         <Route path="/incidentes/:id" element={<DetalleIncidente />} />
         <Route path="/entregas" element={<ListaEntregas />} />
-        <Route path="/entregas/nueva" element={<NuevaEntrega />} />
+        <Route path="/entregas/generar/:idPedido" element={<GenerarEntregas />} />
         <Route path="/entregas/:id" element={<DetalleEntrega />} />
         <Route path="/devoluciones" element={<ListaDevoluciones />} />
-        <Route path="/devoluciones/nueva" element={<NuevaDevolucion />} />
         <Route path="/devoluciones/:id" element={<DetalleDevolucion />} />
         <Route path="/experimentos" element={<ListaExperimentos />} />
         <Route path="/experimentos/nuevo" element={<NuevoExperimento />} />

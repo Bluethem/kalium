@@ -11,6 +11,8 @@ const ListaDevoluciones = () => {
     estado: '',
     busqueda: ''
   });
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
 
   useEffect(() => {
     cargarDevoluciones();
@@ -61,6 +63,18 @@ const ListaDevoluciones = () => {
       estado: '',
       busqueda: ''
     });
+    setPaginaActual(1);
+  };
+
+  // Paginación
+  const indexUltimo = paginaActual * itemsPorPagina;
+  const indexPrimero = indexUltimo - itemsPorPagina;
+  const devolucionesPaginadas = devolucionesFiltradas.slice(indexPrimero, indexUltimo);
+  const totalPaginas = Math.ceil(devolucionesFiltradas.length / itemsPorPagina);
+
+  const cambiarPagina = (numeroPagina) => {
+    setPaginaActual(numeroPagina);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getEstadoBadge = (estado) => {
@@ -107,17 +121,13 @@ const ListaDevoluciones = () => {
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
-          <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+          <div className="mb-6">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
               Gestión de Devoluciones
             </h2>
-            <button
-              onClick={() => navigate('/devoluciones/nueva')}
-              className="flex items-center gap-2 rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-opacity-90"
-            >
-              <span className="material-symbols-outlined text-base">add</span>
-              Nueva Devolución
-            </button>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Registra devoluciones directamente desde el detalle de cada entrega
+            </p>
           </div>
 
           {/* Filtros */}
@@ -201,7 +211,7 @@ const ListaDevoluciones = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                {devolucionesFiltradas.length === 0 ? (
+                {devolucionesPaginadas.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                       {hayFiltrosActivos 
@@ -210,7 +220,7 @@ const ListaDevoluciones = () => {
                     </td>
                   </tr>
                 ) : (
-                  devolucionesFiltradas.map((devolucion) => (
+                  devolucionesPaginadas.map((devolucion) => (
                     <tr key={devolucion.idDevolucion} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                         #DEV{String(devolucion.idDevolucion).padStart(3, '0')}
@@ -253,6 +263,44 @@ const ListaDevoluciones = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Paginación */}
+          {totalPaginas > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrando {indexPrimero + 1} - {Math.min(indexUltimo, devolucionesFiltradas.length)} de {devolucionesFiltradas.length} devoluciones
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => cambiarPagina(paginaActual - 1)}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                {[...Array(totalPaginas)].map((_, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => cambiarPagina(index + 1)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      paginaActual === index + 1
+                        ? 'bg-[rgb(44,171,91)] text-white'
+                        : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => cambiarPagina(paginaActual + 1)}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -110,8 +110,9 @@ INSERT INTO TipoInsumo (NombreTipoInsumo, Descripcion, IDCategoria, IDUnidad, Es
 INSERT INTO EstInsumo (NombreEstInsumo) VALUES
 ('Disponible'),
 ('En Uso'),
-('Agotado'),
-('En Mantenimiento');
+('No Disponible'),
+('En Mantenimiento'),
+('Reservado');
 
 -- ============================================
 -- 9. INSUMOS FÍSICOS
@@ -219,25 +220,35 @@ INSERT INTO Pedido (FechaPedido, CantGrupos, IDInstructor, IDEstPedido, IDCurso,
 ('2025-01-07', 4, 1, 3, 1, 1, 3); -- Pedido En Preparación de María
 
 -- ============================================
--- 17. DETALLES DE PEDIDO
+-- 17. ESTADOS DE PEDIDO DETALLE (ANTES DE CREAR DETALLES)
+-- ============================================
+INSERT INTO EstPedidoDetalle (NombreEstDetalle) VALUES
+('Pendiente'),      -- Pedido creado pero no aprobado
+('Reservado'),      -- Pedido aprobado, insumos reservados
+('Entregado'),      -- Ya se entregó
+('Cancelado');      -- Se canceló, devolver al inventario
+
+-- ============================================
+-- 18. DETALLES DE PEDIDO
 -- ============================================
 -- IDPedido: 1, 2, 3 (pedidos insertados arriba)
 -- IDTipoInsumo: 1=Ácido Sulfúrico, 2=Hidróxido, 3=Matraz, 5=Balanza
-INSERT INTO PedidoDetalle (CantInsumo, IDPedido, IDTipoInsumo) VALUES
--- Pedido 1
-(10, 1, 1), -- 10ml de Ácido Sulfúrico
-(5, 1, 3),  -- 5 Matraces
+-- IDEstPedidoDetalle: 1=Pendiente, 2=Reservado
+INSERT INTO PedidoDetalle (CantInsumo, IDPedido, IDTipoInsumo, IDEstPedidoDetalle) VALUES
+-- Pedido 1 (Pendiente - estado 1)
+(10, 1, 1, 1), -- 10ml de Ácido Sulfúrico
+(5, 1, 3, 1),  -- 5 Matraces
 
--- Pedido 2
-(8, 2, 2),  -- 8g de Hidróxido
-(3, 2, 5),  -- 3 Balanzas
+-- Pedido 2 (Aprobado - estado 2, detalles reservados)
+(8, 2, 2, 2),  -- 8g de Hidróxido
+(3, 2, 5, 2),  -- 3 Balanzas
 
--- Pedido 3
-(15, 3, 7), -- 15ml de Etanol
-(2, 3, 4);  -- 2 Probetas
+-- Pedido 3 (En Preparación - estado 3, detalles reservados)
+(15, 3, 7, 2), -- 15ml de Etanol
+(2, 3, 4, 2);  -- 2 Probetas
 
 -- ============================================
--- 18. ENTREGAS
+-- 19. ENTREGAS
 -- ============================================
 -- Solo para pedidos aprobados o en preparación
 -- IDPedido: 2 (Aprobado), 3 (En Preparación)
@@ -247,7 +258,7 @@ INSERT INTO Entrega (FechaEntrega, HoraEntrega, IDPedido, IDEstudiante) VALUES
 ('2025-01-17', '2025-01-17 14:15:00', 3, 2); -- Entrega del Pedido 3 a Laura
 
 -- ============================================
--- 19. ENTREGAS DE INSUMOS
+-- 20. ENTREGAS DE INSUMOS
 -- ============================================
 -- IDEntrega: 1, 2
 -- IDInsumo: Basados en los IDs generados automáticamente
@@ -257,7 +268,7 @@ INSERT INTO EntregaInsumo (IDEntrega, IDInsumo) VALUES
 (2, 2); -- Probeta para Pedido 3
 
 -- ============================================
--- 20. ENTREGAS DE QUÍMICOS
+-- 21. ENTREGAS DE QUÍMICOS
 -- ============================================
 -- IDEntrega: 1, 2
 -- IDQuimico: Basados en los IDs generados automáticamente (1-4)
@@ -266,7 +277,7 @@ INSERT INTO EntregaQuimico (IDEntrega, IDQuimico) VALUES
 (2, 3); -- Etanol para Pedido 3
 
 -- ============================================
--- 21. ESTADOS DE DEVOLUCIÓN
+-- 22. ESTADOS DE DEVOLUCIÓN
 -- ============================================
 INSERT INTO EstDevolucion (EstadoDevolucion) VALUES
 ('Completa'),
@@ -274,7 +285,7 @@ INSERT INTO EstDevolucion (EstadoDevolucion) VALUES
 ('Con Daños');
 
 -- ============================================
--- 22. DEVOLUCIONES
+-- 23. DEVOLUCIONES
 -- ============================================
 -- IDDevolucion generado automáticamente
 -- IDPedido: 2 (ya entregado)
@@ -285,7 +296,7 @@ INSERT INTO Devolucion (FechaDevolucion, HoraDevolucion, IDPedido, IDEstDevoluci
 ('2025-01-17', '2025-01-17 19:30:00', 3, 2, 2);
 
 -- ============================================
--- 23. DETALLES DE DEVOLUCIÓN
+-- 24. DETALLES DE DEVOLUCIÓN
 -- ============================================
 -- IDDevolucion: 1, 2
 -- IDInsumo: 5, 2
@@ -294,7 +305,7 @@ INSERT INTO DevolucionDetalle (IDDevolucion, IDInsumo) VALUES
 (2, 2); -- Probeta devuelta
 
 -- ============================================
--- 24. ESTADOS DE INCIDENTE
+-- 25. ESTADOS DE INCIDENTE
 -- ============================================
 INSERT INTO EstIncidente (EstadoIncidente) VALUES
 ('Reportado'),
@@ -303,23 +314,24 @@ INSERT INTO EstIncidente (EstadoIncidente) VALUES
 ('Cancelado');
 
 -- ============================================
--- 25. INCIDENTES
+-- 26. INCIDENTES
 -- ============================================
 -- IDDevolucion: 1, 2
 -- IDEstudiante: 1=Pedro, 2=Laura
--- IDEstIncidente: 1=Reportado, 2=En Revisión, 3=Resuelto
+-- IDEstIncidente: 1=Reportado, 2=En Revisión, 3=Resuelto, 4=Cancelado
 INSERT INTO Incidentes (Descripcion, FechaIncidente, FechaSolucion, IDDevolucion, IDEstudiante, IDEstIncidente) VALUES
 ('Matraz roto durante la práctica', '2025-01-16', '2025-01-17', 1, 1, 3),
-('Falta de reactivo en la devolución', '2025-01-17', NULL, 2, 2, 2);
+('Falta de reactivo en la devolución', '2025-01-17', NULL, 2, 2, 2),
+('Nuevo incidente', '2025-01-18', NULL, 1, 1, 1);
 
 -- ============================================
--- 26. EXPERIMENTOS
+-- 27. EXPERIMENTOS
 -- ============================================
 INSERT INTO Experimento (NombreExperimento) VALUES
 ('Titulación Ácido-Base'),
 ('Síntesis de Aspirina'),
-('Destilación Simple');
-
+('Destilación Simple'),
+('Cromatografía en Columna');
 -- ============================================
 -- 27. DETALLES DE EXPERIMENTO
 -- ============================================

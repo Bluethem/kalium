@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { insumoService } from '../../services/api';
+import { insumoService, categoriaService } from '../../services/api';
 import Header from '../../components/Layout/Header';
-import axios from 'axios';
 
 const ListaInsumos = () => {
   const navigate = useNavigate();
@@ -29,7 +28,7 @@ const ListaInsumos = () => {
       setLoading(true);
       const [tiposRes, categoriasRes] = await Promise.all([
         insumoService.getTiposInsumoConStock(),
-        axios.get('http://localhost:8080/api/categorias')
+        categoriaService.getCategorias()
       ]);
       setTiposInsumo(tiposRes.data);
       setCategorias(categoriasRes.data);

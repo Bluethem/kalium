@@ -142,24 +142,37 @@ const DetallePedido = () => {
                 </div>
 
                 {/* Botones de acción si está pendiente */}
-                {esPendiente && (
-                  <div className="flex gap-3">
+                <div className="flex gap-3">
+                  {esPendiente && (
+                    <>
+                      <button
+                        onClick={() => setShowModalAprobar(true)}
+                        className="flex items-center gap-2 rounded-lg bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400"
+                      >
+                        <span className="material-symbols-outlined text-base">check_circle</span>
+                        Aprobar Pedido
+                      </button>
+                      <button
+                        onClick={() => setShowModalRechazar(true)}
+                        className="flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400"
+                      >
+                        <span className="material-symbols-outlined text-base">cancel</span>
+                        Rechazar Pedido
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Botón para generar entregas (solo si está Aprobado o En Preparación) */}
+                  {(pedido.estPedido?.idEstPedido === 2 || pedido.estPedido?.idEstPedido === 3) && (
                     <button
-                      onClick={() => setShowModalAprobar(true)}
-                      className="flex items-center gap-2 rounded-lg bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400"
+                      onClick={() => navigate(`/entregas/generar/${id}`)}
+                      className="flex items-center gap-2 rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white hover:bg-opacity-90"
                     >
-                      <span className="material-symbols-outlined text-base">check_circle</span>
-                      Aprobar Pedido
+                      <span className="material-symbols-outlined text-base">inventory_2</span>
+                      Generar Entregas
                     </button>
-                    <button
-                      onClick={() => setShowModalRechazar(true)}
-                      className="flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400"
-                    >
-                      <span className="material-symbols-outlined text-base">cancel</span>
-                      Rechazar Pedido
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
 

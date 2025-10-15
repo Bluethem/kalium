@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Layout/Header';
-import axios from 'axios';
-import { insumoService } from '../../services/api';
+import { insumoService, categoriaService, estadoInsumoService } from '../../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -41,8 +40,8 @@ const Reportes = () => {
       setLoading(true);
       const [insumosRes, categoriasRes, estadosRes] = await Promise.all([
         insumoService.getTiposInsumoConStock(),
-        axios.get('http://localhost:8080/api/categorias'),
-        axios.get('http://localhost:8080/api/estados-insumo')
+        categoriaService.getCategorias(),
+        estadoInsumoService.getEstados()
       ]);
       setInsumos(insumosRes.data);
       setCategorias(categoriasRes.data);

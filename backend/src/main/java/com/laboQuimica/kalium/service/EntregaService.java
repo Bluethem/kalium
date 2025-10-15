@@ -37,6 +37,15 @@ public class EntregaService {
     @Autowired
     private EstInsumoRepository estInsumoRepository;
     
+    @Autowired
+    private PedidoDetalleRepository pedidoDetalleRepository;
+    
+    @Autowired
+    private EstPedidoDetalleRepository estPedidoDetalleRepository;
+    
+    @Autowired
+    private EstPedidoRepository estPedidoRepository;
+    
     /**
      * Obtener todas las entregas
      */
@@ -78,20 +87,17 @@ public class EntregaService {
             throw new RuntimeException("Debe especificar un pedido válido");
         }
         
-        if (entrega.getEstudiante() == null || entrega.getEstudiante().getIdEstudiante() == null) {
-            throw new RuntimeException("Debe especificar un estudiante válido");
-        }
-        
         // Verificar que el pedido existe
         Pedido pedido = pedidoRepository.findById(entrega.getPedido().getIdPedido())
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
-        
-        // Verificar que el estudiante existe
-        Estudiante estudiante = estudianteRepository.findById(entrega.getEstudiante().getIdEstudiante())
-            .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
-        
         entrega.setPedido(pedido);
-        entrega.setEstudiante(estudiante);
+        
+        // Estudiante es OPCIONAL ahora (se puede asignar después)
+        if (entrega.getEstudiante() != null && entrega.getEstudiante().getIdEstudiante() != null) {
+            Estudiante estudiante = estudianteRepository.findById(entrega.getEstudiante().getIdEstudiante())
+                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+            entrega.setEstudiante(estudiante);
+        }
         
         return entregaRepository.save(entrega);
     }
@@ -243,5 +249,161 @@ public class EntregaService {
             throw new RuntimeException("EntregaQuimico no encontrada con id: " + id);
         }
         entregaQuimicoRepository.deleteById(id);
+    }
+    
+    // ===== NUEVO: Generación masiva de entregas por grupos =====
+    
+    /**
+     * Genera entregas masivas para un pedido basándose en la cantidad de grupos
+     * Si el pedido tiene 5 grupos, se crean 5 entregas vacías pendientes de asignar estudiante
+     * 
+     * @param idPedido ID del pedido aprobado
+     * @return Lista de entregas creadas
+     */
+    @Transactional
+    public List<Entrega> generarEntregasPorGrupos(Integer idPedido) {
+        // Obtener el pedido
+        Pedido pedido = pedidoRepository.findById(idPedido)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + idPedido));
+        
+        // Verificar que el pedido esté aprobado o en preparación
+        Integer estadoPedido = pedido.getEstPedido().getIdEstPedido();
+        if (estadoPedido != 2 && estadoPedido != 3) {
+            throw new RuntimeException("Solo se pueden generar entregas para pedidos aprobados o en preparación");
+        }
+        
+        // Verificar que no existan entregas ya generadas
+        List<Entrega> entregasExistentes = entregaRepository.findByPedido(pedido);
+        if (!entregasExistentes.isEmpty()) {
+            throw new RuntimeException("Ya existen entregas generadas para este pedido");
+        }
+        
+        // Obtener la cantidad de grupos
+        int cantidadGrupos = pedido.getCantGrupos();
+        
+        // Preparar fecha y hora de entrega del horario
+        java.time.LocalDate fechaEntrega = pedido.getHorario().getFechaEntrega();
+        java.time.LocalDateTime horaEntrega = pedido.getHorario().getHoraInicio();
+        
+        // Obtener insumos y químicos reservados para este pedido
+        EstInsumo estadoReservado = estInsumoRepository.findById(5)
+            .orElseThrow(() -> new RuntimeException("Estado 'Reservado' no encontrado"));
+        EstInsumo estadoEnUso = estInsumoRepository.findById(2)
+            .orElseThrow(() -> new RuntimeException("Estado 'En Uso' no encontrado"));
+        
+        // Obtener todos los insumos físicos reservados para el pedido
+        List<Insumo> insumosReservados = insumoRepository.findByEstInsumo(estadoReservado);
+        
+        // Filtrar solo los que pertenecen a este pedido (verificando PedidoDetalle)
+        List<PedidoDetalle> detalles = pedidoDetalleRepository.findByPedido(pedido);
+        java.util.Map<Integer, Integer> cantidadPorTipoInsumo = new java.util.HashMap<>();
+        
+        for (PedidoDetalle detalle : detalles) {
+            Integer idTipoInsumo = detalle.getTipoInsumo().getIdTipoInsumo();
+            Integer cantidad = detalle.getCantInsumo();
+            cantidadPorTipoInsumo.put(idTipoInsumo, cantidad * cantidadGrupos); // Total necesario
+        }
+        
+        // Crear N entregas (una por grupo)
+        java.util.List<Entrega> entregasCreadas = new java.util.ArrayList<>();
+        
+        for (int i = 0; i < cantidadGrupos; i++) {
+            Entrega entrega = new Entrega();
+            entrega.setFechaEntrega(fechaEntrega);
+            entrega.setHoraEntrega(horaEntrega);
+            entrega.setPedido(pedido);
+            // Estudiante se asignará después
+            
+            // Guardar la entrega
+            Entrega entregaGuardada = entregaRepository.save(entrega);
+            
+            // Asignar insumos a esta entrega
+            for (PedidoDetalle detalle : detalles) {
+                if (!detalle.getTipoInsumo().getEsQuimico()) {
+                    // Es un insumo físico
+                    int cantidadNecesaria = detalle.getCantInsumo();
+                    int asignados = 0;
+                    
+                    for (Insumo insumo : insumosReservados) {
+                        if (asignados >= cantidadNecesaria) break;
+                        
+                        if (insumo.getTipoInsumo().getIdTipoInsumo().equals(detalle.getTipoInsumo().getIdTipoInsumo())
+                            && insumo.getEstInsumo().getIdEstInsumo().equals(5)) { // Aún reservado
+                            
+                            // Crear EntregaInsumo
+                            EntregaInsumo entregaInsumo = new EntregaInsumo();
+                            entregaInsumo.setEntrega(entregaGuardada);
+                            entregaInsumo.setInsumo(insumo);
+                            entregaInsumoRepository.save(entregaInsumo);
+                            
+                            // Cambiar estado a "En Uso"
+                            insumo.setEstInsumo(estadoEnUso);
+                            insumoRepository.save(insumo);
+                            
+                            asignados++;
+                        }
+                    }
+                }
+            }
+            
+            entregasCreadas.add(entregaGuardada);
+        }
+        
+        // Marcar detalles del pedido como "Entregado" (estado 3)
+        EstPedidoDetalle estadoEntregado = estPedidoDetalleRepository.findById(3)
+            .orElseThrow(() -> new RuntimeException("Estado 'Entregado' no encontrado"));
+        
+        for (PedidoDetalle detalle : detalles) {
+            detalle.setEstPedidoDetalle(estadoEntregado);
+            pedidoDetalleRepository.save(detalle);
+        }
+        
+        // Cambiar estado del pedido a "Entregado" (estado 4)
+        EstPedido estadoPedidoEntregado = estPedidoRepository.findById(4)
+            .orElseThrow(() -> new RuntimeException("Estado 'Entregado' no encontrado"));
+        pedido.setEstPedido(estadoPedidoEntregado);
+        pedidoRepository.save(pedido);
+        
+        return entregasCreadas;
+    }
+    
+    /**
+     * Asigna un estudiante a una entrega específica
+     * 
+     * @param idEntrega ID de la entrega
+     * @param idEstudiante ID del estudiante
+     * @return Entrega actualizada
+     */
+    @Transactional
+    public Entrega asignarEstudianteAEntrega(Integer idEntrega, Integer idEstudiante) {
+        Entrega entrega = entregaRepository.findById(idEntrega)
+            .orElseThrow(() -> new RuntimeException("Entrega no encontrada con id: " + idEntrega));
+        
+        Estudiante estudiante = estudianteRepository.findById(idEstudiante)
+            .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con id: " + idEstudiante));
+        
+        entrega.setEstudiante(estudiante);
+        return entregaRepository.save(entrega);
+    }
+    
+    /**
+     * Verifica si un pedido ya tiene entregas generadas
+     */
+    public boolean pedidoTieneEntregas(Integer idPedido) {
+        Pedido pedido = pedidoRepository.findById(idPedido)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + idPedido));
+        return !entregaRepository.findByPedido(pedido).isEmpty();
+    }
+    
+    /**
+     * Obtiene entregas pendientes de asignar estudiante
+     */
+    public List<Entrega> obtenerEntregasSinEstudiante(Integer idPedido) {
+        Pedido pedido = pedidoRepository.findById(idPedido)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + idPedido));
+        
+        return entregaRepository.findByPedido(pedido).stream()
+            .filter(e -> e.getEstudiante() == null)
+            .collect(java.util.stream.Collectors.toList());
     }
 }

@@ -3,7 +3,9 @@ package com.laboQuimica.kalium.controller;
 import com.laboQuimica.kalium.entity.Entrega;
 import com.laboQuimica.kalium.entity.EntregaInsumo;
 import com.laboQuimica.kalium.entity.EntregaQuimico;
+import com.laboQuimica.kalium.exception.ResourceNotFoundException;
 import com.laboQuimica.kalium.service.EntregaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/entregas")
-@CrossOrigin(origins = "http://localhost:5173")
 public class EntregaController {
     
     @Autowired
@@ -25,12 +26,7 @@ public class EntregaController {
      */
     @GetMapping
     public ResponseEntity<List<Entrega>> obtenerTodas() {
-        try {
-            List<Entrega> entregas = entregaService.obtenerTodas();
-            return ResponseEntity.ok(entregas);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return ResponseEntity.ok(entregaService.obtenerTodas());
     }
     
     /**
@@ -41,7 +37,7 @@ public class EntregaController {
     public ResponseEntity<Entrega> obtenerPorId(@PathVariable Integer id) {
         return entregaService.obtenerPorId(id)
             .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+            .orElseThrow(() -> new ResourceNotFoundException("Entrega", "id", id));
     }
     
     /**
@@ -50,12 +46,7 @@ public class EntregaController {
      */
     @GetMapping("/pedido/{idPedido}")
     public ResponseEntity<List<Entrega>> obtenerPorPedido(@PathVariable Integer idPedido) {
-        try {
-            List<Entrega> entregas = entregaService.obtenerPorPedido(idPedido);
-            return ResponseEntity.ok(entregas);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(entregaService.obtenerPorPedido(idPedido));
     }
     
     /**
@@ -64,12 +55,7 @@ public class EntregaController {
      */
     @GetMapping("/estudiante/{idEstudiante}")
     public ResponseEntity<List<Entrega>> obtenerPorEstudiante(@PathVariable Integer idEstudiante) {
-        try {
-            List<Entrega> entregas = entregaService.obtenerPorEstudiante(idEstudiante);
-            return ResponseEntity.ok(entregas);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(entregaService.obtenerPorEstudiante(idEstudiante));
     }
     
     /**
@@ -78,12 +64,7 @@ public class EntregaController {
      */
     @GetMapping("/{id}/insumos")
     public ResponseEntity<List<EntregaInsumo>> obtenerInsumos(@PathVariable Integer id) {
-        try {
-            List<EntregaInsumo> insumos = entregaService.obtenerInsumosPorEntrega(id);
-            return ResponseEntity.ok(insumos);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(entregaService.obtenerInsumosPorEntrega(id));
     }
     
     /**
@@ -92,12 +73,7 @@ public class EntregaController {
      */
     @GetMapping("/{id}/quimicos")
     public ResponseEntity<List<EntregaQuimico>> obtenerQuimicos(@PathVariable Integer id) {
-        try {
-            List<EntregaQuimico> quimicos = entregaService.obtenerQuimicosPorEntrega(id);
-            return ResponseEntity.ok(quimicos);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(entregaService.obtenerQuimicosPorEntrega(id));
     }
     
     /**
@@ -113,16 +89,9 @@ public class EntregaController {
      * }
      */
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Entrega entrega) {
-        try {
-            Entrega nuevaEntrega = entregaService.guardar(entrega);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEntrega);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al crear entrega: " + e.getMessage());
-        }
+    public ResponseEntity<Entrega> crear(@Valid @RequestBody Entrega entrega) {
+        Entrega nuevaEntrega = entregaService.guardar(entrega);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEntrega);
     }
     
     /**
@@ -136,16 +105,9 @@ public class EntregaController {
      * }
      */
     @PostMapping("/insumos")
-    public ResponseEntity<?> crearEntregaInsumo(@RequestBody EntregaInsumo entregaInsumo) {
-        try {
-            EntregaInsumo nuevaEntregaInsumo = entregaService.guardarEntregaInsumo(entregaInsumo);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEntregaInsumo);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al crear entrega de insumo: " + e.getMessage());
-        }
+    public ResponseEntity<EntregaInsumo> crearEntregaInsumo(@Valid @RequestBody EntregaInsumo entregaInsumo) {
+        EntregaInsumo nuevaEntregaInsumo = entregaService.guardarEntregaInsumo(entregaInsumo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEntregaInsumo);
     }
     
     /**
@@ -159,16 +121,9 @@ public class EntregaController {
      * }
      */
     @PostMapping("/quimicos")
-    public ResponseEntity<?> crearEntregaQuimico(@RequestBody EntregaQuimico entregaQuimico) {
-        try {
-            EntregaQuimico nuevaEntregaQuimico = entregaService.guardarEntregaQuimico(entregaQuimico);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEntregaQuimico);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al crear entrega de químico: " + e.getMessage());
-        }
+    public ResponseEntity<EntregaQuimico> crearEntregaQuimico(@Valid @RequestBody EntregaQuimico entregaQuimico) {
+        EntregaQuimico nuevaEntregaQuimico = entregaService.guardarEntregaQuimico(entregaQuimico);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEntregaQuimico);
     }
     
     /**
@@ -176,19 +131,9 @@ public class EntregaController {
      * PUT /api/entregas/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Entrega entrega) {
-        try {
-            Entrega entregaActualizada = entregaService.actualizar(id, entrega);
-            return ResponseEntity.ok(entregaActualizada);
-        } catch (RuntimeException e) {
-            if (e.getMessage().contains("no encontrada")) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al actualizar entrega: " + e.getMessage());
-        }
+    public ResponseEntity<Entrega> actualizar(@PathVariable Integer id, @Valid @RequestBody Entrega entrega) {
+        Entrega entregaActualizada = entregaService.actualizar(id, entrega);
+        return ResponseEntity.ok(entregaActualizada);
     }
     
     /**
@@ -196,16 +141,9 @@ public class EntregaController {
      * DELETE /api/entregas/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Integer id) {
-        try {
-            entregaService.eliminar(id);
-            return ResponseEntity.ok().body("Entrega eliminada correctamente");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al eliminar entrega: " + e.getMessage());
-        }
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        entregaService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
     
     /**
@@ -213,16 +151,9 @@ public class EntregaController {
      * DELETE /api/entregas/insumos/{id}
      */
     @DeleteMapping("/insumos/{id}")
-    public ResponseEntity<?> eliminarEntregaInsumo(@PathVariable Integer id) {
-        try {
-            entregaService.eliminarEntregaInsumo(id);
-            return ResponseEntity.ok().body("Insumo eliminado de la entrega correctamente");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al eliminar insumo de entrega: " + e.getMessage());
-        }
+    public ResponseEntity<Void> eliminarEntregaInsumo(@PathVariable Integer id) {
+        entregaService.eliminarEntregaInsumo(id);
+        return ResponseEntity.noContent().build();
     }
     
     /**
@@ -230,15 +161,62 @@ public class EntregaController {
      * DELETE /api/entregas/quimicos/{id}
      */
     @DeleteMapping("/quimicos/{id}")
-    public ResponseEntity<?> eliminarEntregaQuimico(@PathVariable Integer id) {
+    public ResponseEntity<Void> eliminarEntregaQuimico(@PathVariable Integer id) {
+        entregaService.eliminarEntregaQuimico(id);
+        return ResponseEntity.noContent().build();
+    }
+    
+    // ===== NUEVO: Endpoints para generación masiva de entregas =====
+    
+    /**
+     * Generar entregas masivas para un pedido basándose en la cantidad de grupos
+     * POST /api/entregas/generar/{idPedido}
+     * 
+     * Ejemplo: Pedido con 5 grupos → Genera 5 entregas
+     */
+    @PostMapping("/generar/{idPedido}")
+    public ResponseEntity<?> generarEntregasPorGrupos(@PathVariable Integer idPedido) {
         try {
-            entregaService.eliminarEntregaQuimico(id);
-            return ResponseEntity.ok().body("Químico eliminado de la entrega correctamente");
+            List<Entrega> entregas = entregaService.generarEntregasPorGrupos(idPedido);
+            return ResponseEntity.status(HttpStatus.CREATED).body(entregas);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al eliminar químico de entrega: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    
+    /**
+     * Asignar un estudiante a una entrega específica
+     * PUT /api/entregas/{idEntrega}/asignar-estudiante/{idEstudiante}
+     */
+    @PutMapping("/{idEntrega}/asignar-estudiante/{idEstudiante}")
+    public ResponseEntity<?> asignarEstudiante(
+            @PathVariable Integer idEntrega,
+            @PathVariable Integer idEstudiante) {
+        try {
+            Entrega entrega = entregaService.asignarEstudianteAEntrega(idEntrega, idEstudiante);
+            return ResponseEntity.ok(entrega);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
+    /**
+     * Verificar si un pedido ya tiene entregas generadas
+     * GET /api/entregas/verificar/{idPedido}
+     */
+    @GetMapping("/verificar/{idPedido}")
+    public ResponseEntity<Boolean> verificarEntregas(@PathVariable Integer idPedido) {
+        boolean tieneEntregas = entregaService.pedidoTieneEntregas(idPedido);
+        return ResponseEntity.ok(tieneEntregas);
+    }
+    
+    /**
+     * Obtener entregas sin estudiante asignado de un pedido
+     * GET /api/entregas/pendientes/{idPedido}
+     */
+    @GetMapping("/pendientes/{idPedido}")
+    public ResponseEntity<List<Entrega>> obtenerEntregasSinEstudiante(@PathVariable Integer idPedido) {
+        List<Entrega> entregas = entregaService.obtenerEntregasSinEstudiante(idPedido);
+        return ResponseEntity.ok(entregas);
     }
 }

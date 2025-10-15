@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reportes")
-@CrossOrigin(origins = "http://localhost:5173")
 public class ReporteController {
     
     @Autowired
@@ -24,13 +23,9 @@ public class ReporteController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
             @RequestParam(required = false, defaultValue = "Todas") String categoria) {
         
-        try {
-            List<ReporteInventarioDTO> reporte = reporteService.generarReporteInventario(
-                fechaInicio, fechaFin, categoria
-            );
-            return ResponseEntity.ok(reporte);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        List<ReporteInventarioDTO> reporte = reporteService.generarReporteInventario(
+            fechaInicio, fechaFin, categoria
+        );
+        return ResponseEntity.ok(reporte);
     }
 }

@@ -13,6 +13,10 @@ const ListaPedidos = () => {
     tipoPedido: ''
   });
 
+  // Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [itemsPorPagina, setItemsPorPagina] = useState(10);
+
   useEffect(() => {
     cargarPedidos();
   }, []);
@@ -122,6 +126,17 @@ const ListaPedidos = () => {
 
   // ✅ Verificar si hay filtros activos
   const hayFiltrosActivos = filtros.estado || filtros.curso || filtros.tipoPedido;
+  
+  // Cálculos de paginación
+  const totalPaginas = Math.ceil(pedidosFiltrados.length / itemsPorPagina);
+  const indexInicio = (paginaActual - 1) * itemsPorPagina;
+  const indexFin = indexInicio + itemsPorPagina;
+  const pedidosPaginados = pedidosFiltrados.slice(indexInicio, indexFin);
+  
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [filtros, itemsPorPagina]);
 
   if (loading) {
     return (
@@ -234,6 +249,33 @@ const ListaPedidos = () => {
             )}
           </div>
 
+          {/* Información de resultados y selector de items por página */}
+          <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Mostrando <span className="font-semibold">{indexInicio + 1}</span> a{' '}
+              <span className="font-semibold">{Math.min(indexFin, pedidosFiltrados.length)}</span> de{' '}
+              <span className="font-semibold">{pedidosFiltrados.length}</span> resultados
+            </p>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="itemsPorPagina" className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrar:
+              </label>
+              <select
+                id="itemsPorPagina"
+                value={itemsPorPagina}
+                onChange={(e) => setItemsPorPagina(Number(e.target.value))}
+                className="rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white py-1 px-3 text-sm focus:ring-2 focus:ring-[rgb(44,171,91)] focus:border-transparent"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+              <span className="text-sm text-gray-600 dark:text-gray-400">por página</span>
+            </div>
+          </div>
+
           {/* Tabla */}
           <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
@@ -269,7 +311,7 @@ const ListaPedidos = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                {pedidosFiltrados.length === 0 ? (
+                {pedidosPaginados.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                       {hayFiltrosActivos 
@@ -278,7 +320,7 @@ const ListaPedidos = () => {
                     </td>
                   </tr>
                 ) : (
-                  pedidosFiltrados.map((pedido) => (
+                  pedidosPaginados.map((pedido) => (
                     <tr key={pedido.idPedido} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                         #{String(pedido.idPedido).padStart(5, '0')}
@@ -345,6 +387,88 @@ const ListaPedidos = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Paginación */}
+          {totalPaginas > 1 && (
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Página <span className="font-semibold">{paginaActual}</span> de{' '}
+                <span className="font-semibold">{totalPaginas}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Botón Primera Página */}
+                <button
+                  onClick={() => setPaginaActual(1)}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Primera página"
+                >
+                  <span className="material-symbols-outlined text-base">first_page</span>
+                </button>
+
+                {/* Botón Anterior */}
+                <button
+                  onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Página anterior"
+                >
+                  <span className="material-symbols-outlined text-base">chevron_left</span>
+                </button>
+
+                {/* Números de página */}
+                <div className="flex gap-2">
+                  {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                    let pageNum;
+                    if (totalPaginas <= 5) {
+                      pageNum = i + 1;
+                    } else if (paginaActual <= 3) {
+                      pageNum = i + 1;
+                    } else if (paginaActual >= totalPaginas - 2) {
+                      pageNum = totalPaginas - 4 + i;
+                    } else {
+                      pageNum = paginaActual - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPaginaActual(pageNum)}
+                        className={`px-4 py-2 rounded-lg border transition-colors ${
+                          paginaActual === pageNum
+                            ? 'bg-[rgb(44,171,91)] text-white border-[rgb(44,171,91)]'
+                            : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Botón Siguiente */}
+                <button
+                  onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Página siguiente"
+                >
+                  <span className="material-symbols-outlined text-base">chevron_right</span>
+                </button>
+
+                {/* Botón Última Página */}
+                <button
+                  onClick={() => setPaginaActual(totalPaginas)}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Última página"
+                >
+                  <span className="material-symbols-outlined text-base">last_page</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

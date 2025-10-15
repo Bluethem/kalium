@@ -5,7 +5,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173") // Esto ya no es necesario por CORS config, pero lo dejo por si acaso
 public class ApiController {
 
     // ✅ Endpoint para la raíz de API

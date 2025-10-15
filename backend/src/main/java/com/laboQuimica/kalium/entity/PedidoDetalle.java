@@ -25,4 +25,8 @@ public class PedidoDetalle {
     @ManyToOne
     @JoinColumn(name = "IDTipoInsumo", nullable = false)
     private TipoInsumo tipoInsumo;
+    
+    @ManyToOne
+    @JoinColumn(name = "IDEstPedidoDetalle", nullable = false)
+    private EstPedidoDetalle estPedidoDetalle;
 }

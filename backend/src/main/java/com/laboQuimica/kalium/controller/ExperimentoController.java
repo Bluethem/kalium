@@ -2,7 +2,9 @@ package com.laboQuimica.kalium.controller;
 
 import com.laboQuimica.kalium.entity.DetalleExperimento;
 import com.laboQuimica.kalium.entity.Experimento;
+import com.laboQuimica.kalium.exception.ResourceNotFoundException;
 import com.laboQuimica.kalium.service.ExperimentoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/experimentos")
-@CrossOrigin(origins = "http://localhost:5173")
 public class ExperimentoController {
     
     @Autowired
@@ -24,12 +25,7 @@ public class ExperimentoController {
      */
     @GetMapping
     public ResponseEntity<List<Experimento>> obtenerTodos() {
-        try {
-            List<Experimento> experimentos = experimentoService.obtenerTodos();
-            return ResponseEntity.ok(experimentos);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return ResponseEntity.ok(experimentoService.obtenerTodos());
     }
     
     /**
@@ -40,7 +36,7 @@ public class ExperimentoController {
     public ResponseEntity<Experimento> obtenerPorId(@PathVariable Integer id) {
         return experimentoService.obtenerPorId(id)
             .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+            .orElseThrow(() -> new ResourceNotFoundException("Experimento", "id", id));
     }
     
     /**
@@ -49,12 +45,7 @@ public class ExperimentoController {
      */
     @GetMapping("/{id}/detalles")
     public ResponseEntity<List<DetalleExperimento>> obtenerDetalles(@PathVariable Integer id) {
-        try {
-            List<DetalleExperimento> detalles = experimentoService.obtenerDetalles(id);
-            return ResponseEntity.ok(detalles);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(experimentoService.obtenerDetalles(id));
     }
     
     /**
@@ -67,16 +58,9 @@ public class ExperimentoController {
      * }
      */
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Experimento experimento) {
-        try {
-            Experimento nuevoExperimento = experimentoService.guardar(experimento);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoExperimento);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al crear experimento: " + e.getMessage());
-        }
+    public ResponseEntity<Experimento> crear(@Valid @RequestBody Experimento experimento) {
+        Experimento nuevoExperimento = experimentoService.guardar(experimento);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoExperimento);
     }
     
     /**
@@ -91,16 +75,9 @@ public class ExperimentoController {
      * }
      */
     @PostMapping("/detalles")
-    public ResponseEntity<?> agregarDetalle(@RequestBody DetalleExperimento detalle) {
-        try {
-            DetalleExperimento nuevoDetalle = experimentoService.agregarDetalle(detalle);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoDetalle);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al agregar detalle: " + e.getMessage());
-        }
+    public ResponseEntity<DetalleExperimento> agregarDetalle(@Valid @RequestBody DetalleExperimento detalle) {
+        DetalleExperimento nuevoDetalle = experimentoService.agregarDetalle(detalle);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoDetalle);
     }
     
     /**
@@ -108,19 +85,9 @@ public class ExperimentoController {
      * PUT /api/experimentos/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Experimento experimento) {
-        try {
-            Experimento experimentoActualizado = experimentoService.actualizar(id, experimento);
-            return ResponseEntity.ok(experimentoActualizado);
-        } catch (RuntimeException e) {
-            if (e.getMessage().contains("no encontrado")) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al actualizar experimento: " + e.getMessage());
-        }
+    public ResponseEntity<Experimento> actualizar(@PathVariable Integer id, @Valid @RequestBody Experimento experimento) {
+        Experimento experimentoActualizado = experimentoService.actualizar(id, experimento);
+        return ResponseEntity.ok(experimentoActualizado);
     }
     
     /**
@@ -128,16 +95,9 @@ public class ExperimentoController {
      * DELETE /api/experimentos/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Integer id) {
-        try {
-            experimentoService.eliminar(id);
-            return ResponseEntity.ok().body("Experimento eliminado correctamente");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al eliminar experimento: " + e.getMessage());
-        }
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        experimentoService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
     
     /**
@@ -145,15 +105,8 @@ public class ExperimentoController {
      * DELETE /api/experimentos/detalles/{id}
      */
     @DeleteMapping("/detalles/{id}")
-    public ResponseEntity<?> eliminarDetalle(@PathVariable Integer id) {
-        try {
-            experimentoService.eliminarDetalle(id);
-            return ResponseEntity.ok().body("Detalle eliminado correctamente");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error al eliminar detalle: " + e.getMessage());
-        }
+    public ResponseEntity<Void> eliminarDetalle(@PathVariable Integer id) {
+        experimentoService.eliminarDetalle(id);
+        return ResponseEntity.noContent().build();
     }
 }

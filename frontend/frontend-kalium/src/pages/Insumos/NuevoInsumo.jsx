@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
-import { insumoService, quimicoService } from '../../services/api';
-import axios from 'axios';
+import { insumoService, quimicoService, categoriaService, estadoInsumoService, unidadService } from '../../services/api';
 
 const NuevoInsumo = () => {
   const navigate = useNavigate();
@@ -51,9 +50,9 @@ const NuevoInsumo = () => {
     try {
       const [tiposRes, estadosRes, categoriasRes, unidadesRes] = await Promise.all([
         insumoService.getTiposInsumo(),
-        axios.get('http://localhost:8080/api/estados-insumo'),
-        axios.get('http://localhost:8080/api/categorias'),
-        axios.get('http://localhost:8080/api/unidades')
+        estadoInsumoService.getEstados(),
+        categoriaService.getCategorias(),
+        unidadService.getUnidades()
       ]);
       setTiposInsumo(tiposRes.data);
       setEstadosInsumo(estadosRes.data);

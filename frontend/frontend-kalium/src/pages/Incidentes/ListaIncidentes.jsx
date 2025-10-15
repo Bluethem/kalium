@@ -12,6 +12,8 @@ const ListaIncidentes = () => {
     estudiante: '',
     busqueda: ''
   });
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
 
   useEffect(() => {
     cargarIncidentes();
@@ -60,6 +62,18 @@ const ListaIncidentes = () => {
       estudiante: '',
       busqueda: ''
     });
+    setPaginaActual(1);
+  };
+
+  // Paginación
+  const indexUltimo = paginaActual * itemsPorPagina;
+  const indexPrimero = indexUltimo - itemsPorPagina;
+  const incidentesPaginados = incidentesFiltrados.slice(indexPrimero, indexUltimo);
+  const totalPaginas = Math.ceil(incidentesFiltrados.length / itemsPorPagina);
+
+  const cambiarPagina = (numeroPagina) => {
+    setPaginaActual(numeroPagina);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleResolver = async (idIncidente) => {
@@ -206,7 +220,7 @@ const ListaIncidentes = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                {incidentesFiltrados.length === 0 ? (
+                {incidentesPaginados.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                       {hayFiltrosActivos 
@@ -215,7 +229,7 @@ const ListaIncidentes = () => {
                     </td>
                   </tr>
                 ) : (
-                  incidentesFiltrados.map((incidente) => (
+                  incidentesPaginados.map((incidente) => (
                     <tr key={incidente.idIncidentes} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                         #INC{String(incidente.idIncidentes).padStart(3, '0')}
@@ -270,6 +284,44 @@ const ListaIncidentes = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Paginación */}
+          {totalPaginas > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrando {indexPrimero + 1} - {Math.min(indexUltimo, incidentesFiltrados.length)} de {incidentesFiltrados.length} incidentes
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => cambiarPagina(paginaActual - 1)}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                {[...Array(totalPaginas)].map((_, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => cambiarPagina(index + 1)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      paginaActual === index + 1
+                        ? 'bg-[rgb(44,171,91)] text-white'
+                        : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => cambiarPagina(paginaActual + 1)}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

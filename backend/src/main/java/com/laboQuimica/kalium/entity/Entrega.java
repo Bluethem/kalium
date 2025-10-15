@@ -28,6 +28,6 @@ public class Entrega {
     private Pedido pedido;
     
     @ManyToOne
-    @JoinColumn(name = "IDEstudiante", nullable = false)
+    @JoinColumn(name = "IDEstudiante", nullable = true)
     private Estudiante estudiante;
 }
