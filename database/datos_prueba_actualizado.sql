@@ -44,7 +44,7 @@ INSERT INTO Rol (NombreRol, Descripcion) VALUES
 ('ADMIN_SISTEMA', 'Administrador de sistemas - Gestiona usuarios y permisos'),
 ('ADMIN_LABORATORIO', 'Administrador de laboratorio - Gestiona inventario, pedidos y entregas'),
 ('INSTRUCTOR', 'Instructor - Crea pedidos y consulta información'),
-('ESTUDIANTE', 'Estudiante - Consulta entregas (futuro)');
+('ESTUDIANTE', 'Estudiante - Realiza devoluciones y incidentes');
 
 -- ============================================
 -- 2. USUARIOS
@@ -55,19 +55,22 @@ INSERT INTO Usuario (Nombre, Apellido, Correo, Contrasena, IDRol) VALUES
 ('Juan', 'Pérez', 'juan.perez@lab.com', 'password123', 1),
 ('María', 'García', 'maria.garcia@lab.com', 'password123', 2),
 ('Carlos', 'López', 'carlos.lopez@lab.com', 'password123', 3),
-('Ana', 'Martínez', 'ana.martinez@lab.com', 'password123', 3);
+('Ana', 'Martínez', 'ana.martinez@lab.com', 'password123', 3),
+('David', 'Luza', 'david.luza@lab.com', 'password123', 4),
+('Franz', 'Inga', 'franz.inga@lab.com', 'password123', 4),
+('Pedro', 'Perez', 'pedro.perez@lab.com', 'password123', 4);
 
 -- ============================================
 -- 3. ADMINISTRADORES
 -- ============================================
 -- Insertar administradores (IDUsuario 1 = Juan Pérez)
-INSERT INTO Administrador (IDUsuario) VALUES (1);
+INSERT INTO Administrador (IDUsuario) VALUES (1), (2);
 
 -- ============================================
 -- 4. INSTRUCTORES
 -- ============================================
 -- Insertar instructores (IDUsuario 2 y 3 = María García y Carlos López)
-INSERT INTO Instructor (IDUsuario) VALUES (2), (3);
+INSERT INTO Instructor (IDUsuario) VALUES (3), (4);
 
 -- ============================================
 -- 5. CATEGORÍAS
@@ -162,11 +165,8 @@ INSERT INTO Quimico (CantQuimico, IDTipoInsumo, FechaIngreso) VALUES
 -- ============================================
 -- 11. ESTUDIANTES
 -- ============================================
-INSERT INTO Estudiante (Nombre, Apellido) VALUES
-('Pedro', 'Ramírez'),
-('Laura', 'Torres'),
-('Miguel', 'Fernández'),
-('Sofía', 'Morales');
+-- IDUsuario 5=David, 6=Franz, 7=Pedro (todos con rol ESTUDIANTE)
+INSERT INTO Estudiante (IDUsuario) VALUES (5), (6), (7);
 
 -- ============================================
 -- 12. ESTADOS DE PEDIDO
@@ -181,11 +181,11 @@ INSERT INTO EstPedido (NombreEstPedido) VALUES
 -- ============================================
 -- 13. CURSOS
 -- ============================================
-INSERT INTO Curso (NombreCurso) VALUES
-('Química General I'),
-('Química Orgánica'),
-('Química Analítica'),
-('Bioquímica');
+INSERT INTO Curso (NombreCurso, Codigo, Descripcion) VALUES
+('Química General I', 'QG1', 'Curso introductorio de química'),
+('Química Orgánica', 'QO1', 'Curso de química orgánica'),
+('Química Analítica', 'QA1', 'Curso de química analítica'),
+('Bioquímica', 'BQ1', 'Curso de bioquímica');
 
 -- ============================================
 -- 14. TIPOS DE PEDIDO
@@ -252,10 +252,10 @@ INSERT INTO PedidoDetalle (CantInsumo, IDPedido, IDTipoInsumo, IDEstPedidoDetall
 -- ============================================
 -- Solo para pedidos aprobados o en preparación
 -- IDPedido: 2 (Aprobado), 3 (En Preparación)
--- IDEstudiante: 1=Pedro, 2=Laura
+-- IDEstudiante: 1=David (IDUsuario 5), 2=Franz (IDUsuario 6), 3=Pedro (IDUsuario 7)
 INSERT INTO Entrega (FechaEntrega, HoraEntrega, IDPedido, IDEstudiante) VALUES
-('2025-01-16', '2025-01-16 10:30:00', 2, 1), -- Entrega del Pedido 2 a Pedro
-('2025-01-17', '2025-01-17 14:15:00', 3, 2); -- Entrega del Pedido 3 a Laura
+('2025-01-16', '2025-01-16 10:30:00', 2, 1),
+('2025-01-17', '2025-01-17 14:15:00', 3, 2);
 
 -- ============================================
 -- 20. ENTREGAS DE INSUMOS
@@ -317,7 +317,7 @@ INSERT INTO EstIncidente (EstadoIncidente) VALUES
 -- 26. INCIDENTES
 -- ============================================
 -- IDDevolucion: 1, 2
--- IDEstudiante: 1=Pedro, 2=Laura
+-- IDEstudiante: 1=David (IDUsuario 5), 2=Franz (IDUsuario 6)
 -- IDEstIncidente: 1=Reportado, 2=En Revisión, 3=Resuelto, 4=Cancelado
 INSERT INTO Incidentes (Descripcion, FechaIncidente, FechaSolucion, IDDevolucion, IDEstudiante, IDEstIncidente) VALUES
 ('Matraz roto durante la práctica', '2025-01-16', '2025-01-17', 1, 1, 3),

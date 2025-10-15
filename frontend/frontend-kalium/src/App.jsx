@@ -12,6 +12,7 @@ import Header from './components/Layout/Header';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import DashboardEstudiante from './pages/DashboardEstudiante';
 import Usuarios from './pages/Usuarios';
 import Cuenta from './pages/Cuenta';
 import ListaNotificaciones from './pages/Notificaciones/ListaNotificaciones';
@@ -26,6 +27,7 @@ import DetalleDevolucion from './pages/Devoluciones/DetalleDevolucion';
 import ListaExperimentos from './pages/Experimentos/ListaExperimentos';
 import DetalleExperimento from './pages/Experimentos/DetalleExperimento';
 import NuevoExperimento from './pages/Experimentos/NuevoExperimento';
+import EditarExperimento from './pages/Experimentos/EditarExperimento';
 
 function App() {
   return (
@@ -70,6 +72,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard-estudiante" element={<DashboardEstudiante />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/cuenta" element={<Cuenta />} />
         <Route path="/insumos" element={<ListaInsumos />} />
@@ -91,6 +94,7 @@ function App() {
         <Route path="/experimentos" element={<ListaExperimentos />} />
         <Route path="/experimentos/nuevo" element={<NuevoExperimento />} />
         <Route path="/experimentos/:id" element={<DetalleExperimento />} />
+        <Route path="/experimentos/:id/editar" element={<EditarExperimento />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

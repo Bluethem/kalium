@@ -61,6 +61,8 @@ export const pedidoService = {
   updatePedido: (id, pedidoData) => api.put(`/pedidos/${id}`, pedidoData),
   cambiarEstado: (idPedido, idEstado) => api.patch(`/pedidos/${idPedido}/estado/${idEstado}`),
   deletePedido: (id) => api.delete(`/pedidos/${id}`),
+  generarPedidoDesdeExperimento: (idExperimento, datos) => 
+    api.post(`/pedidos/experimentos/${idExperimento}/generar`, datos),
 };
 
 export const entregaService = {
@@ -182,6 +184,7 @@ export const devolucionService = {
   getDevolucionById: (id) => api.get(`/devoluciones/${id}`),
   getDevolucionesPorPedido: (idPedido) => api.get(`/devoluciones/pedido/${idPedido}`),
   getDevolucionesPorEstado: (idEstado) => api.get(`/devoluciones/estado/${idEstado}`),
+  getDevolucionesPorEstudiante: (idEstudiante) => api.get(`/devoluciones/estudiante/${idEstudiante}`),
   getDetalles: (idDevolucion) => api.get(`/devoluciones/${idDevolucion}/detalles`),
   createDevolucion: (data) => api.post('/devoluciones', data),
   agregarDetalle: (data) => api.post('/devoluciones/detalles', data),

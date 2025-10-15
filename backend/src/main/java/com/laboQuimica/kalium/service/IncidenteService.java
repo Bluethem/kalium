@@ -21,9 +21,6 @@ public class IncidenteService {
     private EstIncidenteRepository estIncidenteRepository;
     
     @Autowired
-    private EstudianteRepository estudianteRepository;
-    
-    @Autowired
     private DevolucionRepository devolucionRepository;
     
     @Autowired
@@ -56,12 +53,10 @@ public class IncidenteService {
     }
     
     /**
-     * Obtener incidentes por estudiante
+     * ✅ MODIFICADO: Obtener incidentes por IDUsuario del estudiante
      */
-    public List<Incidentes> obtenerPorEstudiante(Integer idEstudiante) {
-        return estudianteRepository.findById(idEstudiante)
-            .map(incidentesRepository::findByEstudiante)
-            .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con id: " + idEstudiante));
+    public List<Incidentes> obtenerPorEstudiante(Integer idUsuario) {
+        return incidentesRepository.findByEstudianteUsuarioIdUsuario(idUsuario);
     }
     
     /**
@@ -190,8 +185,8 @@ public class IncidenteService {
             // Obtener todos los administradores de laboratorio
             List<Usuario> administradores = usuarioRepository.findByRol_NombreRol("ADMIN_LABORATORIO");
             
-            String nombreEstudiante = incidente.getEstudiante() != null 
-                ? incidente.getEstudiante().getNombre() + " " + incidente.getEstudiante().getApellido()
+            String nombreEstudiante = incidente.getEstudiante() != null && incidente.getEstudiante().getUsuario() != null
+                ? incidente.getEstudiante().getUsuario().getNombre() + " " + incidente.getEstudiante().getUsuario().getApellido()
                 : "Desconocido";
             
             String mensaje = String.format(

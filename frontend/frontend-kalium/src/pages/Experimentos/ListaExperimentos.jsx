@@ -8,6 +8,8 @@ const ListaExperimentos = () => {
   const [experimentos, setExperimentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
 
   useEffect(() => {
     cargarExperimentos();
@@ -35,6 +37,17 @@ const ListaExperimentos = () => {
       return idExp.includes(busquedaLower) || nombre.includes(busquedaLower);
     });
   }, [experimentos, busqueda]);
+
+  // Paginación
+  const indexUltimo = paginaActual * itemsPorPagina;
+  const indexPrimero = indexUltimo - itemsPorPagina;
+  const experimentosPaginados = experimentosFiltrados.slice(indexPrimero, indexUltimo);
+  const totalPaginas = Math.ceil(experimentosFiltrados.length / itemsPorPagina);
+
+  const cambiarPagina = (numeroPagina) => {
+    setPaginaActual(numeroPagina);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (loading) {
     return (
@@ -102,36 +115,28 @@ const ListaExperimentos = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                       Nombre del Experimento
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Insumos Necesarios
-                    </th>
                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                       Acciones
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                  {experimentosFiltrados.length === 0 ? (
+                  {experimentosPaginados.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan="3" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                         {busqueda 
                           ? 'No se encontraron experimentos con ese criterio de búsqueda' 
                           : 'No hay experimentos registrados'}
                       </td>
                     </tr>
                   ) : (
-                    experimentosFiltrados.map((experimento) => (
+                    experimentosPaginados.map((experimento) => (
                       <tr key={experimento.idExperimento} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-500 dark:text-gray-400">
                           EXP{String(experimento.idExperimento).padStart(3, '0')}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                           {experimento.nombreExperimento}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                          {experimento.detalles?.length > 0 
-                            ? `${experimento.detalles.length} insumo(s) necesario(s)`
-                            : 'Sin insumos definidos'}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                           <button
@@ -148,6 +153,44 @@ const ListaExperimentos = () => {
               </table>
             </div>
           </div>
+
+          {/* Paginación */}
+          {totalPaginas > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Mostrando {indexPrimero + 1} - {Math.min(indexUltimo, experimentosFiltrados.length)} de {experimentosFiltrados.length} experimentos
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => cambiarPagina(paginaActual - 1)}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                {[...Array(totalPaginas)].map((_, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => cambiarPagina(index + 1)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      paginaActual === index + 1
+                        ? 'bg-[rgb(44,171,91)] text-white'
+                        : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => cambiarPagina(paginaActual + 1)}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

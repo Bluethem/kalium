@@ -41,6 +41,11 @@ public class DevolucionController {
         return ResponseEntity.ok(devolucionService.obtenerPorEstado(idEstado));
     }
     
+    @GetMapping("/estudiante/{idEstudiante}")
+    public ResponseEntity<List<Devolucion>> obtenerPorEstudiante(@PathVariable Integer idEstudiante) {
+        return ResponseEntity.ok(devolucionService.obtenerPorEstudiante(idEstudiante));
+    }
+    
     @GetMapping("/{id}/detalles")
     public ResponseEntity<List<DevolucionDetalle>> obtenerDetalles(@PathVariable Integer id) {
         return ResponseEntity.ok(devolucionService.obtenerDetalles(id));

@@ -73,6 +73,13 @@ public class DevolucionService {
     }
     
     /**
+     * Obtener devoluciones por estudiante
+     */
+    public List<Devolucion> obtenerPorEstudiante(Integer idEstudiante) {
+        return devolucionRepository.findByEstudiante(idEstudiante);
+    }
+    
+    /**
      * Crear una nueva devolución
      */
     public Devolucion guardar(Devolucion devolucion) {

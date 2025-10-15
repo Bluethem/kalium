@@ -35,6 +35,9 @@ public class NotificacionService {
 
     @Autowired
     private QuimicoRepository quimicoRepository;
+
+    @Autowired
+    private NotificacionWebSocketService webSocketService;
     
     /**
      * Obtener todas las notificaciones de un usuario
@@ -109,6 +112,13 @@ public class NotificacionService {
         notificacion.setLeida(true);
         notificacionRepository.save(notificacion);
         
+        // Enviar actualización de contador por WebSocket
+        Long contador = contarNoLeidas(notificacion.getUsuario().getIdUsuario());
+        webSocketService.enviarActualizacionContador(
+            notificacion.getUsuario().getIdUsuario().longValue(), 
+            contador.intValue()
+        );
+        
         return convertirADTO(notificacion);
     }
     
@@ -124,6 +134,9 @@ public class NotificacionService {
         
         notificaciones.forEach(n -> n.setLeida(true));
         notificacionRepository.saveAll(notificaciones);
+        
+        // Enviar actualización de contador por WebSocket (contador = 0)
+        webSocketService.enviarActualizacionContador(idUsuario.longValue(), 0);
     }
     
     /* Crear notificación de bajo stock para todos los administradores de laboratorio */
@@ -172,9 +185,9 @@ public class NotificacionService {
         dto.setLeida(notificacion.getLeida());
         dto.setFechaCreacion(notificacion.getFechaCreacion());
         dto.setIdUsuario(notificacion.getUsuario().getIdUsuario());
-        dto.setDatosExtra(notificacion.getDatosExtra()); // ✅ Agregar el JSON completo
+        dto.setDatosExtra(notificacion.getDatosExtra()); // Agregar el JSON completo
         
-        // ✅ Extraer idTipoInsumo del JSON si existe
+        // Extraer idTipoInsumo del JSON si existe
         if (notificacion.getDatosExtra() != null && notificacion.getDatosExtra().contains("idTipoInsumo")) {
             try {
                 // Parsear el JSON manualmente (formato: {"idTipoInsumo": 123})
@@ -187,7 +200,7 @@ public class NotificacionService {
                 Integer idTipoInsumo = Integer.parseInt(idStr);
                 dto.setIdTipoInsumo(idTipoInsumo);
                 
-                // ✅ Opcional: Obtener el nombre del tipo de insumo desde la BD
+                // Opcional: Obtener el nombre del tipo de insumo desde la BD
                 TipoInsumo tipoInsumo = tipoInsumoRepository.findById(idTipoInsumo).orElse(null);
                 if (tipoInsumo != null) {
                     dto.setNombreTipoInsumo(tipoInsumo.getNombreTipoInsumo());
@@ -289,7 +302,19 @@ public class NotificacionService {
             String datosExtra = String.format("{\"idTipoInsumo\": %d}", idTipoInsumo);
             notificacion.setDatosExtra(datosExtra);
             
-            notificacionRepository.save(notificacion);
+            Notificacion notifGuardada = notificacionRepository.save(notificacion);
+            
+            // NUEVO: Enviar notificación en tiempo real por WebSocket
+            try {
+                NotificacionDTO dto = convertirADTO(notifGuardada);
+                webSocketService.enviarNotificacionAUsuario(idUsuario.longValue(), dto);
+                
+                // Actualizar contador
+                Long contador = contarNoLeidas(idUsuario);
+                webSocketService.enviarActualizacionContador(idUsuario.longValue(), contador.intValue());
+            } catch (Exception e) {
+                System.err.println("Error al enviar notificación por WebSocket: " + e.getMessage());
+            }
         } catch (Exception e) {
             System.err.println("Error al crear notificación: " + e.getMessage());
         }
