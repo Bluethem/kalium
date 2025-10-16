@@ -25,6 +25,9 @@ public class PedidoService {
     @Autowired
     private EstPedidoRepository estPedidoRepository;
     
+    @Autowired
+    private ReservaService reservaService;
+    
     public List<Pedido> obtenerTodos() {
         return pedidoRepository.findAll();
     }
@@ -65,6 +68,37 @@ public class PedidoService {
     }
     
     public Pedido cambiarEstado(Integer idPedido, Integer idEstado) {
+        // Si se está aprobando (estado 2), usar ReservaService
+        if (idEstado == 2) {
+            reservaService.aprobarPedido(idPedido);
+            return pedidoRepository.findById(idPedido)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + idPedido));
+        }
+        
+        // Si se está cancelando (estado 5), usar ReservaService
+        if (idEstado == 5) {
+            reservaService.cancelarPedido(idPedido);
+            return pedidoRepository.findById(idPedido)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + idPedido));
+        }
+        
+        // Si se está rechazando (estado 3), también cancelar reservas si las había
+        if (idEstado == 3) {
+            Pedido pedido = pedidoRepository.findById(idPedido)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + idPedido));
+            
+            // Si ya estaba aprobado, liberar reservas
+            if (pedido.getEstPedido().getIdEstPedido() == 2) {
+                reservaService.cancelarPedido(idPedido);
+            }
+            
+            EstPedido estado = estPedidoRepository.findById(idEstado)
+                .orElseThrow(() -> new RuntimeException("Estado no encontrado con id: " + idEstado));
+            pedido.setEstPedido(estado);
+            return pedidoRepository.save(pedido);
+        }
+        
+        // Para otros estados, cambio normal
         Pedido pedido = pedidoRepository.findById(idPedido)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + idPedido));
         

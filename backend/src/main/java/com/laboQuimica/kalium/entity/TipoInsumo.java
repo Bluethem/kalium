@@ -11,11 +11,11 @@ import lombok.*;
 public class TipoInsumo {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // ← AGREGAR ESTA LÍNEA
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDTipoInsumo")
     private Integer idTipoInsumo;
     
-    @Column(name = "NombreTipoInsumo", nullable = false, length = 100)
+    @Column(name = "NombreTipoInsumo", nullable = false, unique = true, length = 100)
     private String nombreTipoInsumo;
     
     @Column(name = "Descripcion", nullable = false, length = 255)
@@ -29,6 +29,10 @@ public class TipoInsumo {
     @JoinColumn(name = "IDUnidad", nullable = false)
     private Unidad unidad;
 
-    @Column(name = "EsQuimico", nullable = false, length = 1)
+    @Column(name = "EsQuimico", nullable = false)
     private Boolean esQuimico;
+    
+    // ✅ NUEVO CAMPO
+    @Column(name = "stockMinimo", nullable = false)
+    private Integer stockMinimo;
 }

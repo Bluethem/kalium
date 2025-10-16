@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class Entrega {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDEntrega")
     private Integer idEntrega;
     
@@ -27,6 +28,6 @@ public class Entrega {
     private Pedido pedido;
     
     @ManyToOne
-    @JoinColumn(name = "IDEstudiante", nullable = false)
+    @JoinColumn(name = "IDEstudiante", nullable = true)
     private Estudiante estudiante;
 }

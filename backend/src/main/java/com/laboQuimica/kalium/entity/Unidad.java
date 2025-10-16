@@ -11,6 +11,7 @@ import lombok.*;
 public class Unidad {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDUnidad")
     private Integer idUnidad;
     

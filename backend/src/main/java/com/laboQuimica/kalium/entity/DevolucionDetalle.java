@@ -11,6 +11,7 @@ import lombok.*;
 public class DevolucionDetalle {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDDevolucionDetalle")
     private Integer idDevolucionDetalle;
     
@@ -21,4 +22,10 @@ public class DevolucionDetalle {
     @ManyToOne
     @JoinColumn(name = "IDInsumo", nullable = false)
     private Insumo insumo;
+    
+    @Column(name = "EstadoInsumoDevuelto", nullable = false, length = 50)
+    private String estadoInsumoDevuelto = "OK"; // OK, Dañado, Perdido
+    
+    @Column(name = "Observaciones", length = 255)
+    private String observaciones;
 }

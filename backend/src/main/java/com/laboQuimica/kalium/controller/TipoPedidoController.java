@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tipos-pedido")
-@CrossOrigin(origins = "http://localhost:5173")
 public class TipoPedidoController {
     
     @Autowired

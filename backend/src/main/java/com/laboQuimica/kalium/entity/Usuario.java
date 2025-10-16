@@ -11,6 +11,7 @@ import lombok.*;
 public class Usuario {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IDUsuario")
     private Integer idUsuario;
     
@@ -25,4 +26,9 @@ public class Usuario {
     
     @Column(name = "Contrasena", nullable = false, length = 100)
     private String contrasena;
+    
+    // ✅ NUEVO CAMPO
+    @ManyToOne
+    @JoinColumn(name = "IDRol", nullable = false)
+    private Rol rol;
 }

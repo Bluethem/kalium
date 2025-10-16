@@ -18,10 +18,16 @@ public class TipoInsumoStockDTO {
     private Unidad unidad;
     private Boolean esQuimico;
     
+    // ✅ NUEVO CAMPO
+    private Integer stockMinimo;
+    
     // Para químicos: cantidad total en peso/volumen
     // Para insumos: cantidad de unidades
     private String cantidadTotal;
     
     // Cantidad numérica para ordenamiento
     private Double cantidadNumerica;
+    
+    // ✅ NUEVO CAMPO: Indicador de stock bajo
+    private Boolean stockBajo;
 }
