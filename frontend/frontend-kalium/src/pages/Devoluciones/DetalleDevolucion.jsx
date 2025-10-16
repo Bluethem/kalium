@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
 import { devolucionService, entregaService, estDevolucionService } from '../../services/api';
 
 const DetalleDevolucion = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const modoCrear = searchParams.get('crear') === 'true';
-  const idEntregaParam = searchParams.get('entrega');
 
   const [loading, setLoading] = useState(true);
   const [devolucion, setDevolucion] = useState(null);
@@ -17,61 +14,25 @@ const DetalleDevolucion = () => {
   const [insumosDevueltos, setInsumosDevueltos] = useState([]);
   const [estadosDevolucion, setEstadosDevolucion] = useState([]);
   const [procesandoInsumo, setProcesandoInsumo] = useState(null);
-  const [showModalEliminar, setShowModalEliminar] = useState(false);
+  const [todosRevisados, setTodosRevisados] = useState(false);
+  
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showModalAprobar, setShowModalAprobar] = useState(false);
+  const [showModalRechazar, setShowModalRechazar] = useState(false);
+  const [motivoRechazo, setMotivoRechazo] = useState('');
 
+  // Estados para cada insumo (solo para UI, el admin los marca)
   const [estadosInsumo, setEstadosInsumo] = useState({});
   const [observaciones, setObservaciones] = useState({});
 
   useEffect(() => {
-    if (modoCrear && idEntregaParam) {
-      crearDevolucionDesdeEntrega();
-    } else if (id) {
+    if (id) {
       cargarDevolucion();
     }
-  }, [id, modoCrear, idEntregaParam]);
-
-  const crearDevolucionDesdeEntrega = async () => {
-    try {
-      setLoading(true);
-      const entregaRes = await entregaService.getEntregaById(idEntregaParam);
-      const entregaData = entregaRes.data;
-      setEntrega(entregaData);
-
-      const devolucionesRes = await devolucionService.getDevoluciones();
-      const yaDevuelto = devolucionesRes.data.some(d => d.entrega?.idEntrega === parseInt(idEntregaParam));
-
-      if (yaDevuelto) {
-        setErrorMessage('Esta entrega ya tiene una devolución registrada');
-        setShowError(true);
-        setTimeout(() => navigate('/devoluciones'), 2000);
-        return;
-      }
-
-      const nuevaDevolucion = {
-        fechaDevolucion: new Date().toISOString().split('T')[0],
-        horaDevolucion: new Date().toISOString().slice(0, 16),
-        pedido: { idPedido: entregaData.pedido.idPedido },
-        estDevolucion: { idEstDevolucion: 1 },
-        entrega: { idEntrega: parseInt(idEntregaParam) }
-      };
-
-      const devRes = await devolucionService.createDevolucion(nuevaDevolucion);
-      setDevolucion(devRes.data);
-      await cargarInsumosEntrega(idEntregaParam);
-      
-      const estadosRes = await estDevolucionService.getEstados();
-      setEstadosDevolucion(estadosRes.data || []);
-    } catch (error) {
-      console.error('Error:', error);
-      setErrorMessage(error.response?.data || 'Error al crear la devolución');
-      setShowError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id]);
 
   const cargarDevolucion = async () => {
     try {
@@ -87,6 +48,7 @@ const DetalleDevolucion = () => {
 
       await cargarInsumosEntrega(devRes.data.entrega.idEntrega);
       await cargarInsumosDevueltos(id);
+      await verificarRevisados();
     } catch (error) {
       console.error('Error:', error);
       setErrorMessage('No se pudo cargar la devolución');
@@ -101,15 +63,6 @@ const DetalleDevolucion = () => {
     try {
       const response = await entregaService.getInsumosPorEntrega(idEntrega);
       setInsumosEntrega(response.data || []);
-      
-      const estadosIniciales = {};
-      const obsIniciales = {};
-      (response.data || []).forEach(item => {
-        estadosIniciales[item.insumo.idInsumo] = 'OK';
-        obsIniciales[item.insumo.idInsumo] = '';
-      });
-      setEstadosInsumo(estadosIniciales);
-      setObservaciones(obsIniciales);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -119,260 +72,426 @@ const DetalleDevolucion = () => {
     try {
       const response = await devolucionService.getDetalles(idDevolucion);
       setInsumosDevueltos(response.data || []);
+      
+      // Cargar estados actuales
+      const estadosIniciales = {};
+      const obsIniciales = {};
+      (response.data || []).forEach(detalle => {
+        estadosIniciales[detalle.insumo.idInsumo] = detalle.estadoInsumoDevuelto || 'NO_REVISADO';
+        obsIniciales[detalle.insumo.idInsumo] = detalle.observaciones || '';
+      });
+      setEstadosInsumo(estadosIniciales);
+      setObservaciones(obsIniciales);
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  const registrarInsumoDevuelto = async (insumo) => {
-    if (!devolucion) {
-      setErrorMessage('Primero debe crearse la devolución');
+  const verificarRevisados = async () => {
+    try {
+      const response = await devolucionService.verificarRevisados(id);
+      setTodosRevisados(response.data);
+    } catch (error) {
+      console.error('Error al verificar revisados:', error);
+      setTodosRevisados(false);
+    }
+  };
+
+  const handleRevisarInsumo = async (idInsumo, estado) => {
+    if (!devolucion || devolucion.estDevolucion?.idEstDevolucion !== 1) {
+      setErrorMessage('Solo se pueden revisar devoluciones en estado PENDIENTE');
       setShowError(true);
       return;
     }
 
     try {
-      setProcesandoInsumo(insumo.idInsumo);
+      setProcesandoInsumo(idInsumo);
 
-      const detalle = {
+      // Actualizar estado local primero
+      setEstadosInsumo(prev => ({ ...prev, [idInsumo]: estado }));
+
+      const nuevoDetalle = {
         devolucion: { idDevolucion: devolucion.idDevolucion },
-        insumo: { idInsumo: insumo.idInsumo },
-        estadoInsumoDevuelto: estadosInsumo[insumo.idInsumo] || 'OK',
-        observaciones: observaciones[insumo.idInsumo] || null
+        insumo: { idInsumo },
+        estadoInsumoDevuelto: estado,
+        observaciones: observaciones[idInsumo] || ''
       };
 
-      await devolucionService.agregarDetalle(detalle);
+      await devolucionService.agregarDetalle(nuevoDetalle);
 
-      await Promise.all([
-        cargarInsumosEntrega(entrega.idEntrega),
-        cargarInsumosDevueltos(devolucion.idDevolucion)
-      ]);
+      // Recargar datos
+      await cargarInsumosDevueltos(id);
+      await verificarRevisados();
 
-      if (detalle.estadoInsumoDevuelto !== 'OK') {
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
+      if (estado === 'DAÑADO' || estado === 'FALTANTE') {
+        setSuccessMessage(`⚠️ Insumo marcado como ${estado}. Incidencia generada automáticamente.`);
+      } else {
+        setSuccessMessage(`✅ Insumo marcado como ${estado}`);
       }
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+
     } catch (error) {
       console.error('Error:', error);
-      setErrorMessage(error.response?.data || 'Error al registrar el insumo');
+      setErrorMessage(error.response?.data || 'Error al revisar el insumo');
       setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
     } finally {
       setProcesandoInsumo(null);
     }
   };
 
-  const handleEliminar = async () => {
+  const handleAprobar = async () => {
+    if (!todosRevisados) {
+      setErrorMessage('Debes revisar TODOS los insumos antes de aprobar');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
+      return;
+    }
+
     try {
-      await devolucionService.deleteDevolucion(devolucion.idDevolucion);
-      navigate('/devoluciones');
+      await devolucionService.aprobarDevolucion(id);
+      setSuccessMessage('✅ Devolución APROBADA correctamente');
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate('/devoluciones');
+      }, 2000);
     } catch (error) {
       console.error('Error:', error);
-      setErrorMessage('No se pudo eliminar la devolución');
+      setErrorMessage(error.response?.data || 'Error al aprobar la devolución');
       setShowError(true);
-      setShowModalEliminar(false);
+      setTimeout(() => setShowError(false), 3000);
     }
+    setShowModalAprobar(false);
   };
 
-  const getEstadoBadge = (estado) => {
-    const estados = {
-      'Completa': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'Incompleta': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-      'Con Daños': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-    };
-    return estados[estado] || 'bg-gray-100 text-gray-800';
-  };
+  const handleRechazar = async () => {
+    if (!motivoRechazo.trim()) {
+      setErrorMessage('Debes especificar un motivo de rechazo');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
+      return;
+    }
 
-  const getEstadoInsumoIcon = (estado) => {
-    const iconos = {
-      'OK': { icon: 'check_circle', color: 'text-green-600' },
-      'Dañado': { icon: 'error', color: 'text-red-600' },
-      'Perdido': { icon: 'cancel', color: 'text-orange-600' },
-    };
-    return iconos[estado] || iconos['OK'];
+    try {
+      await devolucionService.rechazarDevolucion(id, motivoRechazo);
+      setSuccessMessage('✅ Devolución RECHAZADA');
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate('/devoluciones');
+      }, 2000);
+    } catch (error) {
+      console.error('Error:', error);
+      setErrorMessage(error.response?.data || 'Error al rechazar la devolución');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
+    }
+    setShowModalRechazar(false);
+    setMotivoRechazo('');
   };
-
-  const insumosNoDevueltos = insumosEntrega.filter(
-    item => !insumosDevueltos.some(d => d.insumo.idInsumo === item.insumo.idInsumo)
-  );
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+      <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)]"></div>
-        </div>
+        <main className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center">Cargando...</div>
+        </main>
       </div>
     );
   }
 
-  if (!devolucion || !entrega) {
+  if (!devolucion) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+      <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-600">Devolución no encontrada</p>
-        </div>
+        <main className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center text-red-600">Devolución no encontrada</div>
+        </main>
       </div>
     );
   }
+
+  const estadoBgColor = {
+    'Pendiente': 'bg-yellow-100 text-yellow-800',
+    'Aprobada': 'bg-green-100 text-green-800',
+    'Rechazada': 'bg-red-100 text-red-800',
+    'En revision': 'bg-blue-100 text-blue-800'
+  };
+
+  const esPendiente = devolucion.estDevolucion?.idEstDevolucion === 1;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="flex-1 p-6 lg:p-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-6 flex items-center gap-4">
-            <button onClick={() => navigate('/devoluciones')} className="p-2 rounded-full hover:bg-gray-200">
-              <span className="material-symbols-outlined">arrow_back</span>
+      
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <button
+              onClick={() => navigate('/devoluciones')}
+              className="mb-4 text-[rgb(44,171,91)] hover:underline flex items-center gap-2"
+            >
+              ← Volver a Devoluciones
             </button>
-            <div className="flex-1">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Devolución #DEV{String(devolucion.idDevolucion).padStart(3, '0')}
-              </h2>
-            </div>
-            <button onClick={() => setShowModalEliminar(true)} className="flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-700">
-              <span className="material-symbols-outlined text-base">delete</span>
-              Eliminar
-            </button>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Devolución #{String(devolucion.idDevolucion).padStart(3, '0')}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Revisar y aprobar devolución de insumos
+            </p>
           </div>
+          <span className={`px-4 py-2 rounded-full text-sm font-semibold ${estadoBgColor[devolucion.estDevolucion?.estadoDevolucion] || 'bg-gray-100 text-gray-800'}`}>
+            {devolucion.estDevolucion?.estadoDevolucion || 'Sin estado'}
+          </span>
+        </div>
 
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 mb-6">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Información General</h3>
-              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getEstadoBadge(devolucion.estDevolucion?.estadoDevolucion)}`}>
-                {devolucion.estDevolucion?.estadoDevolucion}
-              </span>
+        {/* Información de la Entrega */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <h2 className="text-xl font-bold mb-4">📦 Información de la Entrega</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Entrega</p>
+              <p className="font-semibold">#ENT{String(entrega?.idEntrega).padStart(3, '0')}</p>
             </div>
-            <div className="p-6 grid grid-cols-3 gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Estudiante</p>
-                <p className="font-semibold">{entrega.estudiante?.usuario?.nombre} {entrega.estudiante?.usuario?.apellido}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Entrega</p>
-                <button onClick={() => navigate(`/entregas/${entrega.idEntrega}`)} className="font-semibold text-[rgb(44,171,91)] hover:underline">
-                  #ENT{String(entrega.idEntrega).padStart(3, '0')}
-                </button>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Fecha</p>
-                <p className="font-semibold">{new Date(devolucion.fechaDevolucion).toLocaleDateString('es-ES')}</p>
-              </div>
+            <div>
+              <p className="text-sm text-gray-600">Estudiante</p>
+              <p className="font-semibold">
+                {entrega?.estudiante?.usuario?.nombre || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Fecha de Devolución</p>
+              <p className="font-semibold">{devolucion.fechaDevolucion}</p>
             </div>
           </div>
+        </div>
 
-          {insumosNoDevueltos.length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border mb-6">
-              <div className="p-6 border-b">
-                <h3 className="text-xl font-bold">Insumos Por Devolver ({insumosNoDevueltos.length})</h3>
+        {/* Insumos a Revisar */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">🔍 Revisar Insumos</h2>
+            {esPendiente && (
+              <div className="text-sm">
+                <span className={`px-3 py-1 rounded-full ${todosRevisados ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                  {todosRevisados ? '✅ Todos Revisados' : '⏳ Pendiente de Revisión'}
+                </span>
               </div>
-              <div className="p-6 space-y-4">
-                {insumosNoDevueltos.map((item) => (
-                  <div key={item.insumo.idInsumo} className="border rounded-lg p-4 flex items-center gap-4">
-                    <div className="flex-1">
-                      <p className="font-semibold">{item.insumo.tipoInsumo.nombreTipoInsumo}</p>
-                      <p className="text-sm text-gray-500">ID: {item.insumo.idInsumo}</p>
-                    </div>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2">
-                        <input type="radio" name={`estado-${item.insumo.idInsumo}`} value="OK" checked={estadosInsumo[item.insumo.idInsumo] === 'OK'} onChange={(e) => setEstadosInsumo(prev => ({...prev, [item.insumo.idInsumo]: e.target.value}))} />
-                        ✅ OK
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="radio" name={`estado-${item.insumo.idInsumo}`} value="Dañado" checked={estadosInsumo[item.insumo.idInsumo] === 'Dañado'} onChange={(e) => setEstadosInsumo(prev => ({...prev, [item.insumo.idInsumo]: e.target.value}))} />
-                        ❌ Dañado
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="radio" name={`estado-${item.insumo.idInsumo}`} value="Perdido" checked={estadosInsumo[item.insumo.idInsumo] === 'Perdido'} onChange={(e) => setEstadosInsumo(prev => ({...prev, [item.insumo.idInsumo]: e.target.value}))} />
-                        🚫 Perdido
-                      </label>
-                    </div>
-                    <input type="text" placeholder="Observaciones..." value={observaciones[item.insumo.idInsumo] || ''} onChange={(e) => setObservaciones(prev => ({...prev, [item.insumo.idInsumo]: e.target.value}))} className="w-64 rounded-md border px-2 py-1" />
-                    <button onClick={() => registrarInsumoDevuelto(item.insumo)} disabled={procesandoInsumo === item.insumo.idInsumo} className="rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white hover:bg-opacity-90">
-                      Registrar
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border mb-6">
-            <div className="p-6 border-b">
-              <h3 className="text-xl font-bold">Insumos Devueltos ({insumosDevueltos.length})</h3>
-            </div>
-            {insumosDevueltos.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">No se han registrado insumos devueltos</div>
-            ) : (
-              <table className="min-w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase">Insumo</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium uppercase">Estado</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase">Observaciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {insumosDevueltos.map((detalle) => {
-                    const estadoIcon = getEstadoInsumoIcon(detalle.estadoInsumoDevuelto);
-                    return (
-                      <tr key={detalle.idDevolucionDetalle}>
-                        <td className="px-6 py-4">
-                          <p className="font-semibold">{detalle.insumo.tipoInsumo.nombreTipoInsumo}</p>
-                          <p className="text-sm text-gray-500">ID: {detalle.insumo.idInsumo}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className={`material-symbols-outlined text-lg ${estadoIcon.color}`}>
-                              {estadoIcon.icon}
-                            </span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {detalle.estadoInsumoDevuelto}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">{detalle.observaciones || '-'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
             )}
           </div>
 
-          <div className="flex justify-between">
-            <button onClick={() => navigate('/devoluciones')} className="rounded-lg border px-6 py-2">Volver</button>
-          </div>
+          {insumosEntrega.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No hay insumos en esta entrega</p>
+          ) : (
+            <div className="space-y-4">
+              {insumosEntrega.map((item) => {
+                const insumo = item.insumo;
+                const yaDevuelto = insumosDevueltos.find(d => d.insumo?.idInsumo === insumo.idInsumo);
+                const estadoActual = estadosInsumo[insumo.idInsumo] || 'NO_REVISADO';
+                const estaProcesando = procesandoInsumo === insumo.idInsumo;
+
+                return (
+                  <div key={insumo.idInsumo} className="border rounded-lg p-4 hover:border-[rgb(44,171,91)] transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">
+                          {insumo.tipoInsumo?.nombreTipoInsumo || 'Sin nombre'}
+                        </h3>
+                        <p className="text-sm text-gray-600">ID: {insumo.idInsumo}</p>
+                        <p className="text-sm text-gray-600">
+                          Categoría: {insumo.tipoInsumo?.categoria?.nombreCategoria || 'N/A'}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                          estadoActual === 'OK' ? 'bg-green-100 text-green-800' :
+                          estadoActual === 'DAÑADO' ? 'bg-red-100 text-red-800' :
+                          estadoActual === 'FALTANTE' ? 'bg-orange-100 text-orange-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {estadoActual === 'NO_REVISADO' ? '⏳ NO REVISADO' :
+                           estadoActual === 'OK' ? '✅ OK' :
+                           estadoActual === 'DAÑADO' ? '❌ DAÑADO' :
+                           '⚠️ FALTANTE'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Observaciones */}
+                    {esPendiente && estadoActual === 'NO_REVISADO' && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Observaciones (opcional)
+                        </label>
+                        <textarea
+                          value={observaciones[insumo.idInsumo] || ''}
+                          onChange={(e) => setObservaciones(prev => ({
+                            ...prev,
+                            [insumo.idInsumo]: e.target.value
+                          }))}
+                          placeholder="Ej: Tiene rayones, falta una pieza, etc."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(44,171,91)] focus:border-transparent"
+                          rows="2"
+                        />
+                      </div>
+                    )}
+
+                    {/* Botones de Revisión */}
+                    {esPendiente && estadoActual === 'NO_REVISADO' && (
+                      <div className="mt-4 flex gap-3">
+                        <button
+                          onClick={() => handleRevisarInsumo(insumo.idInsumo, 'OK')}
+                          disabled={estaProcesando}
+                          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+                        >
+                          {estaProcesando ? '⏳ Procesando...' : '✅ Marcar como OK'}
+                        </button>
+                        <button
+                          onClick={() => handleRevisarInsumo(insumo.idInsumo, 'DAÑADO')}
+                          disabled={estaProcesando}
+                          className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+                        >
+                          {estaProcesando ? '⏳ Procesando...' : '❌ Marcar como DAÑADO'}
+                        </button>
+                        <button
+                          onClick={() => handleRevisarInsumo(insumo.idInsumo, 'FALTANTE')}
+                          disabled={estaProcesando}
+                          className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+                        >
+                          {estaProcesando ? '⏳ Procesando...' : '⚠️ Marcar como FALTANTE'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Mostrar observaciones si ya fue revisado */}
+                    {yaDevuelto && yaDevuelto.observaciones && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Observaciones:</p>
+                        <p className="text-sm text-gray-600">{yaDevuelto.observaciones}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Botones de Acción */}
+        {esPendiente && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex gap-4 justify-end">
+              <button
+                onClick={() => setShowModalRechazar(true)}
+                className="px-6 py-3 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 font-semibold transition-colors"
+              >
+                ❌ Rechazar Devolución
+              </button>
+              <button
+                onClick={() => setShowModalAprobar(true)}
+                disabled={!todosRevisados}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  todosRevisados
+                    ? 'bg-[rgb(44,171,91)] text-white hover:bg-[rgb(39,153,82)]'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                title={!todosRevisados ? 'Debes revisar todos los insumos primero' : ''}
+              >
+                ✅ Aprobar Devolución
+              </button>
+            </div>
+            {!todosRevisados && (
+              <p className="text-sm text-gray-600 text-right mt-2">
+                ⚠️ Debes revisar todos los insumos antes de aprobar
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Información de Estado */}
+        {!esPendiente && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+            <p className="text-blue-900 font-semibold">
+              Esta devolución ya fue {devolucion.estDevolucion?.estadoDevolucion?.toLowerCase()}
+            </p>
+          </div>
+        )}
       </main>
 
+      {/* Modal Aprobar */}
+      {showModalAprobar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">✅ Aprobar Devolución</h3>
+            <p className="mb-6 text-gray-700">
+              ¿Está seguro de aprobar esta devolución? Los insumos marcados como OK serán liberados y las incidencias ya fueron generadas automáticamente.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowModalAprobar(false)}
+                className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 hover:bg-gray-50 font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAprobar}
+                className="flex-1 bg-[rgb(44,171,91)] text-white rounded-lg px-4 py-3 hover:bg-[rgb(39,153,82)] font-semibold"
+              >
+                Sí, Aprobar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Rechazar */}
+      {showModalRechazar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4 text-red-600">❌ Rechazar Devolución</h3>
+            <p className="mb-4 text-gray-700">
+              Especifica el motivo del rechazo:
+            </p>
+            <textarea
+              value={motivoRechazo}
+              onChange={(e) => setMotivoRechazo(e.target.value)}
+              placeholder="Ej: Faltan insumos, están en mal estado, etc."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
+              rows="4"
+            />
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowModalRechazar(false);
+                  setMotivoRechazo('');
+                }}
+                className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 hover:bg-gray-50 font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRechazar}
+                className="flex-1 bg-red-600 text-white rounded-lg px-4 py-3 hover:bg-red-700 font-semibold"
+              >
+                Rechazar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notificaciones */}
       {showSuccess && (
-        <div className="fixed bottom-4 right-4 z-50 bg-orange-100 border-l-4 border-orange-500 px-6 py-4 rounded-lg shadow-xl">
-          <p className="font-semibold text-orange-900">⚠️ Incidencia Generada Automáticamente</p>
+        <div className="fixed bottom-4 right-4 z-50 bg-green-100 border-l-4 border-green-500 px-6 py-4 rounded-lg shadow-xl animate-slide-in-right">
+          <p className="font-semibold text-green-900">{successMessage}</p>
         </div>
       )}
 
       {showError && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl p-8 max-w-md">
-            <h3 className="text-xl font-bold mb-4">Error</h3>
-            <p className="mb-6">{errorMessage}</p>
-            <button onClick={() => setShowError(false)} className="w-full rounded-lg bg-[rgb(44,171,91)] px-6 py-3 text-white">Aceptar</button>
-          </div>
-        </div>
-      )}
-
-      {showModalEliminar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl p-8 max-w-md">
-            <h3 className="text-xl font-bold mb-4">Eliminar Devolución</h3>
-            <p className="mb-6">¿Está seguro? Esta acción no se puede deshacer.</p>
-            <div className="flex gap-4">
-              <button onClick={() => setShowModalEliminar(false)} className="flex-1 border rounded-lg px-4 py-2">Cancelar</button>
-              <button onClick={handleEliminar} className="flex-1 bg-red-600 text-white rounded-lg px-4 py-2">Eliminar</button>
-            </div>
-          </div>
+        <div className="fixed bottom-4 right-4 z-50 bg-red-100 border-l-4 border-red-500 px-6 py-4 rounded-lg shadow-xl animate-slide-in-right">
+          <p className="font-semibold text-red-900">{errorMessage}</p>
         </div>
       )}
     </div>

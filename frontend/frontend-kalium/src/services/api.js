@@ -169,8 +169,10 @@ export const incidenteService = {
   resolverIncidente: (id) => api.patch(`/incidentes/${id}/resolver`),
   deleteIncidente: (id) => api.delete(`/incidentes/${id}`),
   getEstadosIncidente: () => api.get('/incidentes/estados'),
-  ponerEnRevision: (id) => api.patch(`/incidentes/${id}/estado/2`),
+  ponerEnRevision: (id) => api.patch(`/incidentes/${id}/poner-revision`), // ✅ ACTUALIZADO
   cancelarIncidente: (id) => api.patch(`/incidentes/${id}/cancelar`),
+  puedeResolver: (id) => api.get(`/incidentes/${id}/puede-resolver`), // ✅ NUEVO
+  puedePonerEnRevision: (id) => api.get(`/incidentes/${id}/puede-poner-revision`), // ✅ NUEVO
 };
 
 // Servicios para Estudiantes
@@ -193,6 +195,7 @@ export const devolucionService = {
   aprobarDevolucion: (id) => api.patch(`/devoluciones/${id}/aprobar`),
   rechazarDevolucion: (id, motivo) => api.patch(`/devoluciones/${id}/rechazar`, { motivo }),
   verificarCompleta: (id) => api.get(`/devoluciones/${id}/completa`),
+  verificarRevisados: (id) => api.get(`/devoluciones/${id}/revisados`),
 };
 
 export const estDevolucionService = {

@@ -158,105 +158,73 @@ const MisEntregas = () => {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {entregas.map((entrega) => {
-                const estadoBadge = getEstadoBadge(entrega.idEntrega);
-                const yaDevuelto = tieneDevolucion(entrega.idEntrega);
-                const estadoDevolucion = getEstadoDevolucion(entrega.idEntrega);
-                const rechazada = estadoDevolucion?.idEstDevolucion === 3;
-                
+                const devolucion = devoluciones.find(dev => dev.entrega?.idEntrega === entrega.idEntrega);
+                const tieneDevolucionRegistrada = !!devolucion;
+                const estadoDev = devolucion ? getEstadoDevolucion(entrega.idEntrega) : null;
+
                 return (
-                  <div
-                    key={entrega.idEntrega}
-                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                  >
-                    {/* Header de la tarjeta */}
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <div key={entrega.idEntrega} 
+                      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                    
+                    {/* Contenido existente de la tarjeta */}
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                             Entrega #{String(entrega.idEntrega).padStart(3, '0')}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Pedido #{String(entrega.pedido?.idPedido || 0).padStart(3, '0')}
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Pedido: #{String(entrega.pedido?.idPedido).padStart(3, '0')}
                           </p>
                         </div>
-                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${estadoBadge.clase}`}>
-                          {estadoBadge.texto}
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center text-gray-600 dark:text-gray-400">
-                          <span className="material-symbols-outlined text-base mr-2">
-                            calendar_today
-                          </span>
-                          {formatearFechaHora(entrega.fechaEntrega, entrega.horaEntrega)}
-                        </div>
                         
-                        <div className="flex items-center text-gray-600 dark:text-gray-400">
-                          <span className="material-symbols-outlined text-base mr-2">
-                            school
+                        {/* Estado de devolución si existe */}
+                        {tieneDevolucionRegistrada && estadoDev && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${estadoDev.clase}`}>
+                            {estadoDev.texto}
                           </span>
-                          {entrega.pedido?.curso?.nombreCurso || 'Curso no especificado'}
+                        )}
+                      </div>
+
+                      {/* Información de la entrega */}
+                      <div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">calendar_today</span>
+                          <span>Fecha: {entrega.fechaEntrega}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">schedule</span>
+                          <span>Hora: {entrega.horaEntrega}</span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Acciones */}
-                    <div className="p-6 bg-gray-50 dark:bg-gray-900/50">
-                      <div className="flex gap-2">
+                      {/* Botones de acción */}
+                      <div className="flex gap-3">
                         <button
-                          onClick={() => verDetalleEntrega(entrega)}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                          onClick={() => verDetalle(entrega)}
+                          className="flex-1 px-4 py-2 border border-[rgb(44,171,91)] text-[rgb(44,171,91)] rounded-lg hover:bg-[rgb(44,171,91)] hover:text-white transition-colors font-semibold"
                         >
-                          <span className="material-symbols-outlined text-base">
-                            visibility
-                          </span>
-                          Ver Detalle
+                          Ver Detalles
                         </button>
-                        {!yaDevuelto ? (
+
+                        {/* ✅ BOTÓN DE SOLICITAR DEVOLUCIÓN */}
+                        {!tieneDevolucionRegistrada ? (
                           <button
-                            onClick={() => iniciarDevolucion(entrega.idEntrega)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#34D399] hover:bg-[#2ab885] rounded-lg"
+                            onClick={() => navigate(`/solicitar-devolucion?entrega=${entrega.idEntrega}`)}
+                            className="flex-1 px-4 py-2 bg-[rgb(44,171,91)] text-white rounded-lg hover:bg-[rgb(39,153,82)] transition-colors font-semibold"
                           >
-                            <span className="material-symbols-outlined text-base">
-                              assignment_return
-                            </span>
-                            Devolver
-                          </button>
-                        ) : rechazada ? (
-                          <button
-                            onClick={() => iniciarDevolucion(entrega.idEntrega)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg"
-                          >
-                            <span className="material-symbols-outlined text-base">
-                              refresh
-                            </span>
-                            Reintentar
+                            📦 Solicitar Devolución
                           </button>
                         ) : (
                           <button
                             disabled
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed"
+                            className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                            title="Ya tiene devolución registrada"
                           >
-                            <span className="material-symbols-outlined text-base">
-                              check_circle
-                            </span>
-                            Procesada
+                            ✅ Devolución {estadoDev?.texto}
                           </button>
                         )}
                       </div>
-                      
-                      {/* Mensaje si está rechazada */}
-                      {rechazada && (
-                        <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                          <p className="text-xs text-red-800 dark:text-red-300 font-medium">
-                            <span className="material-symbols-outlined text-sm align-middle mr-1">
-                              info
-                            </span>
-                            Tu devolución fue rechazada. Puedes intentar nuevamente.
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </div>
                 );

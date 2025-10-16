@@ -143,4 +143,46 @@ public class IncidenteController {
     public ResponseEntity<List<EstIncidente>> obtenerEstados() {
         return ResponseEntity.ok(incidenteService.obtenerTodosEstados());
     }
+
+    /**
+     * ✅ NUEVO: Verificar si un incidente puede ser resuelto
+     * GET /api/incidentes/{id}/puede-resolver
+     */
+    @GetMapping("/{id}/puede-resolver")
+    public ResponseEntity<Boolean> puedeResolver(@PathVariable Integer id) {
+        try {
+            boolean puede = incidenteService.puedeResolver(id);
+            return ResponseEntity.ok(puede);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(false);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Verificar si un incidente puede ponerse en revisión
+     * GET /api/incidentes/{id}/puede-poner-revision
+     */
+    @GetMapping("/{id}/puede-poner-revision")
+    public ResponseEntity<Boolean> puedePonerEnRevision(@PathVariable Integer id) {
+        try {
+            boolean puede = incidenteService.puedePonerEnRevision(id);
+            return ResponseEntity.ok(puede);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(false);
+        }
+    }
+
+    /**
+     * ✅ MEJORADO: Poner en revisión con manejo de errores
+     * PATCH /api/incidentes/{id}/poner-revision
+     */
+    @PatchMapping("/{id}/poner-revision")
+    public ResponseEntity<?> ponerEnRevision(@PathVariable Integer id) {
+        try {
+            Incidentes incidente = incidenteService.ponerEnRevision(id);
+            return ResponseEntity.ok(incidente);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

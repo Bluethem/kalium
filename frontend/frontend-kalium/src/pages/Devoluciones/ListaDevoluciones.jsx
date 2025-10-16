@@ -17,6 +17,7 @@ const ListaDevoluciones = () => {
   const [modalRechazo, setModalRechazo] = useState({ mostrar: false, idDevolucion: null });
   const [motivoRechazo, setMotivoRechazo] = useState('');
   const [devolucionesCompletas, setDevolucionesCompletas] = useState({});
+  const [devolucionesRevisadas, setDevolucionesRevisadas] = useState({});
 
   useEffect(() => {
     cargarDevoluciones();
@@ -28,19 +29,29 @@ const ListaDevoluciones = () => {
       const response = await devolucionService.getDevoluciones();
       setDevoluciones(response.data);
       
-      // ✅ Verificar cuáles están completas
+      // ✅ Verificar cuáles están completas Y revisadas
       const completasMap = {};
+      const revisadasMap = {}; // ← NUEVO
+      
       for (const dev of response.data) {
         if (dev.estDevolucion?.idEstDevolucion === 1) { // Solo verificar pendientes
           try {
+            // Verificar si está completa
             const completa = await devolucionService.verificarCompleta(dev.idDevolucion);
             completasMap[dev.idDevolucion] = completa.data;
+            
+            // ✅ NUEVO: Verificar si está revisada
+            const revisados = await devolucionService.verificarRevisados(dev.idDevolucion);
+            revisadasMap[dev.idDevolucion] = revisados.data;
           } catch (error) {
             completasMap[dev.idDevolucion] = false;
+            revisadasMap[dev.idDevolucion] = false;
           }
         }
       }
+      
       setDevolucionesCompletas(completasMap);
+      setDevolucionesRevisadas(revisadasMap); // ← NUEVO
     } catch (error) {
       console.error('Error al cargar devoluciones:', error);
     } finally {
@@ -317,27 +328,31 @@ const ListaDevoluciones = () => {
                         <div className="flex items-center justify-center gap-2">
                           {/* Mostrar botones Aprobar/Rechazar solo si está Pendiente */}
                           {devolucion.estDevolucion?.idEstDevolucion === 1 && (
-                            <>
-                              <button
-                                onClick={() => handleAprobar(devolucion.idDevolucion)}
-                                disabled={procesando === devolucion.idDevolucion || !devolucionesCompletas[devolucion.idDevolucion]}
-                                className="flex items-center gap-1 rounded-md bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={!devolucionesCompletas[devolucion.idDevolucion] ? 'Faltan insumos por devolver' : ''}
-                              >
-                                <span className="material-symbols-outlined text-sm">check_circle</span>
-                                {procesando === devolucion.idDevolucion ? 'Procesando...' : 'Aprobar'}
-                              </button>
-                              <button
-                                onClick={() => abrirModalRechazo(devolucion.idDevolucion)}
-                                disabled={procesando === devolucion.idDevolucion}
-                                className="flex items-center gap-1 rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400 disabled:opacity-50"
-                              >
-                                <span className="material-symbols-outlined text-sm">cancel</span>
-                                Rechazar
-                              </button>
-                            </>
+                            <div className="mt-3 mb-3">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                devolucionesRevisadas[devolucion.idDevolucion]
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {devolucionesRevisadas[devolucion.idDevolucion] ? (
+                                  <>
+                                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                    Listo para Aprobar
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-4 h-4 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Pendiente de Revisión
+                                  </>
+                                )}
+                              </span>
+                            </div>
                           )}
-                          
                           <button
                             onClick={() => navigate(`/devoluciones/${devolucion.idDevolucion}`)}
                             className="text-[rgb(44,171,91)] hover:underline"

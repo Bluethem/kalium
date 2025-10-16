@@ -233,7 +233,7 @@ CREATE TABLE DevolucionDetalle
   IDDevolucionDetalle INT NOT NULL AUTO_INCREMENT,
   IDDevolucion INT NOT NULL,
   IDInsumo INT NOT NULL,
-  EstadoInsumoDevuelto VARCHAR(50) NOT NULL DEFAULT 'OK' COMMENT 'OK, Dañado, Perdido',
+  EstadoInsumoDevuelto VARCHAR(50) NOT NULL DEFAULT 'NO_REVISADO' COMMENT 'OK, Dañado, Perdido, NO_REVISADO',
   Observaciones VARCHAR(255) NULL COMMENT 'Observaciones sobre el estado del insumo',
   PRIMARY KEY (IDDevolucionDetalle),
   FOREIGN KEY (IDDevolucion) REFERENCES Devolucion(IDDevolucion),

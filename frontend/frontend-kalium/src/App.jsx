@@ -30,6 +30,7 @@ import DetalleExperimento from './pages/Experimentos/DetalleExperimento';
 import NuevoExperimento from './pages/Experimentos/NuevoExperimento';
 import EditarExperimento from './pages/Experimentos/EditarExperimento';
 import ProtectedRoute from './components/ProtectedRoute';
+import SolicitarDevolucion from './pages/Devoluciones/SolicitarDevolucion';
 
 function App() {
   return (
@@ -146,22 +147,23 @@ function App() {
         } />
         
         {/* ========== DEVOLUCIONES ========== */}
+        {/* Vista ADMIN - Revisar y aprobar devoluciones */}
         <Route path="/devoluciones" element={
           <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
             <ListaDevoluciones />
           </ProtectedRoute>
         } />
-        
+
         <Route path="/devoluciones/:id" element={
           <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
             <DetalleDevolucion />
           </ProtectedRoute>
         } />
-        
-        {/* Nueva ruta para crear devolución desde estudiante */}
-        <Route path="/devoluciones/nueva" element={
+
+        {/* Vista ESTUDIANTE - Solicitar devolución */}
+        <Route path="/solicitar-devolucion" element={
           <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
-            <DetalleDevolucion />
+            <SolicitarDevolucion />
           </ProtectedRoute>
         } />
         

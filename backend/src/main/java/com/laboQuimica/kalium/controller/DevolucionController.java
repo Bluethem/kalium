@@ -118,4 +118,13 @@ public class DevolucionController {
             return ResponseEntity.badRequest().body(false);
         }
     }
+    @GetMapping("/{id}/revisados")
+    public ResponseEntity<Boolean> verificarRevisados(@PathVariable Integer id) {
+        try {
+            boolean todosRevisados = devolucionService.todosInsumosRevisados(id);
+            return ResponseEntity.ok(todosRevisados);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(false);
+        }
+    }
 }
