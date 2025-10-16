@@ -70,34 +70,170 @@ function App() {
         }}
       />
       <Routes>
+        {/* ========== RUTAS PÚBLICAS ========== */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard-estudiante" element={<DashboardEstudiante />} />
-        <Route path="/mis-entregas" element={<MisEntregas />} />
-        <Route path="/usuarios" element={<Usuarios />} />
-        <Route path="/cuenta" element={<Cuenta />} />
-        <Route path="/insumos" element={<ListaInsumos />} />
-        <Route path="/insumos/nuevo" element={<NuevoInsumo />} />
-        <Route path="/insumos/:id" element={<DetalleInsumo />} />
-        <Route path="/pedidos" element={<ListaPedidos />} />
-        <Route path="/pedidos/nuevo" element={<NuevoPedido />} />
-        <Route path="/pedidos/:id" element={<DetallePedido />} />
-        <Route path="/reportes" element={<Reportes />} />
+        
+        {/* ========== RUTAS DE ADMIN ========== */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/usuarios" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <Usuarios />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== INSUMOS ========== */}
+        <Route path="/insumos" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'INSTRUCTOR']}>
+            <ListaInsumos />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/insumos/nuevo" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <NuevoInsumo />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/insumos/:id" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'INSTRUCTOR']}>
+            <DetalleInsumo />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== PEDIDOS ========== */}
+        <Route path="/pedidos" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'INSTRUCTOR']}>
+            <ListaPedidos />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/pedidos/nuevo" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'INSTRUCTOR']}>
+            <NuevoPedido />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/pedidos/:id" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'INSTRUCTOR']}>
+            <DetallePedido />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== ENTREGAS (Solo Admin) ========== */}
+        <Route path="/entregas" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <ListaEntregas />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/entregas/generar/:idPedido" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <GenerarEntregas />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/entregas/:id" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <DetalleEntrega />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== DEVOLUCIONES ========== */}
+        <Route path="/devoluciones" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <ListaDevoluciones />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/devoluciones/:id" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <DetalleDevolucion />
+          </ProtectedRoute>
+        } />
+        
+        {/* Nueva ruta para crear devolución desde estudiante */}
+        <Route path="/devoluciones/nueva" element={
+          <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+            <DetalleDevolucion />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== INCIDENTES ========== */}
+        <Route path="/incidentes" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <ListaIncidentes />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/incidentes/nuevo" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <NuevoIncidente />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/incidentes/:id" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'ESTUDIANTE']}>
+            <DetalleIncidente />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== REPORTES ========== */}
+        <Route path="/reportes" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <Reportes />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== EXPERIMENTOS ========== */}
+        <Route path="/experimentos" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'INSTRUCTOR']}>
+            <ListaExperimentos />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/experimentos/nuevo" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <NuevoExperimento />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/experimentos/:id" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'INSTRUCTOR']}>
+            <DetalleExperimento />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/experimentos/:id/editar" element={
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN']}>
+            <EditarExperimento />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== RUTAS DE ESTUDIANTE ========== */}
+        <Route path="/dashboard-estudiante" element={
+          <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+            <DashboardEstudiante />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/mis-entregas" element={
+          <ProtectedRoute allowedRoles={['ESTUDIANTE']}>
+            <MisEntregas />
+          </ProtectedRoute>
+        } />
+        
+        {/* ========== RUTAS COMPARTIDAS ========== */}
         <Route path="/notificaciones" element={<ListaNotificaciones />} />
-        <Route path="/incidentes" element={<ListaIncidentes />} />
-        <Route path="/incidentes/nuevo" element={<NuevoIncidente />} />
-        <Route path="/incidentes/:id" element={<DetalleIncidente />} />
-        <Route path="/entregas" element={<ListaEntregas />} />
-        <Route path="/entregas/generar/:idPedido" element={<GenerarEntregas />} />
-        <Route path="/entregas/:id" element={<DetalleEntrega />} />
-        <Route path="/devoluciones" element={<ListaDevoluciones />} />
-        <Route path="/devoluciones/:id" element={<DetalleDevolucion />} />
-        <Route path="/experimentos" element={<ListaExperimentos />} />
-        <Route path="/experimentos/nuevo" element={<NuevoExperimento />} />
-        <Route path="/experimentos/:id" element={<DetalleExperimento />} />
-        <Route path="/experimentos/:id/editar" element={<EditarExperimento />} />
+        <Route path="/cuenta" element={<Cuenta />} />
+        
+        {/* ========== RUTA POR DEFECTO ========== */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

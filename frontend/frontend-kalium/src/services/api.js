@@ -192,6 +192,7 @@ export const devolucionService = {
   deleteDevolucion: (id) => api.delete(`/devoluciones/${id}`),
   aprobarDevolucion: (id) => api.patch(`/devoluciones/${id}/aprobar`),
   rechazarDevolucion: (id, motivo) => api.patch(`/devoluciones/${id}/rechazar`, { motivo }),
+  verificarCompleta: (id) => api.get(`/devoluciones/${id}/completa`),
 };
 
 export const estDevolucionService = {

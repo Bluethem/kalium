@@ -108,4 +108,14 @@ public class DevolucionController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/{id}/completa")
+    public ResponseEntity<Boolean> verificarCompleta(@PathVariable Integer id) {
+        try {
+            boolean completa = devolucionService.esDevolucionCompleta(id);
+            return ResponseEntity.ok(completa);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(false);
+        }
+    }
 }

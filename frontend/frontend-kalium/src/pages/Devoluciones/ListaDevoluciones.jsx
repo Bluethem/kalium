@@ -16,6 +16,7 @@ const ListaDevoluciones = () => {
   const [procesando, setProcesando] = useState(null);
   const [modalRechazo, setModalRechazo] = useState({ mostrar: false, idDevolucion: null });
   const [motivoRechazo, setMotivoRechazo] = useState('');
+  const [devolucionesCompletas, setDevolucionesCompletas] = useState({});
 
   useEffect(() => {
     cargarDevoluciones();
@@ -26,6 +27,20 @@ const ListaDevoluciones = () => {
       setLoading(true);
       const response = await devolucionService.getDevoluciones();
       setDevoluciones(response.data);
+      
+      // ✅ Verificar cuáles están completas
+      const completasMap = {};
+      for (const dev of response.data) {
+        if (dev.estDevolucion?.idEstDevolucion === 1) { // Solo verificar pendientes
+          try {
+            const completa = await devolucionService.verificarCompleta(dev.idDevolucion);
+            completasMap[dev.idDevolucion] = completa.data;
+          } catch (error) {
+            completasMap[dev.idDevolucion] = false;
+          }
+        }
+      }
+      setDevolucionesCompletas(completasMap);
     } catch (error) {
       console.error('Error al cargar devoluciones:', error);
     } finally {
@@ -305,8 +320,9 @@ const ListaDevoluciones = () => {
                             <>
                               <button
                                 onClick={() => handleAprobar(devolucion.idDevolucion)}
-                                disabled={procesando === devolucion.idDevolucion}
-                                className="flex items-center gap-1 rounded-md bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400 disabled:opacity-50"
+                                disabled={procesando === devolucion.idDevolucion || !devolucionesCompletas[devolucion.idDevolucion]}
+                                className="flex items-center gap-1 rounded-md bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={!devolucionesCompletas[devolucion.idDevolucion] ? 'Faltan insumos por devolver' : ''}
                               >
                                 <span className="material-symbols-outlined text-sm">check_circle</span>
                                 {procesando === devolucion.idDevolucion ? 'Procesando...' : 'Aprobar'}

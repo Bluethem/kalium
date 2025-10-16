@@ -9,6 +9,9 @@ const MisEntregas = () => {
   const [devoluciones, setDevoluciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const [modalDetalle, setModalDetalle] = useState({ mostrar: false, entrega: null });
+  const [insumosDetalle, setInsumosDetalle] = useState([]);
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -55,6 +58,24 @@ const MisEntregas = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+  const verDetalleEntrega = async (entrega) => {
+    setModalDetalle({ mostrar: true, entrega });
+    setLoadingDetalle(true);
+    
+    try {
+      const insumosRes = await entregaService.getInsumosPorEntrega(entrega.idEntrega);
+      setInsumosDetalle(insumosRes.data || []);
+    } catch (error) {
+      console.error('Error al cargar insumos:', error);
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+
+  const cerrarModalDetalle = () => {
+    setModalDetalle({ mostrar: false, entrega: null });
+    setInsumosDetalle([]);
   };
 
   const getEstadoBadge = (idEntrega) => {
@@ -184,7 +205,7 @@ const MisEntregas = () => {
                     <div className="p-6 bg-gray-50 dark:bg-gray-900/50">
                       <div className="flex gap-2">
                         <button
-                          onClick={() => navigate(`/entregas/${entrega.idEntrega}`)}
+                          onClick={() => verDetalleEntrega(entrega)}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                           <span className="material-symbols-outlined text-base">
@@ -192,7 +213,6 @@ const MisEntregas = () => {
                           </span>
                           Ver Detalle
                         </button>
-                        
                         {!yaDevuelto ? (
                           <button
                             onClick={() => iniciarDevolucion(entrega.idEntrega)}
@@ -241,6 +261,87 @@ const MisEntregas = () => {
                   </div>
                 );
               })}
+            </div>
+          )}
+          {modalDetalle.mostrar && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-2xl rounded-xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[90vh] overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Detalle de Entrega #{String(modalDetalle.entrega?.idEntrega).padStart(3, '0')}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Insumos asignados a esta entrega
+                    </p>
+                  </div>
+                  <button
+                    onClick={cerrarModalDetalle}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  {loadingDetalle ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#34D399] mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Cargando insumos...</p>
+                    </div>
+                  ) : insumosDetalle.length === 0 ? (
+                    <div className="text-center py-8">
+                      <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">
+                        inventory_2
+                      </span>
+                      <p className="text-gray-600 dark:text-gray-400">No hay insumos en esta entrega</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {insumosDetalle.map((item, index) => (
+                        <div
+                          key={item.idEntregaInsumo || index}
+                          className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#34D399]/10 dark:bg-[#34D399]/20">
+                            <span className="material-symbols-outlined text-[#34D399]">
+                              science
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              {item.insumo?.tipoInsumo?.nombreTipoInsumo || 'Sin nombre'}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              ID: {item.insumo?.idInsumo} • 
+                              Estado: {item.insumo?.estInsumo?.nombreEstado || 'N/A'}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            item.insumo?.estInsumo?.idEstInsumo === 2 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {item.insumo?.estInsumo?.nombreEstado || 'N/A'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Footer */}
+                <div className="p-6 border-t border-gray-200 dark:border-gray-800">
+                  <button
+                    onClick={cerrarModalDetalle}
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-[#34D399] hover:bg-[#2ab885] rounded-lg"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

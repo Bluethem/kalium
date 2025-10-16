@@ -384,4 +384,19 @@ public class DevolucionService {
             System.err.println("Error al crear notificación de rechazo: " + e.getMessage());
         }
     }
+
+    public boolean esDevolucionCompleta(Integer idDevolucion) {
+        Devolucion devolucion = devolucionRepository.findById(idDevolucion)
+            .orElseThrow(() -> new RuntimeException("Devolución no encontrada"));
+        
+        // Obtener insumos de la entrega
+        Entrega entrega = devolucion.getEntrega();
+        List<EntregaInsumo> insumosEntrega = entregaInsumoRepository.findByEntrega(entrega);
+        
+        // Obtener insumos devueltos
+        List<DevolucionDetalle> insumosDevueltos = devolucionDetalleRepository.findByDevolucion(devolucion);
+        
+        // Comparar cantidades
+        return insumosEntrega.size() == insumosDevueltos.size();
+    }
 }
