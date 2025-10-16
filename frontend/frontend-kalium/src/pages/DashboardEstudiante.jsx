@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Layout/Header';
 import { devolucionService, incidenteService } from '../services/api';
 import logger from '../utils/logger';
+import { useNavigate } from 'react-router-dom';
 
 function DashboardEstudiante() {
+  const navigate = useNavigate();
   const [usuario, setUsuario] = useState(null);
   const [estadisticas, setEstadisticas] = useState({
     totalDevoluciones: 0,
@@ -173,6 +175,28 @@ function DashboardEstudiante() {
                   <span className="material-symbols-outlined text-blue-500 dark:text-blue-400">
                     swap_horiz
                   </span>
+                </div>
+              </div>
+
+              {/* Card de Mis Entregas - NUEVO */}
+              <div 
+                onClick={() => navigate('/mis-entregas')}
+                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Mis Entregas
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                      Ver
+                    </p>
+                  </div>
+                  <div className="h-14 w-14 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-3xl text-purple-600 dark:text-purple-400">
+                      inventory_2
+                    </span>
+                  </div>
                 </div>
               </div>
 

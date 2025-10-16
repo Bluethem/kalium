@@ -247,7 +247,7 @@ const DetalleDevolucion = () => {
             <div className="p-6 grid grid-cols-3 gap-6">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Estudiante</p>
-                <p className="font-semibold">{entrega.estudiante?.nombre} {entrega.estudiante?.apellido}</p>
+                <p className="font-semibold">{entrega.estudiante?.usuario?.nombre} {entrega.estudiante?.usuario?.apellido}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Entrega</p>

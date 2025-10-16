@@ -207,7 +207,7 @@ const DetalleIncidente = () => {
                     Estudiante
                   </p>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {incidente.estudiante?.nombre} {incidente.estudiante?.apellido}
+                    {incidente.estudiante?.usuario?.nombre} {incidente.estudiante?.usuario?.apellido}
                   </p>
                 </div>
 

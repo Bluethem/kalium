@@ -39,6 +39,9 @@ public class DevolucionService {
     
     @Autowired
     private EntregaInsumoRepository entregaInsumoRepository;
+
+    @Autowired
+    private NotificacionRepository notificacionRepository;
     
     /**
      * Obtener todas las devoluciones
@@ -259,6 +262,126 @@ public class DevolucionService {
         } catch (Exception e) {
             System.err.println("⚠️ Error al generar incidencia automática: " + e.getMessage());
             // No lanzar excepción para no bloquear la devolución
+        }
+    }
+
+    /**
+     * Aprobar una devolución
+     * - Cambia estado a "Aprobada" (ID 2)
+     * - Los insumos ya fueron liberados en agregarDetalle()
+     * - Notifica al estudiante
+     */
+    @Transactional
+    public Devolucion aprobarDevolucion(Integer idDevolucion) {
+        Devolucion devolucion = devolucionRepository.findById(idDevolucion)
+            .orElseThrow(() -> new RuntimeException("Devolución no encontrada con id: " + idDevolucion));
+        
+        // Verificar que esté en estado Pendiente
+        if (devolucion.getEstDevolucion().getIdEstDevolucion() != 1) {
+            throw new RuntimeException("Solo se pueden aprobar devoluciones en estado Pendiente");
+        }
+        
+        // Cambiar estado a Aprobada (ID 2)
+        EstDevolucion estadoAprobada = estDevolucionRepository.findById(2)
+            .orElseThrow(() -> new RuntimeException("Estado 'Aprobada' no encontrado"));
+        devolucion.setEstDevolucion(estadoAprobada);
+        
+        Devolucion devolucionGuardada = devolucionRepository.save(devolucion);
+        
+        // Notificar al estudiante
+        notificarEstudianteDevolucionAprobada(devolucion);
+        
+        return devolucionGuardada;
+    }
+
+    /**
+     * Rechazar una devolución
+     * - Cambia estado a "Rechazada" (ID 3)
+     * - Revierte estados de insumos a "En Uso" (ID 2)
+     * - Notifica al estudiante con el motivo
+     */
+    @Transactional
+    public Devolucion rechazarDevolucion(Integer idDevolucion, String motivo) {
+        Devolucion devolucion = devolucionRepository.findById(idDevolucion)
+            .orElseThrow(() -> new RuntimeException("Devolución no encontrada con id: " + idDevolucion));
+        
+        // Verificar que esté en estado Pendiente
+        if (devolucion.getEstDevolucion().getIdEstDevolucion() != 1) {
+            throw new RuntimeException("Solo se pueden rechazar devoluciones en estado Pendiente");
+        }
+        
+        // Cambiar estado a Rechazada (ID 3)
+        EstDevolucion estadoRechazada = estDevolucionRepository.findById(3)
+            .orElseThrow(() -> new RuntimeException("Estado 'Rechazada' no encontrado"));
+        devolucion.setEstDevolucion(estadoRechazada);
+        
+        // Revertir estados de insumos a "En Uso" (ID 2)
+        List<DevolucionDetalle> detalles = devolucionDetalleRepository.findByDevolucion(devolucion);
+        EstInsumo estadoEnUso = estInsumoRepository.findById(2)
+            .orElseThrow(() -> new RuntimeException("Estado 'En Uso' no encontrado"));
+        
+        for (DevolucionDetalle detalle : detalles) {
+            Insumo insumo = detalle.getInsumo();
+            insumo.setEstInsumo(estadoEnUso);
+            insumoRepository.save(insumo);
+        }
+        
+        Devolucion devolucionGuardada = devolucionRepository.save(devolucion);
+        
+        // Notificar al estudiante con el motivo
+        notificarEstudianteDevolucionRechazada(devolucion, motivo);
+        
+        return devolucionGuardada;
+    }
+
+    /**
+     * Métodos privados para notificaciones
+     */
+    private void notificarEstudianteDevolucionAprobada(Devolucion devolucion) {
+        try {
+            if (devolucion.getEntrega() != null && 
+                devolucion.getEntrega().getEstudiante() != null &&
+                devolucion.getEntrega().getEstudiante().getUsuario() != null) {
+                
+                Usuario estudiante = devolucion.getEntrega().getEstudiante().getUsuario();
+                
+                Notificacion notif = new Notificacion();
+                notif.setTitulo("Devolución Aprobada ✓");
+                notif.setMensaje("Tu devolución #DEV" + String.format("%03d", devolucion.getIdDevolucion()) + 
+                                " ha sido aprobada por el administrador.");
+                notif.setTipo("DEVOLUCION_APROBADA");
+                notif.setLeida(false);
+                notif.setUsuario(estudiante);
+                notif.setFechaCreacion(java.time.LocalDateTime.now());
+                
+                notificacionRepository.save(notif);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de aprobación: " + e.getMessage());
+        }
+    }
+
+    private void notificarEstudianteDevolucionRechazada(Devolucion devolucion, String motivo) {
+        try {
+            if (devolucion.getEntrega() != null && 
+                devolucion.getEntrega().getEstudiante() != null &&
+                devolucion.getEntrega().getEstudiante().getUsuario() != null) {
+                
+                Usuario estudiante = devolucion.getEntrega().getEstudiante().getUsuario();
+                
+                Notificacion notif = new Notificacion();
+                notif.setTitulo("Devolución Rechazada ✗");
+                notif.setMensaje("Tu devolución #DEV" + String.format("%03d", devolucion.getIdDevolucion()) + 
+                                " fue rechazada. Motivo: " + (motivo != null && !motivo.isEmpty() ? motivo : "No especificado"));
+                notif.setTipo("DEVOLUCION_RECHAZADA");
+                notif.setLeida(false);
+                notif.setUsuario(estudiante);
+                notif.setFechaCreacion(java.time.LocalDateTime.now());
+                
+                notificacionRepository.save(notif);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de rechazo: " + e.getMessage());
         }
     }
 }

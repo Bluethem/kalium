@@ -52,9 +52,9 @@ public class IncidenteController {
      * Obtener incidentes por estudiante
      * GET /api/incidentes/estudiante/{idEstudiante}
      */
-    @GetMapping("/estudiante/{idEstudiante}")
-    public ResponseEntity<List<Incidentes>> obtenerPorEstudiante(@PathVariable Integer idEstudiante) {
-        return ResponseEntity.ok(incidenteService.obtenerPorEstudiante(idEstudiante));
+    @GetMapping("/usuario/{idUsuario}")
+    public ResponseEntity<List<Incidentes>> obtenerPorUsuario(@PathVariable Integer idUsuario) {
+        return ResponseEntity.ok(incidenteService.obtenerPorEstudiante(idUsuario));
     }
     
     /**

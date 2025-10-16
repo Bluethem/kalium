@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import DashboardEstudiante from './pages/DashboardEstudiante';
+import MisEntregas from './pages/Estudiante/MisEntregas';
 import Usuarios from './pages/Usuarios';
 import Cuenta from './pages/Cuenta';
 import ListaNotificaciones from './pages/Notificaciones/ListaNotificaciones';
@@ -28,6 +29,7 @@ import ListaExperimentos from './pages/Experimentos/ListaExperimentos';
 import DetalleExperimento from './pages/Experimentos/DetalleExperimento';
 import NuevoExperimento from './pages/Experimentos/NuevoExperimento';
 import EditarExperimento from './pages/Experimentos/EditarExperimento';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -73,6 +75,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard-estudiante" element={<DashboardEstudiante />} />
+        <Route path="/mis-entregas" element={<MisEntregas />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/cuenta" element={<Cuenta />} />
         <Route path="/insumos" element={<ListaInsumos />} />

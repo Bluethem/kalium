@@ -13,6 +13,9 @@ const ListaDevoluciones = () => {
   });
   const [paginaActual, setPaginaActual] = useState(1);
   const itemsPorPagina = 10;
+  const [procesando, setProcesando] = useState(null);
+  const [modalRechazo, setModalRechazo] = useState({ mostrar: false, idDevolucion: null });
+  const [motivoRechazo, setMotivoRechazo] = useState('');
 
   useEffect(() => {
     cargarDevoluciones();
@@ -75,6 +78,52 @@ const ListaDevoluciones = () => {
   const cambiarPagina = (numeroPagina) => {
     setPaginaActual(numeroPagina);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAprobar = async (idDevolucion) => {
+    if (!window.confirm('¿Está seguro de aprobar esta devolución?')) return;
+    
+    try {
+      setProcesando(idDevolucion);
+      await devolucionService.aprobarDevolucion(idDevolucion);
+      await cargarDevoluciones();
+      alert('Devolución aprobada exitosamente');
+    } catch (error) {
+      console.error('Error al aprobar:', error);
+      alert(error.response?.data || 'Error al aprobar la devolución');
+    } finally {
+      setProcesando(null);
+    }
+  };
+
+  const abrirModalRechazo = (idDevolucion) => {
+    setModalRechazo({ mostrar: true, idDevolucion });
+    setMotivoRechazo('');
+  };
+
+  const cerrarModalRechazo = () => {
+    setModalRechazo({ mostrar: false, idDevolucion: null });
+    setMotivoRechazo('');
+  };
+
+  const handleRechazar = async () => {
+    if (!motivoRechazo.trim()) {
+      alert('Por favor ingrese el motivo del rechazo');
+      return;
+    }
+    
+    try {
+      setProcesando(modalRechazo.idDevolucion);
+      await devolucionService.rechazarDevolucion(modalRechazo.idDevolucion, motivoRechazo);
+      await cargarDevoluciones();
+      cerrarModalRechazo();
+      alert('Devolución rechazada exitosamente');
+    } catch (error) {
+      console.error('Error al rechazar:', error);
+      alert(error.response?.data || 'Error al rechazar la devolución');
+    } finally {
+      setProcesando(null);
+    }
   };
 
   const getEstadoBadge = (estado) => {
@@ -250,12 +299,36 @@ const ListaDevoluciones = () => {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
-                        <button
-                          onClick={() => navigate(`/devoluciones/${devolucion.idDevolucion}`)}
-                          className="text-[rgb(44,171,91)] hover:underline"
-                        >
-                          Ver detalle
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          {/* Mostrar botones Aprobar/Rechazar solo si está Pendiente */}
+                          {devolucion.estDevolucion?.idEstDevolucion === 1 && (
+                            <>
+                              <button
+                                onClick={() => handleAprobar(devolucion.idDevolucion)}
+                                disabled={procesando === devolucion.idDevolucion}
+                                className="flex items-center gap-1 rounded-md bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400 disabled:opacity-50"
+                              >
+                                <span className="material-symbols-outlined text-sm">check_circle</span>
+                                {procesando === devolucion.idDevolucion ? 'Procesando...' : 'Aprobar'}
+                              </button>
+                              <button
+                                onClick={() => abrirModalRechazo(devolucion.idDevolucion)}
+                                disabled={procesando === devolucion.idDevolucion}
+                                className="flex items-center gap-1 rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400 disabled:opacity-50"
+                              >
+                                <span className="material-symbols-outlined text-sm">cancel</span>
+                                Rechazar
+                              </button>
+                            </>
+                          )}
+                          
+                          <button
+                            onClick={() => navigate(`/devoluciones/${devolucion.idDevolucion}`)}
+                            className="text-[rgb(44,171,91)] hover:underline"
+                          >
+                            Ver detalle
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -263,6 +336,54 @@ const ListaDevoluciones = () => {
               </tbody>
             </table>
           </div>
+
+          {/*Modal de rechazo*/}
+          {modalRechazo.mostrar && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 shadow-2xl border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Rechazar Devolución
+                  </h3>
+                  <button
+                    onClick={cerrarModalRechazo}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Motivo del rechazo *
+                  </label>
+                  <textarea
+                    value={motivoRechazo}
+                    onChange={(e) => setMotivoRechazo(e.target.value)}
+                    rows="4"
+                    placeholder="Explique por qué rechaza esta devolución..."
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={cerrarModalRechazo}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleRechazar}
+                    disabled={!motivoRechazo.trim() || procesando}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {procesando ? 'Rechazando...' : 'Confirmar Rechazo'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Paginación */}
           {totalPaginas > 1 && (

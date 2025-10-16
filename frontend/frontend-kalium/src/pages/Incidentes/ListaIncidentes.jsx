@@ -45,7 +45,7 @@ const ListaIncidentes = () => {
       if (filtros.busqueda) {
         const busqueda = filtros.busqueda.toLowerCase();
         const descripcion = incidente.descripcion?.toLowerCase() || '';
-        const nombreEstudiante = `${incidente.estudiante?.nombre || ''} ${incidente.estudiante?.apellido || ''}`.toLowerCase();
+        const nombreEstudiante = `${incidente.estudiante?.usuario?.nombre || ''} ${incidente.estudiante?.usuario?.apellido || ''}`.toLowerCase();
         
         if (!descripcion.includes(busqueda) && !nombreEstudiante.includes(busqueda)) {
           return false;
@@ -252,7 +252,7 @@ const ListaIncidentes = () => {
                         </button>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                        {incidente.estudiante?.nombre} {incidente.estudiante?.apellido}
+                        {incidente.estudiante?.usuario?.nombre} {incidente.estudiante?.usuario?.apellido}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getEstadoBadge(incidente.estIncidente?.estadoIncidente)}`}>

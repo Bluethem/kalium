@@ -53,9 +53,9 @@ public class EntregaController {
      * Obtener entregas por estudiante
      * GET /api/entregas/estudiante/{idEstudiante}
      */
-    @GetMapping("/estudiante/{idEstudiante}")
-    public ResponseEntity<List<Entrega>> obtenerPorEstudiante(@PathVariable Integer idEstudiante) {
-        return ResponseEntity.ok(entregaService.obtenerPorEstudiante(idEstudiante));
+    @GetMapping("/usuario/{idUsuario}")
+    public ResponseEntity<List<Entrega>> obtenerPorUsuario(@PathVariable Integer idUsuario) {
+        return ResponseEntity.ok(entregaService.obtenerPorEstudiante(idUsuario));
     }
     
     /**
