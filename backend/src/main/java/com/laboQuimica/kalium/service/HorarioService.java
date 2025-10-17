@@ -1,5 +1,6 @@
 package com.laboQuimica.kalium.service;
 
+import com.laboQuimica.kalium.dto.HorarioEstadoDTO;
 import com.laboQuimica.kalium.entity.Horario;
 import com.laboQuimica.kalium.repository.HorarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,10 @@ public class HorarioService {
     
     public List<Horario> obtenerDisponibles() {
         return horarioRepository.findHorariosDisponibles();
+    }
+
+    public List<HorarioEstadoDTO> obtenerTodosConEstado() {
+        return horarioRepository.findAllWithEstado();
     }
     
     public Optional<Horario> obtenerPorId(Integer id) {

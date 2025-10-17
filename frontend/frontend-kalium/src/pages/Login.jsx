@@ -28,11 +28,18 @@ function Login() {
         const tipoUsuario = await detectarTipoUsuario(user);
 
         // Redirigir según el tipo de usuario
-        if (tipoUsuario === 'instructor') {
-          navigate('/dashboard-instructor');
-        } else {
-          // Administrador u otro rol cae al dashboard principal
-          navigate('/dashboard');
+        switch (tipoUsuario) {
+          case 'instructor':
+            navigate('/dashboard-instructor');
+            break;
+          case 'administrador':
+            navigate('/dashboard');
+            break;
+          default:
+            alert('No existe una interfaz disponible para tu rol. Contacta al administrador.');
+            localStorage.removeItem('usuario');
+            setLoading(false);
+            return;
         }
       } else {
         const msg = await res.text();
@@ -49,18 +56,18 @@ function Login() {
   // Función para detectar si el usuario es Administrador o Instructor
   async function detectarTipoUsuario(usuario) {
     try {
-      const rolNombre = usuario?.rol?.nombreRol ? String(usuario.rol.nombreRol).toUpperCase() : '';
+      const rolId = usuario?.rol?.idRol ?? null;
+      const rolNombre = usuario?.rol?.nombreRol ? String(usuario.rol.nombreRol).toLowerCase() : '';
 
-      if (rolNombre === 'INSTRUCTOR') {
+      if (rolId === 3 || rolNombre.includes('instructor')) {
         return 'instructor';
       }
 
-      if (rolNombre.startsWith('ADMIN')) {
+      if (rolId === 2 || (rolId === null && rolNombre.includes('admin'))) {
         return 'administrador';
       }
 
-      // Fallback: consultas existentes por si no llegó el rol en la respuesta
-      if (usuario?.idUsuario) {
+      if (rolId == null && usuario?.idUsuario) {
         const instructoresRes = await axios.get('http://localhost:8080/api/instructores');
         const esInstructor = (instructoresRes.data || []).some(
           inst => inst.usuario?.idUsuario === usuario.idUsuario

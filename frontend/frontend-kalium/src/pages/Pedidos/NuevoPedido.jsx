@@ -16,6 +16,8 @@ const NuevoPedido = () => {
   const [horariosAgrupados, setHorariosAgrupados] = useState([]);
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [selectedHorario, setSelectedHorario] = useState(null);
+  const [usuarioSesion, setUsuarioSesion] = useState(null);
+  const [esInstructorSesion, setEsInstructorSesion] = useState(false);
 
   // Modales
   const [showErrorStock, setShowErrorStock] = useState(false);
@@ -72,29 +74,62 @@ const NuevoPedido = () => {
   const recargarHorarios = async () => {
     try {
       setLoadingHorarios(true);
-      const response = await horarioService.getHorariosDisponibles();
-      const disponibles = response.data || [];
-      setHorariosDisponibles(disponibles);
-      setHorariosAgrupados(agruparHorariosPorFecha(disponibles));
+      const response = await horarioService.getHorariosConEstado();
+      const horarios = response.data || [];
+      setHorariosDisponibles(horarios);
+      setHorariosAgrupados(agruparHorariosPorFecha(horarios));
       setSelectedHorario(prev => {
         if (!prev) {
           return prev;
         }
-        const match = disponibles.find(h => h.idHorario === prev.idHorario);
+        const match = horarios.find(h => h.idHorario === prev.idHorario && !h.ocupado);
         return match || null;
       });
     } catch (error) {
-      console.error('Error al cargar horarios disponibles:', error);
+      console.error('Error al cargar horarios:', error);
     } finally {
       setLoadingHorarios(false);
     }
   };
 
   useEffect(() => {
-    cargarDatos();
+    let usuarioActual = null;
+    let esInstructorActual = false;
+
+    try {
+      const stored = localStorage.getItem('usuario');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        usuarioActual = parsed;
+        const rolNombre = parsed?.rol?.nombreRol ? String(parsed.rol.nombreRol).toUpperCase() : '';
+        esInstructorActual = rolNombre === 'INSTRUCTOR';
+      }
+    } catch (error) {
+      console.error('Error al obtener usuario en sesión:', error);
+      usuarioActual = null;
+      esInstructorActual = false;
+    }
+
+    setUsuarioSesion(usuarioActual);
+    setEsInstructorSesion(esInstructorActual);
+
+    cargarDatos(usuarioActual, esInstructorActual);
   }, []);
 
-  const cargarDatos = async () => {
+  const normalizarInstructor = (inst) => {
+    const idInstructor = inst?.idInstructor ?? inst?.idUsuario ?? inst?.usuario?.idUsuario ?? null;
+    const nombre = inst?.nombre ?? inst?.usuario?.nombre ?? '';
+    const apellido = inst?.apellido ?? inst?.usuario?.apellido ?? '';
+
+    return {
+      idInstructor,
+      nombre,
+      apellido,
+      nombreCompleto: `${nombre || ''} ${apellido || ''}`.trim() || nombre || apellido || 'Instructor'
+    };
+  };
+
+  const cargarDatos = async (usuarioActual = usuarioSesion, esInstructorActual = esInstructorSesion) => {
     try {
       const [instructoresRes, cursosRes, tiposPedidoRes, tiposInsumoRes] = await Promise.all([
         axios.get('http://localhost:8080/api/instructores'),
@@ -103,10 +138,39 @@ const NuevoPedido = () => {
         insumoService.getTiposInsumoConStock()
       ]);
 
-      setInstructores(instructoresRes.data || []);
+      let instructoresLista = (instructoresRes.data || []).map(normalizarInstructor);
+
+      if (esInstructorActual && usuarioActual) {
+        const existeSesion = instructoresLista.some(inst => inst.idInstructor === usuarioActual.idUsuario);
+        if (!existeSesion) {
+          instructoresLista = [
+            ...instructoresLista,
+            normalizarInstructor({
+              idInstructor: usuarioActual.idUsuario,
+              nombre: usuarioActual.nombre,
+              apellido: usuarioActual.apellido
+            })
+          ];
+        }
+      }
+
+      setInstructores(instructoresLista);
       setCursos(cursosRes.data || []);
       setTiposPedido(tiposPedidoRes.data || []);
       setTiposInsumo(tiposInsumoRes.data || []);
+
+      if (esInstructorActual && usuarioActual) {
+        const instructorSesion = instructoresLista.find(
+          inst => inst.idInstructor === usuarioActual.idUsuario
+        );
+
+        if (instructorSesion?.idInstructor) {
+          setFormPedido(prev => ({
+            ...prev,
+            idInstructor: String(instructorSesion.idInstructor)
+          }));
+        }
+      }
 
       await recargarHorarios();
     } catch (error) {
@@ -146,7 +210,7 @@ const NuevoPedido = () => {
   };
 
   const handleSeleccionHorario = (horario) => {
-    if (!horario) {
+    if (!horario || horario.ocupado) {
       return;
     }
 
@@ -228,12 +292,11 @@ const NuevoPedido = () => {
       // ✅ PASO 2: Crear el pedido con el ID del horario
       const pedidoData = {
         fechaPedido: formPedido.fechaPedido,
-        cantGrupos: parseInt(formPedido.cantGrupos),
-        instructor: { idInstructor: parseInt(formPedido.idInstructor) },
-        estPedido: { idEstPedido: 1 }, // Pendiente
-        curso: { idCurso: parseInt(formPedido.idCurso) },
-        tipoPedido: { idTipoPedido: parseInt(formPedido.idTipoPedido) },
-        horario: { idHorario: idHorarioAsignado } // ✅ Usar el ID existente o generado
+        cantGrupos: parseInt(formPedido.cantGrupos, 10),
+        idInstructor: parseInt(formPedido.idInstructor, 10),
+        idCurso: parseInt(formPedido.idCurso, 10),
+        idTipoPedido: parseInt(formPedido.idTipoPedido, 10),
+        idHorario: idHorarioAsignado
       };
 
       const pedidoRes = await pedidoService.createPedido(pedidoData);
@@ -284,10 +347,9 @@ const NuevoPedido = () => {
                     id="fechaPedido"
                     name="fechaPedido"
                     value={formPedido.fechaPedido}
-                    onChange={handleChangePedido}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                    disabled
+                    readOnly
+                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -317,12 +379,13 @@ const NuevoPedido = () => {
                     value={formPedido.idInstructor}
                     onChange={handleChangePedido}
                     required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                    disabled={esInstructorSesion}
+                    className={`w-full rounded-md border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)] ${esInstructorSesion ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'bg-white dark:bg-gray-700'}`}
                   >
                     <option value="">Seleccionar instructor</option>
                     {instructores.map(inst => (
-                      <option key={inst.idInstructor} value={inst.idInstructor}>
-                        {inst.usuario?.nombre} {inst.usuario?.apellido}
+                      <option key={inst.idInstructor} value={String(inst.idInstructor)}>
+                        {inst.nombreCompleto}
                       </option>
                     ))}
                   </select>
@@ -556,19 +619,29 @@ const NuevoPedido = () => {
                             hour: '2-digit',
                             minute: '2-digit'
                           });
+                          const ocupado = Boolean(slot.ocupado);
 
                           return (
                             <button
                               key={slot.idHorario}
                               type="button"
                               onClick={() => handleSeleccionHorario(slot)}
+                              disabled={ocupado}
                               className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
                                 isSelected
                                   ? 'border-[rgb(44,171,91)] bg-[rgb(44,171,91)] text-white shadow'
-                                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:border-[rgb(44,171,91)]'
+                                  : ocupado
+                                    ? 'border-gray-300 dark:border-gray-700 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:border-[rgb(44,171,91)]'
                               }`}
+                              title={ocupado ? 'Horario ocupado' : 'Seleccionar horario'}
                             >
-                              {horaLegible}
+                              <div className="flex flex-col items-center">
+                                <span>{horaLegible}</span>
+                                <span className={`text-xs ${ocupado ? 'text-gray-500' : 'text-[rgb(44,171,91)]'}`}>
+                                  {ocupado ? 'Ocupado' : 'Disponible'}
+                                </span>
+                              </div>
                             </button>
                           );
                         })}

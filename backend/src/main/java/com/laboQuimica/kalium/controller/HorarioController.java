@@ -1,5 +1,6 @@
 package com.laboQuimica.kalium.controller;
 
+import com.laboQuimica.kalium.dto.HorarioEstadoDTO;
 import com.laboQuimica.kalium.entity.Horario;
 import com.laboQuimica.kalium.repository.HorarioRepository;
 import com.laboQuimica.kalium.service.HorarioService;
@@ -175,6 +176,16 @@ public class HorarioController {
 
             return ResponseEntity.ok(disponibles);
 
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @GetMapping("/con-estado")
+    public ResponseEntity<List<HorarioEstadoDTO>> obtenerTodosConEstado() {
+        try {
+            List<HorarioEstadoDTO> horarios = horarioService.obtenerTodosConEstado();
+            return ResponseEntity.ok(horarios);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

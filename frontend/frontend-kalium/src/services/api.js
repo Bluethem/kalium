@@ -53,6 +53,7 @@ export const quimicoService = {
 // Servicios para Pedidos
 export const pedidoService = {
   getPedidos: () => api.get('/pedidos'),
+  getMisPedidos: () => api.get('/pedidos', { params: { mine: 1 } }),
   getPedidoById: (id) => api.get(`/pedidos/${id}`),
   getPedidosPorInstructor: (idInstructor) => api.get(`/pedidos/instructor/${idInstructor}`),
   getPedidosPorEstado: (idEstado) => api.get(`/pedidos/estado/${idEstado}`),
@@ -149,6 +150,7 @@ export const horarioService = {
   getHorarios: () => api.get('/horarios'),
   getHorarioById: (id) => api.get(`/horarios/${id}`),
   getHorariosDisponibles: () => api.get('/horarios/disponibles'),
+  getHorariosConEstado: () => api.get('/horarios/con-estado'),
   createHorario: (horarioData) => api.post('/horarios', horarioData),
   updateHorario: (id, horarioData) => api.put(`/horarios/${id}`, horarioData),
   deleteHorario: (id) => api.delete(`/horarios/${id}`),

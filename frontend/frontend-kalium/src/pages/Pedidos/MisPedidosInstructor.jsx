@@ -7,7 +7,6 @@ const MisPedidosInstructor = () => {
   const navigate = useNavigate();
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [instructorActual, setInstructorActual] = useState(null);
   const [filtros, setFiltros] = useState({
     estado: '',
     curso: '',
@@ -22,28 +21,12 @@ const MisPedidosInstructor = () => {
     try {
       setLoading(true);
       
-      // Obtener usuario en sesión
-      const usuario = localStorage.getItem('usuario');
-      if (!usuario) {
-        alert('No se encontró sesión activa');
-        navigate('/login');
-        return;
-      }
-      
-      const parsed = JSON.parse(usuario);
-      
-      // Cargar todos los pedidos
-      const response = await pedidoService.getPedidos();
-      
-      // Filtrar solo los pedidos del instructor actual
-      const pedidosDelInstructor = (response.data || []).filter(
-        pedido => pedido.instructor?.usuario?.idUsuario === parsed.idUsuario
-      );
-      
-      setPedidos(pedidosDelInstructor);
+      const response = await pedidoService.getMisPedidos();
+      const data = response.data || [];
+      setPedidos(data);
     } catch (error) {
       console.error('Error al cargar pedidos:', error);
-      alert('Error al cargar los pedidos');
+      alert(error?.response?.data || 'Error al cargar los pedidos');
     } finally {
       setLoading(false);
     }
@@ -64,12 +47,13 @@ const MisPedidosInstructor = () => {
 
   const getEstadoBadge = (estado) => {
     const estados = {
-      'Pendiente': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-      'Aprobado': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'Rechazado': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      'Cancelado': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
-      'En Preparación': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'pendiente': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'aprobado': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'no aprobado': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'Preparado': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
       'Entregado': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'Cancelado(por Vencimiento)': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+      'Cancelado(por el instructor)': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
     };
     return estados[estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
   };
@@ -78,7 +62,7 @@ const MisPedidosInstructor = () => {
     const estadoPedido = pedido.estPedido?.nombreEstPedido;
     
     // Si el pedido está PENDIENTE: Ver, Editar, Eliminar
-    if (estadoPedido === 'Pendiente') {
+    if (estadoPedido === 'pendiente') {
       return (
         <div className="flex items-center justify-center gap-2">
           <button
@@ -168,11 +152,13 @@ const MisPedidosInstructor = () => {
                 className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <option value="">Todos los estados</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobado">Aprobado</option>
-                <option value="En Preparación">En Preparación</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="no aprobado">No Aprobado</option>
+                <option value="Preparado">Preparado</option>
                 <option value="Entregado">Entregado</option>
-                <option value="Cancelado">Cancelado</option>
+                <option value="Cancelado(por Vencimiento)">Cancelado (por Vencimiento)</option>
+                <option value="Cancelado(por el instructor)">Cancelado (por el instructor)</option>
               </select>
               <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
                 expand_more
@@ -224,14 +210,14 @@ const MisPedidosInstructor = () => {
                           {pedido.fechaPedido ? new Date(pedido.fechaPedido).toLocaleDateString('es-ES') : 'N/A'}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                          {pedido.curso?.nombreCurso || 'N/A'}
+                          {pedido.cursoNombre || pedido.curso?.nombreCurso || 'N/A'}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                          {pedido.tipoPedido?.nombrePedido || 'N/A'}
+                          {pedido.tipoPedidoNombre || pedido.tipoPedido?.nombrePedido || 'N/A'}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getEstadoBadge(pedido.estPedido?.nombreEstPedido)}`}>
-                            {pedido.estPedido?.nombreEstPedido || 'Sin estado'}
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getEstadoBadge(pedido.estPedidoNombre || pedido.estPedido?.nombreEstPedido)}`}>
+                            {pedido.estPedidoNombre || pedido.estPedido?.nombreEstPedido || 'Sin estado'}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
