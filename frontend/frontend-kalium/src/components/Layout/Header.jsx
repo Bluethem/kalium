@@ -10,6 +10,7 @@ const Header = ({ minimal = false }) => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userId, setUserId] = useState(null);
+  const [userRole, setUserRole] = useState('');
   const [contadorNoLeidas, setContadorNoLeidas] = useState(0);
 
   useEffect(() => {
@@ -19,10 +20,19 @@ const Header = ({ minimal = false }) => {
         const parsed = JSON.parse(u);
         setUserEmail(parsed?.correo || '');
         setUserId(parsed?.idUsuario || null);
+        const rolNombre = parsed?.rol?.nombreRol ? String(parsed.rol.nombreRol).toUpperCase() : '';
+        if (rolNombre === 'INSTRUCTOR') {
+          setUserRole('instructor');
+        } else if (rolNombre) {
+          setUserRole('administrador');
+        } else {
+          setUserRole('');
+        }
       }
     } catch {
       setUserEmail('');
       setUserId(null);
+      setUserRole('');
     }
   }, [location.pathname]);
 
@@ -59,34 +69,49 @@ const Header = ({ minimal = false }) => {
 
       {!minimal && (
         <nav className="flex flex-1 justify-center items-center gap-8 text-sm font-medium text-gray-600 dark:text-gray-300">
-          <Link to="/dashboard" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/dashboard') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Dashboard
-          </Link>
-          <Link to="/usuarios" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/usuarios') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Usuarios
-          </Link>
-          <Link to="/insumos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/insumos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Insumos
-          </Link>
-          <Link to="/pedidos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/pedidos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Pedidos
-          </Link>
-          {/* ✅ NUEVO ENLACE DE INCIDENTES */}
-          <Link to="/incidentes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/incidentes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Incidentes
-          </Link>
-          <Link to="/reportes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/reportes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Reportes
-          </Link>
-          <Link to="/entregas" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/entregas') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Entregas
-          </Link>
-          <Link to="/devoluciones" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/devoluciones') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Devoluciones
-          </Link>
-          <Link to="/experimentos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/experimentos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Experimentos
-          </Link>
+          {userRole === 'instructor' ? (
+            <>
+              <Link to="/dashboard-instructor" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/dashboard-instructor') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Dashboard
+              </Link>
+              <Link to="/pedidos-instructor" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/pedidos-instructor') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Mis Pedidos
+              </Link>
+              <Link to="/pedidos/nuevo" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/pedidos/nuevo') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Crear Pedido
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/dashboard" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/dashboard') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Dashboard
+              </Link>
+              <Link to="/usuarios" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/usuarios') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Usuarios
+              </Link>
+              <Link to="/insumos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/insumos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Insumos
+              </Link>
+              <Link to="/pedidos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/pedidos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Pedidos
+              </Link>
+              <Link to="/incidentes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/incidentes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Incidentes
+              </Link>
+              <Link to="/reportes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/reportes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Reportes
+              </Link>
+              <Link to="/entregas" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/entregas') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Entregas
+              </Link>
+              <Link to="/devoluciones" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/devoluciones') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Devoluciones
+              </Link>
+              <Link to="/experimentos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/experimentos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+                Experimentos
+              </Link>
+            </>
+          )}
         </nav>
       )}
 
@@ -130,7 +155,7 @@ const Header = ({ minimal = false }) => {
                 <span className="material-symbols-outlined text-base">account_circle</span>
                 Mi cuenta
               </button>
-              <button onClick={() => { localStorage.removeItem('usuario'); navigate('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+              <button onClick={() => { localStorage.removeItem('usuario'); setUserRole(''); setUserEmail(''); setUserId(null); navigate('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">logout</span>
                 Cerrar sesión
               </button>

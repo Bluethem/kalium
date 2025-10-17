@@ -2,6 +2,8 @@ package com.laboQuimica.kalium.controller;
 
 import com.laboQuimica.kalium.entity.Horario;
 import com.laboQuimica.kalium.repository.HorarioRepository;
+import com.laboQuimica.kalium.service.HorarioService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,9 @@ public class HorarioController {
     
     @Autowired
     private HorarioRepository horarioRepository;
+    
+    @Autowired
+    private HorarioService horarioService;
     
     /**
      * Obtener todos los horarios
@@ -158,16 +163,18 @@ public class HorarioController {
     @GetMapping("/disponibles")
     public ResponseEntity<List<Horario>> obtenerDisponibles() {
         try {
-            List<Horario> todosHorarios = horarioRepository.findAll();
-            LocalDateTime ahora = LocalDateTime.now();
-            
-            // Filtrar solo horarios futuros
-            List<Horario> disponibles = todosHorarios.stream()
-                .filter(h -> h.getHoraInicio().isAfter(ahora))
+            List<Horario> disponibles = horarioService.obtenerDisponibles().stream()
+                .sorted((h1, h2) -> {
+                    int compareFecha = h1.getFechaEntrega().compareTo(h2.getFechaEntrega());
+                    if (compareFecha != 0) {
+                        return compareFecha;
+                    }
+                    return h1.getHoraInicio().compareTo(h2.getHoraInicio());
+                })
                 .toList();
-            
+
             return ResponseEntity.ok(disponibles);
-            
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

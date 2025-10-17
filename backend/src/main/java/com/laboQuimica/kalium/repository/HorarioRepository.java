@@ -10,7 +10,10 @@ import java.util.List;
 @Repository
 public interface HorarioRepository extends JpaRepository<Horario, Integer> {
     
-    @Query("SELECT h FROM Horario h WHERE h.idHorario NOT IN " +
-           "(SELECT p.horario.idHorario FROM Pedido p WHERE p.horario IS NOT NULL)")
+    @Query("SELECT h FROM Horario h WHERE NOT EXISTS (" +
+           " SELECT 1 FROM Pedido p" +
+           " WHERE p.horario = h" +
+           "   AND p.estPedido.nombreEstPedido IN ('pendiente', 'aprobado', 'Preparado')" +
+           ")")
     List<Horario> findHorariosDisponibles();
 }

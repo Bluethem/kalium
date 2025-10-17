@@ -26,6 +26,8 @@ import DetalleDevolucion from './pages/Devoluciones/DetalleDevolucion';
 import ListaExperimentos from './pages/Experimentos/ListaExperimentos';
 import DetalleExperimento from './pages/Experimentos/DetalleExperimento';
 import NuevoExperimento from './pages/Experimentos/NuevoExperimento';
+import PanelInstructor from './pages/PanelInstructor';
+import MisPedidosInstructor from './pages/Pedidos/MisPedidosInstructor';
 
 function App() {
   return (
@@ -70,12 +72,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard-instructor" element={<PanelInstructor />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/cuenta" element={<Cuenta />} />
         <Route path="/insumos" element={<ListaInsumos />} />
         <Route path="/insumos/nuevo" element={<NuevoInsumo />} />
         <Route path="/insumos/:id" element={<DetalleInsumo />} />
         <Route path="/pedidos" element={<ListaPedidos />} />
+        <Route path="/pedidos-instructor" element={<MisPedidosInstructor />} />
         <Route path="/pedidos/nuevo" element={<NuevoPedido />} />
         <Route path="/pedidos/:id" element={<DetallePedido />} />
         <Route path="/reportes" element={<Reportes />} />

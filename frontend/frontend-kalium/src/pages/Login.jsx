@@ -23,17 +23,15 @@ function Login() {
       if (res.ok) {
         const user = await res.json();
         localStorage.setItem('usuario', JSON.stringify(user));
-        
+
         // Detectar el tipo de usuario
-        const tipoUsuario = await detectarTipoUsuario(user.idUsuario);
-        
+        const tipoUsuario = await detectarTipoUsuario(user);
+
         // Redirigir según el tipo de usuario
         if (tipoUsuario === 'instructor') {
           navigate('/dashboard-instructor');
-        } else if (tipoUsuario === 'administrador') {
-          navigate('/dashboard');
         } else {
-          // Usuario sin rol específico, redirige al dashboard por defecto
+          // Administrador u otro rol cae al dashboard principal
           navigate('/dashboard');
         }
       } else {
@@ -49,29 +47,30 @@ function Login() {
   }
 
   // Función para detectar si el usuario es Administrador o Instructor
-  async function detectarTipoUsuario(idUsuario) {
+  async function detectarTipoUsuario(usuario) {
     try {
-      // Verificar si es instructor
-      const instructoresRes = await axios.get('http://localhost:8080/api/instructores');
-      const esInstructor = (instructoresRes.data || []).some(
-        inst => inst.usuario?.idUsuario === idUsuario
-      );
-      
-      if (esInstructor) {
+      const rolNombre = usuario?.rol?.nombreRol ? String(usuario.rol.nombreRol).toUpperCase() : '';
+
+      if (rolNombre === 'INSTRUCTOR') {
         return 'instructor';
       }
-      
-      // Verificar si es administrador
-      const administradoresRes = await axios.get('http://localhost:8080/api/administradores');
-      const esAdministrador = (administradoresRes.data || []).some(
-        admin => admin.usuario?.idUsuario === idUsuario
-      );
-      
-      if (esAdministrador) {
+
+      if (rolNombre.startsWith('ADMIN')) {
         return 'administrador';
       }
-      
-      return 'usuario'; // Usuario sin rol específico
+
+      // Fallback: consultas existentes por si no llegó el rol en la respuesta
+      if (usuario?.idUsuario) {
+        const instructoresRes = await axios.get('http://localhost:8080/api/instructores');
+        const esInstructor = (instructoresRes.data || []).some(
+          inst => inst.usuario?.idUsuario === usuario.idUsuario
+        );
+        if (esInstructor) {
+          return 'instructor';
+        }
+      }
+
+      return 'usuario';
     } catch (error) {
       console.error('Error al detectar tipo de usuario:', error);
       return 'usuario';

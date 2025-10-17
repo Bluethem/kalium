@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
 import { pedidoService, insumoService, horarioService, pedidoDetalleService } from '../../services/api';
@@ -11,12 +12,16 @@ const NuevoPedido = () => {
   const [cursos, setCursos] = useState([]);
   const [tiposPedido, setTiposPedido] = useState([]);
   const [tiposInsumo, setTiposInsumo] = useState([]);
-  
+  const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+  const [horariosAgrupados, setHorariosAgrupados] = useState([]);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
+  const [selectedHorario, setSelectedHorario] = useState(null);
+
   // Modales
   const [showErrorStock, setShowErrorStock] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  
+
   const [formPedido, setFormPedido] = useState({
     fechaPedido: new Date().toISOString().split('T')[0],
     cantGrupos: 1,
@@ -34,6 +39,57 @@ const NuevoPedido = () => {
     esQuimico: false
   });
 
+  const agruparHorariosPorFecha = (horarios = []) => {
+    const mapa = horarios.reduce((acc, horario) => {
+      if (!horario?.fechaEntrega) {
+        return acc;
+      }
+      if (!acc[horario.fechaEntrega]) {
+        acc[horario.fechaEntrega] = [];
+      }
+      acc[horario.fechaEntrega].push(horario);
+      return acc;
+    }, {});
+
+    return Object.entries(mapa)
+      .sort((a, b) => new Date(`${a[0]}T00:00:00`) - new Date(`${b[0]}T00:00:00`))
+      .map(([fecha, slots]) => {
+        const fechaLegibleRaw = new Date(`${fecha}T00:00:00`).toLocaleDateString('es-ES', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'short'
+        });
+        const fechaLegible = fechaLegibleRaw.charAt(0).toUpperCase() + fechaLegibleRaw.slice(1);
+
+        return {
+          fecha,
+          fechaLegible,
+          slots: slots.sort((slotA, slotB) => new Date(slotA.horaInicio) - new Date(slotB.horaInicio))
+        };
+      });
+  };
+
+  const recargarHorarios = async () => {
+    try {
+      setLoadingHorarios(true);
+      const response = await horarioService.getHorariosDisponibles();
+      const disponibles = response.data || [];
+      setHorariosDisponibles(disponibles);
+      setHorariosAgrupados(agruparHorariosPorFecha(disponibles));
+      setSelectedHorario(prev => {
+        if (!prev) {
+          return prev;
+        }
+        const match = disponibles.find(h => h.idHorario === prev.idHorario);
+        return match || null;
+      });
+    } catch (error) {
+      console.error('Error al cargar horarios disponibles:', error);
+    } finally {
+      setLoadingHorarios(false);
+    }
+  };
+
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -46,11 +102,13 @@ const NuevoPedido = () => {
         axios.get('http://localhost:8080/api/tipos-pedido'),
         insumoService.getTiposInsumoConStock()
       ]);
-      
+
       setInstructores(instructoresRes.data || []);
       setCursos(cursosRes.data || []);
       setTiposPedido(tiposPedidoRes.data || []);
       setTiposInsumo(tiposInsumoRes.data || []);
+
+      await recargarHorarios();
     } catch (error) {
       console.error('Error al cargar datos:', error);
     }
@@ -58,12 +116,23 @@ const NuevoPedido = () => {
 
   const handleChangePedido = (e) => {
     const { name, value } = e.target;
-    setFormPedido(prev => ({ ...prev, [name]: value }));
+    const actualizado = { ...formPedido, [name]: value };
+    setFormPedido(actualizado);
+
+    if (selectedHorario && (name === 'fechaEntrega' || name === 'horaEntrega')) {
+      const horaSeleccionada = selectedHorario.horaInicio?.substring(11, 16);
+      if (
+        selectedHorario.fechaEntrega !== actualizado.fechaEntrega ||
+        horaSeleccionada !== actualizado.horaEntrega
+      ) {
+        setSelectedHorario(null);
+      }
+    }
   };
 
   const handleChangeItem = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'idTipoInsumo') {
       const tipoSeleccionado = tiposInsumo.find(t => t.idTipoInsumo === parseInt(value));
       setNuevoItem(prev => ({ 
@@ -74,6 +143,21 @@ const NuevoPedido = () => {
     } else {
       setNuevoItem(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleSeleccionHorario = (horario) => {
+    if (!horario) {
+      return;
+    }
+
+    const horaFormateada = horario.horaInicio?.substring(11, 16) || formPedido.horaEntrega;
+
+    setSelectedHorario(horario);
+    setFormPedido(prev => ({
+      ...prev,
+      fechaEntrega: horario.fechaEntrega,
+      horaEntrega: horaFormateada
+    }));
   };
 
   const agregarItem = () => {
@@ -124,16 +208,23 @@ const NuevoPedido = () => {
         throw new Error('Debe agregar al menos un ítem al pedido');
       }
   
-      // ✅ PASO 1: Crear el horario PRIMERO
-      // Combinar fecha y hora en formato LocalDateTime: "2025-01-20T14:30:00"
-      const horarioData = {
-        fechaEntrega: formPedido.fechaEntrega, // LocalDate: "2025-01-20"
-        horaInicio: `${formPedido.fechaEntrega}T${formPedido.horaEntrega}:00` // LocalDateTime: "2025-01-20T14:30:00"
-      };
-      
-      const horarioRes = await horarioService.createHorario(horarioData);
-      const idHorarioCreado = horarioRes.data.idHorario;
-  
+      let idHorarioAsignado = selectedHorario?.idHorario || null;
+
+      if (!idHorarioAsignado) {
+        if (!formPedido.fechaEntrega || !formPedido.horaEntrega) {
+          throw new Error('Seleccione un horario disponible o ingrese la fecha y hora de entrega');
+        }
+
+        // ✅ PASO 1: Crear el horario cuando no se seleccionó uno existente
+        const horarioData = {
+          fechaEntrega: formPedido.fechaEntrega, // LocalDate: "2025-01-20"
+          horaInicio: `${formPedido.fechaEntrega}T${formPedido.horaEntrega}:00` // LocalDateTime: "2025-01-20T14:30:00"
+        };
+
+        const horarioRes = await horarioService.createHorario(horarioData);
+        idHorarioAsignado = horarioRes.data.idHorario;
+      }
+
       // ✅ PASO 2: Crear el pedido con el ID del horario
       const pedidoData = {
         fechaPedido: formPedido.fechaPedido,
@@ -142,11 +233,11 @@ const NuevoPedido = () => {
         estPedido: { idEstPedido: 1 }, // Pendiente
         curso: { idCurso: parseInt(formPedido.idCurso) },
         tipoPedido: { idTipoPedido: parseInt(formPedido.idTipoPedido) },
-        horario: { idHorario: idHorarioCreado } // ✅ Usar el ID generado
+        horario: { idHorario: idHorarioAsignado } // ✅ Usar el ID existente o generado
       };
-  
+
       const pedidoRes = await pedidoService.createPedido(pedidoData);
-      
+
       // ✅ PASO 3: Crear detalles del pedido
       for (const item of items) {
         await pedidoDetalleService.createPedidoDetalle({
@@ -156,7 +247,7 @@ const NuevoPedido = () => {
           estPedidoDetalle: { idEstPedidoDetalle: 1 } // 1 = Pendiente
         });
       }
-  
+
       setShowSuccess(true);
     } catch (error) {
       console.error('Error al crear pedido:', error);
@@ -182,6 +273,7 @@ const NuevoPedido = () => {
             {/* Información del Pedido */}
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
               <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Información del Pedido</h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="fechaPedido" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -276,37 +368,6 @@ const NuevoPedido = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label htmlFor="fechaEntrega" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha de Entrega
-                  </label>
-                  <input
-                    type="date"
-                    id="fechaEntrega"
-                    name="fechaEntrega"
-                    value={formPedido.fechaEntrega}
-                    onChange={handleChangePedido}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="horaEntrega" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Hora de Entrega
-                  </label>
-                  <input
-                    type="time"
-                    id="horaEntrega"
-                    name="horaEntrega"
-                    value={formPedido.horaEntrega}
-                    onChange={handleChangePedido}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  />
                 </div>
               </div>
             </div>
@@ -434,6 +495,88 @@ const NuevoPedido = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Selección de horario */}
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
+              <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Horario de Entrega</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Selecciona un bloque disponible. La fecha y hora se completarán automáticamente según tu elección.
+              </p>
+
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-300">
+                  {selectedHorario ? (
+                    <span>
+                      Horario seleccionado:&nbsp;
+                      <strong>{new Date(selectedHorario.horaInicio).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}</strong>
+                      &nbsp;–&nbsp;
+                      <strong>{new Date(selectedHorario.horaInicio).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</strong>
+                    </span>
+                  ) : (
+                    <span>No hay horario seleccionado.</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={recargarHorarios}
+                  disabled={loadingHorarios}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-base">refresh</span>
+                  {loadingHorarios ? 'Actualizando...' : 'Actualizar'}
+                </button>
+              </div>
+
+              {loadingHorarios ? (
+                <div className="mt-4 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/50 p-6 text-center text-sm text-gray-600 dark:text-gray-400">
+                  Cargando horarios disponibles...
+                </div>
+              ) : horariosAgrupados.length === 0 ? (
+                <div className="mt-4 space-y-4">
+                  <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/50 p-6 text-center text-sm text-gray-600 dark:text-gray-400">
+                    No hay horarios libres registrados. Ingresa un nuevo bloque manualmente.
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {horariosAgrupados.map(grupo => (
+                    <div
+                      key={grupo.fecha}
+                      className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 p-4"
+                    >
+                      <div className="mb-3">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{grupo.fechaLegible}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Bloques disponibles</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                        {grupo.slots.map(slot => {
+                          const isSelected = selectedHorario?.idHorario === slot.idHorario;
+                          const horaLegible = new Date(slot.horaInicio).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+
+                          return (
+                            <button
+                              key={slot.idHorario}
+                              type="button"
+                              onClick={() => handleSeleccionHorario(slot)}
+                              className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                isSelected
+                                  ? 'border-[rgb(44,171,91)] bg-[rgb(44,171,91)] text-white shadow'
+                                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:border-[rgb(44,171,91)]'
+                              }`}
+                            >
+                              {horaLegible}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Botones de acción */}
