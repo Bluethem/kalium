@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Layout/Header';
 
 function Register() {
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -12,6 +13,7 @@ function Register() {
     const correo = e.target.correo.value.trim();
     const contrasena = e.target.contrasena.value;
     const confirmar = e.target.confirmar.value;
+    const rolSeleccionado = e.target.rol?.value; // 2=admin, 3=instructor, 4=alumno
 
     if (contrasena !== confirmar) {
       alert('Las contraseñas no coinciden');
@@ -19,18 +21,16 @@ function Register() {
     }
 
     try {
-      const res = await fetch('http://localhost:8080/api/usuarios', {
+      const res = await fetch('http://localhost:8080/api/solicitudes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, apellido, correo, contrasena })
+        body: JSON.stringify({ nombre, apellido, correo, contrasena, idRol: Number(rolSeleccionado) })
       });
-
       if (res.ok) {
-        alert('Usuario registrado correctamente');
-        navigate('/login');
+        setShowModal(true);
       } else {
         const msg = await res.text();
-        alert(msg || 'No se pudo registrar el usuario');
+        alert(msg || 'No se pudo enviar la solicitud');
       }
     } catch (err) {
       console.error(err);
@@ -95,9 +95,24 @@ function Register() {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div>
+              <label className="sr-only" htmlFor="rol">Rol</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">supervisor_account</span>
+                <select id="rol" name="rol" required defaultValue=""
+                        className="form-input w-full appearance-none rounded-md border-gray-300 bg-white dark:bg-gray-800 py-3 pl-10 pr-10 text-base text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[rgb(44,171,91)]">
+                  <option value="" disabled>Selecciona un rol</option>
+                  <option value="2">Administrador</option>
+                  <option value="3">Instructor</option>
+                  <option value="4">Alumno</option>
+                </select>
+                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">expand_more</span>
+              </div>
+            </div>
+
+            <div className="pt-2"> 
               <button type="submit" className="flex w-full justify-center rounded-md bg-[rgb(44,171,91)] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(44,171,91)]">
-                Registrarse
+                Enviar solicitud de registro
               </button>
             </div>
           </form>
@@ -107,6 +122,34 @@ function Register() {
           </p>
         </div>
       </main>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative z-10 w-full max-w-md mx-4 rounded-lg bg-white dark:bg-gray-900 p-6 shadow-xl border border-gray-200 dark:border-gray-800 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgb(44,171,91)]/10 text-[rgb(44,171,91)]">
+              <span className="material-symbols-outlined text-3xl">mark_email_unread</span>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Solicitud enviada</h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Tu solicitud ha sido enviada. Recibirás una confirmación en tu correo.</p>
+            
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="inline-flex items-center justify-center rounded-md bg-[rgb(44,171,91)] px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(44,171,91)]"
+              >
+                Ir a iniciar sesión
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

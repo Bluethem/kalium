@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { devolucionService } from '../../services/api';
 
 const ListaDevoluciones = () => {
@@ -29,9 +28,9 @@ const ListaDevoluciones = () => {
       const response = await devolucionService.getDevoluciones();
       setDevoluciones(response.data);
       
-      // ✅ Verificar cuáles están completas Y revisadas
+      // Verificar cuáles están completas Y revisadas
       const completasMap = {};
-      const revisadasMap = {}; // ← NUEVO
+      const revisadasMap = {}; 
       
       for (const dev of response.data) {
         if (dev.estDevolucion?.idEstDevolucion === 1) { // Solo verificar pendientes
@@ -40,7 +39,7 @@ const ListaDevoluciones = () => {
             const completa = await devolucionService.verificarCompleta(dev.idDevolucion);
             completasMap[dev.idDevolucion] = completa.data;
             
-            // ✅ NUEVO: Verificar si está revisada
+            // NUEVO: Verificar si está revisada
             const revisados = await devolucionService.verificarRevisados(dev.idDevolucion);
             revisadasMap[dev.idDevolucion] = revisados.data;
           } catch (error) {
@@ -51,7 +50,7 @@ const ListaDevoluciones = () => {
       }
       
       setDevolucionesCompletas(completasMap);
-      setDevolucionesRevisadas(revisadasMap); // ← NUEVO
+      setDevolucionesRevisadas(revisadasMap); 
     } catch (error) {
       console.error('Error al cargar devoluciones:', error);
     } finally {
@@ -177,23 +176,18 @@ const ListaDevoluciones = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando devoluciones...</p>
-          </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando devoluciones...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 p-6 lg:p-8">
+    <div className="flex-1">
+      <div className="p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
           <div className="mb-6">
@@ -454,7 +448,7 @@ const ListaDevoluciones = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 };

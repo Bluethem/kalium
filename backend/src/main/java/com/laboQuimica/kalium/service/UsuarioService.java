@@ -50,6 +50,10 @@ public class UsuarioService {
                 if (usuarioActualizado.getContrasena() != null && !usuarioActualizado.getContrasena().isEmpty()) {
                     usuario.setContrasena(usuarioActualizado.getContrasena());
                 }
+                // Persistir logo si viene en la petición (Jackson convierte Base64->byte[])
+                if (usuarioActualizado.getLogo() != null) {
+                    usuario.setLogo(usuarioActualizado.getLogo());
+                }
                 return usuarioRepository.save(usuario);
             })
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));

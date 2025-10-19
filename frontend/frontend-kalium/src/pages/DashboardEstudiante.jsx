@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Header from '../components/Layout/Header';
 import { devolucionService, incidenteService } from '../services/api';
 import logger from '../utils/logger';
 import { useNavigate } from 'react-router-dom';
@@ -95,23 +94,17 @@ function DashboardEstudiante() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Cargando datos...</p>
-          </div>
-        </main>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cargando datos...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F9FAFB] dark:bg-[#111827]">
-      <Header />
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           {/* Encabezado mejorado */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
@@ -410,8 +403,6 @@ function DashboardEstudiante() {
             </div>
           </section>
         )}
-        </div>
-      </main>
     </div>
   );
 }

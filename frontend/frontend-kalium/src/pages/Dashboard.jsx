@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../components/Layout/Header';
 import { notificacionService } from '../services/api';
 
 function Dashboard() {
+  const [isRol1, setIsRol1] = useState(false);
   useEffect(() => {
     const verificarStockInicial = async () => {
       try {
@@ -17,10 +17,21 @@ function Dashboard() {
     verificarStockInicial();
   }, []);
 
+  useEffect(() => {
+    try {
+      const u = localStorage.getItem('usuario');
+      if (u) {
+        const parsed = JSON.parse(u);
+        const rolObj = parsed?.rol;
+        const idRol = rolObj?.idRol ?? rolObj?.IDRol ?? parsed?.idRol ?? parsed?.IDRol;
+        setIsRol1(Number(idRol) === 1);
+      }
+    } catch {}
+  }, []);
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="flex-1">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <section className="text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Panel de Administración</h2>
           <p className="text-gray-600 dark:text-gray-400">Seleccione una sección para administrar.</p>
@@ -107,9 +118,21 @@ function Dashboard() {
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestion de experimentos</p>
             </div>
           </Link>
+
+          {isRol1 && (
+            <Link to="/solicitudes" className="group block rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+              <div className="flex flex-col items-center justify-center">
+                <div className="flex size-16 items-center justify-center rounded-full bg-[#eef7f2] dark:bg-gray-700 text-[rgb(44,171,91)] group-hover:bg-[rgb(44,171,91)] group-hover:text-white transition-colors">
+                  <span className="material-symbols-outlined text-4xl">assignment</span>
+                </div>
+                <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Solicitudes</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestión de solicitudes de usuario</p>
+              </div>
+            </Link>
+          )}
           
         </section>
-      </main>
+      </div>
     </div>
   );
 }

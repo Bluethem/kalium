@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../../components/Layout/Header';
 import { insumoService, categoriaService, estadoInsumoService } from '../../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,7 +14,7 @@ const Reportes = () => {
   const [filtros, setFiltros] = useState({
   idCategoria: '',
   tipoInsumo: 'todos',
-  nivelStock: 'todos', // ✅ NUEVO
+  nivelStock: 'todos', // 
   busqueda: ''
   });
 
@@ -136,7 +135,7 @@ const Reportes = () => {
     }
   ].filter(item => item.cantidad > 0);
 
-  // ✅ NUEVO: Datos para gráfico de Nivel de Stock
+  // NUEVO: Datos para gráfico de Nivel de Stock
   const datosNivelStock = [
     {
       nombre: 'Stock Bajo',
@@ -216,7 +215,7 @@ const Reportes = () => {
       insumo.unidad?.unidad || 'N/A'
     ]);
 
-    // ✅ USO CORRECTO para jspdf-autotable v5
+    // USO CORRECTO para jspdf-autotable v5
     autoTable(doc, {
       startY: yPos + 5,
       head: [['Nombre', 'Tipo', 'Categoría', 'Cantidad', 'Unidad']],
@@ -351,7 +350,6 @@ const Reportes = () => {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
@@ -363,10 +361,8 @@ const Reportes = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="flex-1">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -784,7 +780,7 @@ const Reportes = () => {
                 </div>
               </div>
 
-              {/* ✅ MEJORADO: Tarjeta de Alertas más prominente */}
+              {/* MEJORADO: Tarjeta de Alertas más prominente */}
               <div className="bg-white dark:bg-gray-900 rounded-lg border-2 border-red-200 dark:border-red-800 p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div>
@@ -883,7 +879,7 @@ const Reportes = () => {
                 )}
               </div>
 
-              {/* ✅ NUEVO: Gráfico de Pastel - Nivel de Stock */}
+              {/* NUEVO: Gráfico de Pastel - Nivel de Stock */}
               <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-orange-500">analytics</span>
@@ -1057,7 +1053,7 @@ const Reportes = () => {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };

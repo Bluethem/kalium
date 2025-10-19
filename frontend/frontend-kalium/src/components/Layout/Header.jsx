@@ -15,8 +15,10 @@ const Header = ({ minimal = false }) => {
   const [userId, setUserId] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [contadorNoLeidas, setContadorNoLeidas] = useState(0);
+  const [userLogo, setUserLogo] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [wsConnected, setWsConnected] = useState(false);
+  const [isRol1, setIsRol1] = useState(false);
 
   useEffect(() => {
     try {
@@ -28,6 +30,10 @@ const Header = ({ minimal = false }) => {
         // Obtener rol (objeto o string)
         const rolNombre = parsed?.rol?.nombreRol || parsed?.rol;
         setUserRole(rolNombre);
+        setUserLogo(parsed?.logo || null);
+        const rolObj = parsed?.rol;
+        const idRol = rolObj?.idRol ?? rolObj?.IDRol ?? parsed?.idRol ?? parsed?.IDRol;
+        setIsRol1(Number(idRol) === 1);
       }
     } catch {
       setUserEmail('');
@@ -153,6 +159,11 @@ const Header = ({ minimal = false }) => {
         <Link to="/dashboard" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/dashboard') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
           Dashboard
         </Link>
+        {isRol1 && (
+          <Link to="/solicitudes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/solicitudes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Solicitudes
+          </Link>
+        )}
         <Link to="/usuarios" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/usuarios') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
           Usuarios
         </Link>
@@ -233,9 +244,18 @@ const Header = ({ minimal = false }) => {
             
             <button
               onClick={() => setMenuOpen(o => !o)}
-              className="size-10 rounded-full bg-[rgb(44,171,91)] text-white flex items-center justify-center font-bold"
+              className="size-10 rounded-full bg-[rgb(44,171,91)] text-white flex items-center justify-center font-bold overflow-hidden"
+              aria-label="Menú de usuario"
             >
-              {(userEmail || 'u').charAt(0).toUpperCase()}
+              {userLogo ? (
+                <img
+                  src={`data:image/png;base64,${userLogo}`}
+                  alt="Logo de usuario"
+                  className="h-10 w-10 object-cover"
+                />
+              ) : (
+                (userEmail || 'u').charAt(0).toUpperCase()
+              )}
             </button>
             
             {menuOpen && (

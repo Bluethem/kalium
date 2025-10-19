@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { pedidoService } from '../../services/api';
 
 const ListaPedidos = () => {
@@ -141,7 +140,6 @@ const ListaPedidos = () => {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
@@ -153,10 +151,8 @@ const ListaPedidos = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 p-6 lg:p-8">
+    <div className="flex-1">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
           <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
@@ -470,7 +466,7 @@ const ListaPedidos = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 };

@@ -24,7 +24,7 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   
   // Obtener rol del usuario (soporta objeto o string)
   const rolNombre = usuario.rol?.nombreRol || usuario.rol;
-  
+
   // Si no hay roles permitidos especificados, permitir acceso
   if (allowedRoles.length === 0) {
     return children;

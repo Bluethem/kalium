@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { experimentoService } from '../../services/api';
 
 const ListaExperimentos = () => {
@@ -51,23 +50,18 @@ const ListaExperimentos = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2cab5b] mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando experimentos...</p>
-          </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2cab5b] mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando experimentos...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 p-6 lg:p-8">
+    <div className="flex-1">
+      <div className="p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
           <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
@@ -192,7 +186,7 @@ const ListaExperimentos = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 };
