@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { entregaService, pedidoService, estudianteService } from '../../services/api';
 
 const GenerarEntregas = () => {
@@ -116,35 +115,27 @@ const GenerarEntregas = () => {
   
   if (loadingData) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
           </div>
         </div>
-      </div>
     );
   }
   
   if (!pedido) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-red-600">Pedido no encontrado</div>
         </div>
-      </div>
     );
   }
   
   const todasAsignadas = entregas.length > 0 && entregas.every(e => e.estudiante !== null);
   
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-      
+    <> 
       {/* Notificaciones */}
       {showSuccess && (
         <div className="fixed top-20 right-4 z-50 rounded-lg bg-green-50 dark:bg-green-900/20 p-4 border border-green-200 dark:border-green-800 shadow-lg">
@@ -171,8 +162,7 @@ const GenerarEntregas = () => {
         </div>
       )}
       
-      <main className="flex-1 p-6 lg:p-8">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-5xl p-6 lg:p-8">
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
             <div>
@@ -341,8 +331,7 @@ const GenerarEntregas = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </>
   );
 };
 

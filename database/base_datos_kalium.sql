@@ -23,9 +23,29 @@ CREATE TABLE Usuario
   Correo VARCHAR(100) NOT NULL,
   Contrasena VARCHAR(100) NOT NULL,
   IDRol INT NOT NULL,
+  logo LONGBLOB NULL,
   PRIMARY KEY (IDUsuario),
   UNIQUE (Correo),
   FOREIGN KEY (IDRol) REFERENCES Rol(IDRol)
+);
+
+CREATE TABLE AdministradorSistema (
+  IDAdministradorSistemas INT NOT NULL AUTO_INCREMENT,
+  IDUsuario INT NOT NULL UNIQUE,
+  PRIMARY KEY (IDAdministradorSistemas),
+  FOREIGN KEY (IDUsuario) REFERENCES Usuario(IDUsuario)
+);
+
+CREATE TABLE Solicitud(
+    IDSolicitud INT NOT NULL AUTO_INCREMENT,
+    Nombre VARCHAR(100) NOT NULL,
+    Apellido VARCHAR(100) NOT NULL,
+    Correo VARCHAR(100) NOT NULL,
+    Contrasena VARCHAR(100) NOT NULL,
+    IDRol INT NOT NULL,
+    PRIMARY KEY (IDSolicitud),
+    UNIQUE (Correo),
+    FOREIGN KEY (IDRol) REFERENCES Rol(IDRol)
 );
 
 CREATE TABLE Administrador

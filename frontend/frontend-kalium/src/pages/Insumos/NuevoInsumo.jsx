@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { insumoService, quimicoService, categoriaService, estadoInsumoService, unidadService } from '../../services/api';
 
 const NuevoInsumo = () => {
@@ -224,10 +223,8 @@ const NuevoInsumo = () => {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <>
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-2xl space-y-8">
           <div>
             <h2 className="text-center text-3xl font-bold text-gray-900 dark:text-white">
@@ -805,8 +802,8 @@ const NuevoInsumo = () => {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 };
 

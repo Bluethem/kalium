@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { experimentoService, insumoService } from '../../services/api';
 
 const EditarExperimento = () => {
@@ -155,24 +154,18 @@ const EditarExperimento = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2cab5b] mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando experimento...</p>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="mx-auto max-w-4xl">
+    <>
+        <div className="mx-auto max-w-4xl p-6 lg:p-8">
           <div className="mb-8">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Editar Experimento</h2>
             <p className="text-gray-500 dark:text-gray-400">Modifique la información del experimento.</p>
@@ -343,7 +336,6 @@ const EditarExperimento = () => {
             </div>
           </form>
         </div>
-      </main>
 
       {/* Modal de Éxito */}
       {showSuccess && (
@@ -401,7 +393,7 @@ const EditarExperimento = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

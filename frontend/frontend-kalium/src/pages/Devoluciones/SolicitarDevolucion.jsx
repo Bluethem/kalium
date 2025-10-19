@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { devolucionService, entregaService } from '../../services/api';
 
 const SolicitarDevolucion = () => {
@@ -89,31 +88,23 @@ const SolicitarDevolucion = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center">Cargando...</div>
         </main>
-      </div>
     );
   }
 
   if (!entrega) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center text-red-600">Entrega no encontrada</div>
         </main>
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <main className="max-w-4xl mx-auto px-4 py-8">
+    <>
+      <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
           <button
@@ -212,7 +203,7 @@ const SolicitarDevolucion = () => {
             </button>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Notificaciones */}
       {showSuccess && (
@@ -233,7 +224,7 @@ const SolicitarDevolucion = () => {
           <p className="font-semibold text-red-900">{errorMessage}</p>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

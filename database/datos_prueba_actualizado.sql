@@ -64,7 +64,8 @@ INSERT INTO Usuario (Nombre, Apellido, Correo, Contrasena, IDRol) VALUES
 -- 3. ADMINISTRADORES
 -- ============================================
 -- Insertar administradores (IDUsuario 1 = Juan Pérez)
-INSERT INTO Administrador (IDUsuario) VALUES (1), (2);
+INSERT INTO AdministradorSistema (IDUsuario) VALUES (1);
+INSERT INTO Administrador (IDUsuario) VALUES (2);
 
 -- ============================================
 -- 4. INSTRUCTORES

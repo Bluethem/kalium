@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { entregaService } from '../../services/api';
 
 const DetalleEntrega = () => {
@@ -49,35 +48,26 @@ const DetalleEntrega = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2cab5b] mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando detalle de la entrega...</p>
           </div>
         </div>
-      </div>
     );
   }
 
   if (!entrega) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-600 dark:text-gray-400">Entrega no encontrada</p>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 p-6 lg:p-8">
-        <div className="mx-auto max-w-5xl">
+    <>
+        <div className="mx-auto max-w-5xl p-6 lg:p-8">
           {/* Header */}
           <div className="mb-6 flex items-center gap-4">
             <button
@@ -231,7 +221,6 @@ const DetalleEntrega = () => {
             </button>
           </div>
         </div>
-      </main>
 
       {/* Modal Confirmar Eliminar */}
       {showModalEliminar && (
@@ -267,7 +256,7 @@ const DetalleEntrega = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

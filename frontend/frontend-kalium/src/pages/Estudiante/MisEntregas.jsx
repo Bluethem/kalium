@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { entregaService, devolucionService } from '../../services/api';
 
 const MisEntregas = () => {
@@ -113,22 +112,17 @@ const MisEntregas = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Cargando entregas...</p>
           </div>
         </main>
-      </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F9FAFB] dark:bg-[#111827]">
-      <Header />
-      <main className="flex-1">
+    <>
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           {/* Encabezado */}
           <div className="mb-8">
@@ -313,8 +307,7 @@ const MisEntregas = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </>
   );
 };
 

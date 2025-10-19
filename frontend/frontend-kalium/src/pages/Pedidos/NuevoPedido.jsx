@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { pedidoService, insumoService, horarioService, pedidoDetalleService, experimentoService } from '../../services/api';
 import axios from 'axios';
 
@@ -228,11 +227,8 @@ const NuevoPedido = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="mx-auto max-w-4xl">
+    <>
+        <div className="mx-auto max-w-4xl p-6 lg:p-8">
           <div className="mb-8">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Nuevo Pedido</h2>
             <p className="text-gray-500 dark:text-gray-400">Complete el formulario para registrar un nuevo pedido.</p>
@@ -537,7 +533,6 @@ const NuevoPedido = () => {
             </div>
           </form>
         </div>
-      </main>
 
       {/* Modal de Error - Stock Insuficiente */}
       {showErrorStock && (
@@ -602,7 +597,7 @@ const NuevoPedido = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

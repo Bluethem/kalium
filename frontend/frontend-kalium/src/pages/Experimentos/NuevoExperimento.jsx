@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { experimentoService, insumoService } from '../../services/api';
 
 const NuevoExperimento = () => {
@@ -121,11 +120,8 @@ const NuevoExperimento = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="mx-auto max-w-4xl">
+    <>
+        <div className="mx-auto max-w-4xl p-6 lg:p-8">
           <div className="mb-8">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Nuevo Experimento</h2>
             <p className="text-gray-500 dark:text-gray-400">Complete el formulario para crear un nuevo experimento.</p>
@@ -296,7 +292,6 @@ const NuevoExperimento = () => {
             </div>
           </form>
         </div>
-      </main>
 
       {/* Modal de Éxito */}
       {showSuccess && (
@@ -365,7 +360,7 @@ const NuevoExperimento = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

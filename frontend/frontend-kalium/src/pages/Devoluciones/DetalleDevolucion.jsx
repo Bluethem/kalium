@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { devolucionService, entregaService, estDevolucionService } from '../../services/api';
 
 const DetalleDevolucion = () => {
@@ -192,23 +191,17 @@ const DetalleDevolucion = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center">Cargando...</div>
         </main>
-      </div>
     );
   }
 
   if (!devolucion) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center text-red-600">Devolución no encontrada</div>
         </main>
-      </div>
     );
   }
 
@@ -222,10 +215,8 @@ const DetalleDevolucion = () => {
   const esPendiente = devolucion.estDevolucion?.idEstDevolucion === 1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <main className="max-w-7xl mx-auto px-4 py-8">
+    <>
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -418,7 +409,7 @@ const DetalleDevolucion = () => {
             </p>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Modal Aprobar */}
       {showModalAprobar && (
@@ -494,7 +485,7 @@ const DetalleDevolucion = () => {
           <p className="font-semibold text-red-900">{errorMessage}</p>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

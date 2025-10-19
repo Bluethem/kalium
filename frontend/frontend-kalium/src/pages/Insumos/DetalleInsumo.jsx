@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
 import { insumoService, quimicoService } from '../../services/api';
 import axios from 'axios';
 
@@ -160,34 +159,26 @@ const DetalleInsumo = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando detalles...</p>
           </div>
         </div>
-      </div>
     );
   }
 
   if (!tipoInsumo) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-600 dark:text-gray-400">Insumo no encontrado</p>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
-      <Header />
-
-      <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => navigate('/insumos')}
@@ -318,7 +309,7 @@ const DetalleInsumo = () => {
             </table>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Modal de Confirmación de Eliminación */}
       {showConfirmDelete && itemEliminar && (
@@ -543,7 +534,7 @@ const DetalleInsumo = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
