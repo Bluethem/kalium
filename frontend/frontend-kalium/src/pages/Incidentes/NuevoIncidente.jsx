@@ -163,7 +163,7 @@ const NuevoIncidente = () => {
                     <option value="">Seleccionar estudiante</option>
                     {estudiantes.map(est => (
                       <option key={est.idEstudiante} value={est.idEstudiante}>
-                        {est.nombre} {est.apellido}
+                        {est.usuario?.nombre} {est.usuario?.apellido}
                       </option>
                     ))}
                   </select>

@@ -60,7 +60,7 @@ const ListaEntregas = () => {
       if (filtros.busqueda) {
         const busqueda = filtros.busqueda.toLowerCase();
         const idEntrega = `#ENT${String(entrega.idEntrega).padStart(3, '0')}`.toLowerCase();
-        const nombreEstudiante = `${entrega.estudiante?.nombre || ''} ${entrega.estudiante?.apellido || ''}`.toLowerCase();
+        const nombreEstudiante = `${entrega.estudiante?.usuario?.nombre || ''} ${entrega.estudiante?.usuario?.apellido || ''}`.toLowerCase();
         const idPedido = `#PED${String(entrega.pedido?.idPedido || 0).padStart(3, '0')}`.toLowerCase();
         
         if (!idEntrega.includes(busqueda) && 
@@ -311,7 +311,7 @@ const ListaEntregas = () => {
                         </button>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                        {entrega.estudiante?.nombre} {entrega.estudiante?.apellido}
+                        {entrega.estudiante?.usuario?.nombre} {entrega.estudiante?.usuario?.apellido}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
                         <button

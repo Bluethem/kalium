@@ -55,6 +55,8 @@ CREATE TABLE Curso
 (
   IDCurso INT NOT NULL AUTO_INCREMENT,
   NombreCurso VARCHAR(100) NOT NULL,
+  Codigo VARCHAR(20) NOT NULL UNIQUE,
+  Descripcion VARCHAR(255),
   PRIMARY KEY (IDCurso)
 );
 
@@ -119,6 +121,12 @@ CREATE TABLE TipoInsumo
   FOREIGN KEY (IDUnidad) REFERENCES Unidad(IDUnidad)
 );
 
+CREATE TABLE EstPedidoDetalle (
+  IDEstPedidoDetalle INT NOT NULL AUTO_INCREMENT,
+  NombreEstDetalle VARCHAR(50) NOT NULL,
+  PRIMARY KEY (IDEstPedidoDetalle)
+);
+
 CREATE TABLE PedidoDetalle
 (
   IDPedidoDetalle INT NOT NULL AUTO_INCREMENT,
@@ -130,12 +138,6 @@ CREATE TABLE PedidoDetalle
   FOREIGN KEY (IDPedido) REFERENCES Pedido(IDPedido),
   FOREIGN KEY (IDTipoInsumo) REFERENCES TipoInsumo(IDTipoInsumo),
   FOREIGN KEY (IDEstPedidoDetalle) REFERENCES EstPedidoDetalle(IDEstPedidoDetalle)
-);
-
-CREATE TABLE EstPedidoDetalle (
-  IDEstPedidoDetalle INT NOT NULL AUTO_INCREMENT,
-  NombreEstDetalle VARCHAR(50) NOT NULL,
-  PRIMARY KEY (IDEstPedidoDetalle)
 );
 
 CREATE TABLE EstInsumo
@@ -156,12 +158,13 @@ CREATE TABLE Insumo
   FOREIGN KEY (IDTipoInsumo) REFERENCES TipoInsumo(IDTipoInsumo)
 );  
 
+-- ✅ MODIFICADO: Estudiante ahora referencia a Usuario
 CREATE TABLE Estudiante
 (
   IDEstudiante INT NOT NULL AUTO_INCREMENT,
-  Nombre VARCHAR(100) NOT NULL,
-  Apellido VARCHAR(100) NOT NULL,
-  PRIMARY KEY (IDEstudiante)
+  IDUsuario INT NOT NULL UNIQUE,
+  PRIMARY KEY (IDEstudiante),
+  FOREIGN KEY (IDUsuario) REFERENCES Usuario(IDUsuario)
 );
 
 CREATE TABLE Entrega
@@ -230,7 +233,7 @@ CREATE TABLE DevolucionDetalle
   IDDevolucionDetalle INT NOT NULL AUTO_INCREMENT,
   IDDevolucion INT NOT NULL,
   IDInsumo INT NOT NULL,
-  EstadoInsumoDevuelto VARCHAR(50) NOT NULL DEFAULT 'OK' COMMENT 'OK, Dañado, Perdido',
+  EstadoInsumoDevuelto VARCHAR(50) NOT NULL DEFAULT 'NO_REVISADO' COMMENT 'OK, Dañado, Perdido, NO_REVISADO',
   Observaciones VARCHAR(255) NULL COMMENT 'Observaciones sobre el estado del insumo',
   PRIMARY KEY (IDDevolucionDetalle),
   FOREIGN KEY (IDDevolucion) REFERENCES Devolucion(IDDevolucion),

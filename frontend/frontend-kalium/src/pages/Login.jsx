@@ -20,7 +20,21 @@ function Login() {
       if (res.ok) {
         const user = await res.json();
         localStorage.setItem('usuario', JSON.stringify(user));
-        navigate('/dashboard');
+        
+        // ✅ Redirigir según el ROL del usuario
+        const rolNombre = user.rol?.nombreRol || user.rol; // Soporte para objeto o string
+        
+        if (rolNombre === 'ADMIN' || rolNombre === 'Administrador') {
+          navigate('/dashboard');
+        } else if (rolNombre === 'ESTUDIANTE' || rolNombre === 'Estudiante') {
+          navigate('/dashboard-estudiante');
+        } else if (rolNombre === 'INSTRUCTOR' || rolNombre === 'Instructor') {
+          navigate('/dashboard-instructor'); // Pendiente de implementar
+        } else {
+          // Rol desconocido, ir a dashboard por defecto
+          console.warn('Rol no reconocido:', rolNombre);
+          navigate('/dashboard');
+        }
       } else {
         const msg = await res.text();
         alert(msg || 'Error de inicio de sesión');

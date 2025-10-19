@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -62,6 +63,34 @@ public class PedidoController {
     public ResponseEntity<Pedido> cambiarEstado(@PathVariable Integer idPedido, @PathVariable Integer idEstado) {
         Pedido pedidoActualizado = pedidoService.cambiarEstado(idPedido, idEstado);
         return ResponseEntity.ok(pedidoActualizado);
+    }
+    
+    /**
+     * Generar pedido automáticamente desde un experimento
+     * POST /api/pedidos/experimentos/{idExperimento}/generar
+     */
+    @PostMapping("/experimentos/{idExperimento}/generar")
+    public ResponseEntity<Pedido> generarPedidoDesdeExperimento(
+            @PathVariable Integer idExperimento,
+            @RequestBody Map<String, Object> datos) {
+        try {
+            Integer idInstructor = (Integer) datos.get("idInstructor");
+            Integer idHorario = (Integer) datos.get("idHorario");
+            Integer idCurso = (Integer) datos.get("idCurso");
+            Integer cantGrupos = (Integer) datos.get("cantGrupos");
+            
+            Pedido pedido = pedidoService.generarPedidoDesdeExperimento(
+                idExperimento,
+                idInstructor,
+                idHorario,
+                idCurso,
+                cantGrupos
+            );
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al generar pedido: " + e.getMessage());
+        }
     }
     
     @DeleteMapping("/{id}")

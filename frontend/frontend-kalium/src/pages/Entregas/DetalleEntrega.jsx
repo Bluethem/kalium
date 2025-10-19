@@ -154,7 +154,7 @@ const DetalleEntrega = () => {
                     Estudiante
                   </p>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {entrega.estudiante?.nombre} {entrega.estudiante?.apellido}
+                    {entrega.estudiante?.usuario?.nombre} {entrega.estudiante?.usuario?.apellido}
                   </p>
                 </div>
               </div>

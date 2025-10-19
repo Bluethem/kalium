@@ -41,33 +41,36 @@ const DetalleIncidente = () => {
       await cargarIncidente();
     } catch (error) {
       console.error('Error al resolver incidente:', error);
-      alert('No se pudo resolver el incidente');
+      const errorMsg = error.response?.data || 'No se pudo resolver el incidente. Debe estar EN REVISIÓN primero.';
+      alert(errorMsg);
     }
   };
 
   const handlePonerEnRevision = async () => {
     try {
-      await incidenteService.cambiarEstado(id, 2); // 2 = En Revisión
+      await incidenteService.ponerEnRevision(id);
       setShowModalRevision(false);
       setSuccessMessage('El incidente ha sido puesto en revisión exitosamente.');
       setShowSuccess(true);
       await cargarIncidente();
     } catch (error) {
       console.error('Error al poner en revisión:', error);
-      alert('No se pudo cambiar el estado del incidente');
+      const errorMsg = error.response?.data || 'No se pudo cambiar el estado del incidente';
+      alert(errorMsg);
     }
   };
 
   const handleCancelar = async () => {
     try {
-      await incidenteService.cambiarEstado(id, 4); // 4 = Cancelado
+      await incidenteService.cancelarIncidente(id);
       setShowModalCancelar(false);
       setSuccessMessage('El incidente ha sido cancelado exitosamente.');
       setShowSuccess(true);
       await cargarIncidente();
     } catch (error) {
       console.error('Error al cancelar incidente:', error);
-      alert('No se pudo cancelar el incidente');
+      const errorMsg = error.response?.data || 'No se pudo cancelar el incidente';
+      alert(errorMsg);
     }
   };
 
@@ -107,11 +110,11 @@ const DetalleIncidente = () => {
   }
 
   const estadoActual = incidente.estIncidente?.estadoIncidente;
-  const esResuelto = estadoActual === 'Resuelto';
-  const esCancelado = estadoActual === 'Cancelado';
-  const esReportado = estadoActual === 'Reportado';
-  const esEnRevision = estadoActual === 'En Revisión';
-  const puedeModificar = !esResuelto && !esCancelado;
+  const idEstadoActual = incidente.estIncidente?.idEstIncidente;
+  const esReportado = idEstadoActual === 1;
+  const esEnRevision = idEstadoActual === 2;
+  const esResuelto = idEstadoActual === 3;
+  const esCancelado = idEstadoActual === 4;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
@@ -119,273 +122,255 @@ const DetalleIncidente = () => {
 
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-5xl">
-          {/* Header con botón volver */}
-          <div className="mb-6 flex items-center gap-4">
+          <div className="mb-6">
             <button
               onClick={() => navigate('/incidentes')}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
+              className="mb-4 text-[rgb(44,171,91)] hover:underline flex items-center gap-2"
             >
               <span className="material-symbols-outlined">arrow_back</span>
-            </button>
-            <div className="flex-1">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                Detalle del Incidente #INC{String(incidente.idIncidentes).padStart(3, '0')}
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400">
-                Información completa del incidente reportado
-              </p>
-            </div>
-          </div>
-
-          {/* Card de información del incidente */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 mb-6">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                    Información del Incidente
-                  </h3>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getEstadoBadge(estadoActual)}`}>
-                      {estadoActual || 'Sin estado'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Botones de acción según el estado */}
-                {puedeModificar && (
-                  <div className="flex gap-2">
-                    {/* Botón Poner en Revisión - solo si está Reportado */}
-                    {esReportado && (
-                      <button
-                        onClick={() => setShowModalRevision(true)}
-                        className="flex items-center gap-2 rounded-lg bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400"
-                      >
-                        <span className="material-symbols-outlined text-base">rate_review</span>
-                        En Revisión
-                      </button>
-                    )}
-
-                    {/* Botón Resolver - si está Reportado o En Revisión */}
-                    {(esReportado || esEnRevision) && (
-                      <button
-                        onClick={() => setShowModalResolver(true)}
-                        className="flex items-center gap-2 rounded-lg bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-500/20 dark:bg-green-500/20 dark:text-green-400"
-                      >
-                        <span className="material-symbols-outlined text-base">check_circle</span>
-                        Resolver
-                      </button>
-                    )}
-
-                    {/* Botón Cancelar - siempre disponible si no está Resuelto ni Cancelado */}
-                    <button
-                      onClick={() => setShowModalCancelar(true)}
-                      className="flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400"
-                    >
-                      <span className="material-symbols-outlined text-base">cancel</span>
-                      Cancelar
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Detalles del incidente en grid */}
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Descripción
-                  </p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {incidente.descripcion}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Estudiante
-                  </p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {incidente.estudiante?.nombre} {incidente.estudiante?.apellido}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Fecha del Incidente
-                  </p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {incidente.fechaIncidente ? new Date(incidente.fechaIncidente).toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric'
-                    }) : 'N/A'}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Fecha de Solución
-                  </p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {incidente.fechaSolucion ? new Date(incidente.fechaSolucion).toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric'
-                    }) : 'Pendiente'}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Devolución Asociada
-                  </p>
-                  <button
-                    onClick={() => navigate(`/devoluciones/${incidente.devolucion?.idDevolucion}`)}
-                    className="text-base font-semibold text-[rgb(44,171,91)] hover:underline"
-                  >
-                    #DEV{String(incidente.devolucion?.idDevolucion || 0).padStart(3, '0')}
-                  </button>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Estado del Incidente
-                  </p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {estadoActual || 'Sin estado'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Botón volver */}
-          <div className="flex justify-end">
-            <button
-              onClick={() => navigate('/incidentes')}
-              className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
               Volver a Incidentes
             </button>
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  Detalle del Incidente #{incidente.idIncidentes}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  Información completa del incidente reportado
+                </p>
+              </div>
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getEstadoBadge(estadoActual)}`}>
+                {estadoActual}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                Descripción del Incidente
+              </h3>
+              <p className="text-gray-700 dark:text-gray-300 mb-6">
+                {incidente.descripcion}
+              </p>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 mb-1">Fecha de Incidente</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {incidente.fechaIncidente || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 mb-1">Fecha de Solución</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {incidente.fechaSolucion || 'Pendiente'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                Estudiante Responsable
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400">Nombre</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {incidente.estudiante?.usuario?.nombre} {incidente.estudiante?.usuario?.apellido}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400">Email</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {incidente.estudiante?.usuario?.email || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {incidente.devolucion && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                Relacionado con Devolución
+              </h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Devolución</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    #DEV{String(incidente.devolucion.idDevolucion).padStart(3, '0')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate(`/devoluciones/${incidente.devolucion.idDevolucion}`)}
+                  className="text-[rgb(44,171,91)] hover:underline text-sm font-semibold"
+                >
+                  Ver Devolución →
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Acciones
+            </h3>
+            
+            {esReportado && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  ⚠️ Este incidente está <strong>REPORTADO</strong> y aún no ha sido revisado.
+                </p>
+                <button
+                  onClick={() => setShowModalRevision(true)}
+                  className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                >
+                  🔍 Poner en Revisión
+                </button>
+                <button
+                  onClick={() => setShowModalCancelar(true)}
+                  className="w-full border-2 border-red-600 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors"
+                >
+                  ❌ Cancelar Incidente
+                </button>
+              </div>
+            )}
+            
+            {esEnRevision && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  🔍 Este incidente está <strong>EN REVISIÓN</strong>. Ya puedes resolverlo o cancelarlo.
+                </p>
+                <button
+                  onClick={() => setShowModalResolver(true)}
+                  className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 font-semibold transition-colors"
+                >
+                  ✅ Resolver Incidente
+                </button>
+                <button
+                  onClick={() => setShowModalCancelar(true)}
+                  className="w-full border-2 border-red-600 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors"
+                >
+                  ❌ Cancelar Incidente
+                </button>
+              </div>
+            )}
+            
+            {esResuelto && (
+              <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded">
+                <p className="text-green-800 dark:text-green-300 font-semibold">
+                  ✅ Este incidente ya fue RESUELTO el {incidente.fechaSolucion || 'N/A'}
+                </p>
+                <p className="text-sm text-green-700 dark:text-green-400 mt-2">
+                  No se pueden realizar más acciones sobre incidentes resueltos.
+                </p>
+              </div>
+            )}
+            
+            {esCancelado && (
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded">
+                <p className="text-red-800 dark:text-red-300 font-semibold">
+                  ❌ Este incidente fue CANCELADO
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-400 mt-2">
+                  No se pueden realizar más acciones sobre incidentes cancelados.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>
 
-      {/* Modal Poner en Revisión */}
       {showModalRevision && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-800">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 mb-4">
-                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">
-                  rate_review
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Poner en Revisión
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                ¿Desea marcar este incidente como "En Revisión"?
-              </p>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowModalRevision(false)}
-                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handlePonerEnRevision}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Confirmar
-                </button>
-              </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+              🔍 Poner en Revisión
+            </h3>
+            <p className="mb-6 text-gray-700 dark:text-gray-300">
+              ¿Deseas poner este incidente en estado de <strong>REVISIÓN</strong>? Esto significa que comenzarás a investigar y analizar el caso.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowModalRevision(false)}
+                className="flex-1 border-2 border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handlePonerEnRevision}
+                className="flex-1 bg-blue-600 text-white rounded-lg px-4 py-3 hover:bg-blue-700 font-semibold"
+              >
+                Sí, Poner en Revisión
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Confirmar Resolver */}
       {showModalResolver && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-800">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/50 mb-4">
-                <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-3xl">
-                  check_circle
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Resolver Incidente
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                ¿Está seguro de marcar este incidente como resuelto? Se establecerá la fecha de solución automáticamente.
-              </p>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowModalResolver(false)}
-                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleResolver}
-                  className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                >
-                  Confirmar
-                </button>
-              </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4 text-green-600">
+              ✅ Resolver Incidente
+            </h3>
+            <p className="mb-6 text-gray-700 dark:text-gray-300">
+              ¿Estás seguro de marcar este incidente como <strong>RESUELTO</strong>? Esta acción es final y no se puede revertir. Se establecerá la fecha de solución automáticamente.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowModalResolver(false)}
+                className="flex-1 border-2 border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResolver}
+                className="flex-1 bg-green-600 text-white rounded-lg px-4 py-3 hover:bg-green-700 font-semibold"
+              >
+                Sí, Resolver
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Confirmar Cancelar */}
       {showModalCancelar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-800">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50 mb-4">
-                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-3xl">
-                  cancel
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Cancelar Incidente
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                ¿Está seguro de cancelar este incidente? Esta acción no se puede deshacer.
-              </p>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowModalCancelar(false)}
-                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  No, volver
-                </button>
-                <button
-                  onClick={handleCancelar}
-                  className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                >
-                  Sí, cancelar
-                </button>
-              </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4 text-red-600">
+              ❌ Cancelar Incidente
+            </h3>
+            <p className="mb-6 text-gray-700 dark:text-gray-300">
+              ¿Estás seguro de <strong>CANCELAR</strong> este incidente? Esto significa que era un error o no procede. Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowModalCancelar(false)}
+                className="flex-1 border-2 border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold"
+              >
+                No, Volver
+              </button>
+              <button
+                onClick={handleCancelar}
+                className="flex-1 bg-red-600 text-white rounded-lg px-4 py-3 hover:bg-red-700 font-semibold"
+              >
+                Sí, Cancelar
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Éxito */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-800">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/50 mb-4">
                 <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-4xl">
-                  check
+                  check_circle
                 </span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">

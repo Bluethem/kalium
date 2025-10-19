@@ -3,6 +3,10 @@ package com.laboQuimica.kalium.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * ✅ MODIFICADO: Estudiante ahora referencia a Usuario
+ * Sigue el mismo patrón que Administrador e Instructor
+ */
 @Entity
 @Table(name = "Estudiante")
 @Data
@@ -15,9 +19,7 @@ public class Estudiante {
     @Column(name = "IDEstudiante")
     private Integer idEstudiante;
     
-    @Column(name = "Nombre", nullable = false, length = 100)
-    private String nombre;
-    
-    @Column(name = "Apellido", nullable = false, length = 100)
-    private String apellido;
+    @OneToOne
+    @JoinColumn(name = "IDUsuario", nullable = false, unique = true)
+    private Usuario usuario;
 }

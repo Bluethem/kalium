@@ -61,18 +61,20 @@ export const pedidoService = {
   updatePedido: (id, pedidoData) => api.put(`/pedidos/${id}`, pedidoData),
   cambiarEstado: (idPedido, idEstado) => api.patch(`/pedidos/${idPedido}/estado/${idEstado}`),
   deletePedido: (id) => api.delete(`/pedidos/${id}`),
+  generarPedidoDesdeExperimento: (idExperimento, datos) => 
+    api.post(`/pedidos/experimentos/${idExperimento}/generar`, datos),
 };
 
 export const entregaService = {
   getEntregas: () => api.get('/entregas'),
   getEntregaById: (id) => api.get(`/entregas/${id}`),
   getEntregasPorPedido: (idPedido) => api.get(`/entregas/pedido/${idPedido}`),
-  getEntregasPorEstudiante: (idEstudiante) => api.get(`/entregas/estudiante/${idEstudiante}`),
+  getEntregasPorEstudiante: (idUsuario) => api.get(`/entregas/usuario/${idUsuario}`),
   getInsumosPorEntrega: (id) => api.get(`/entregas/${id}/insumos`),
   getQuimicosPorEntrega: (id) => api.get(`/entregas/${id}/quimicos`),
   createEntrega: (data) => api.post('/entregas', data),
   generarEntregasPorGrupos: (idPedido) => api.post(`/entregas/generar/${idPedido}`),
-  asignarEstudiante: (idEntrega, idEstudiante) => api.patch(`/entregas/${idEntrega}/estudiante/${idEstudiante}`),
+  asignarEstudiante: (idEntrega, idEstudiante) => api.put(`/entregas/${idEntrega}/asignar-estudiante/${idEstudiante}`),
   verificarEntregasPorPedido: (idPedido) => api.get(`/entregas/verificar/${idPedido}`),
   getEntregasPendientes: (idPedido) => api.get(`/entregas/pendientes/${idPedido}`),
 
@@ -159,7 +161,7 @@ export const incidenteService = {
   getIncidentes: () => api.get('/incidentes'),
   getIncidenteById: (id) => api.get(`/incidentes/${id}`),
   getIncidentesPorEstado: (idEstado) => api.get(`/incidentes/estado/${idEstado}`),
-  getIncidentesPorEstudiante: (idEstudiante) => api.get(`/incidentes/estudiante/${idEstudiante}`),
+  getIncidentesPorEstudiante: (idUsuario) => api.get(`/incidentes/usuario/${idUsuario}`),
   getIncidentesPorDevolucion: (idDevolucion) => api.get(`/incidentes/devolucion/${idDevolucion}`),
   createIncidente: (incidenteData) => api.post('/incidentes', incidenteData),
   updateIncidente: (id, incidenteData) => api.put(`/incidentes/${id}`, incidenteData),
@@ -167,8 +169,10 @@ export const incidenteService = {
   resolverIncidente: (id) => api.patch(`/incidentes/${id}/resolver`),
   deleteIncidente: (id) => api.delete(`/incidentes/${id}`),
   getEstadosIncidente: () => api.get('/incidentes/estados'),
-  ponerEnRevision: (id) => api.patch(`/incidentes/${id}/estado/2`),
+  ponerEnRevision: (id) => api.patch(`/incidentes/${id}/poner-revision`), // ✅ ACTUALIZADO
   cancelarIncidente: (id) => api.patch(`/incidentes/${id}/cancelar`),
+  puedeResolver: (id) => api.get(`/incidentes/${id}/puede-resolver`), // ✅ NUEVO
+  puedePonerEnRevision: (id) => api.get(`/incidentes/${id}/puede-poner-revision`), // ✅ NUEVO
 };
 
 // Servicios para Estudiantes
@@ -182,11 +186,16 @@ export const devolucionService = {
   getDevolucionById: (id) => api.get(`/devoluciones/${id}`),
   getDevolucionesPorPedido: (idPedido) => api.get(`/devoluciones/pedido/${idPedido}`),
   getDevolucionesPorEstado: (idEstado) => api.get(`/devoluciones/estado/${idEstado}`),
+  getDevolucionesPorEstudiante: (idUsuario) => api.get(`/devoluciones/usuario/${idUsuario}`),
   getDetalles: (idDevolucion) => api.get(`/devoluciones/${idDevolucion}/detalles`),
   createDevolucion: (data) => api.post('/devoluciones', data),
   agregarDetalle: (data) => api.post('/devoluciones/detalles', data),
   updateDevolucion: (id, data) => api.put(`/devoluciones/${id}`, data),
   deleteDevolucion: (id) => api.delete(`/devoluciones/${id}`),
+  aprobarDevolucion: (id) => api.patch(`/devoluciones/${id}/aprobar`),
+  rechazarDevolucion: (id, motivo) => api.patch(`/devoluciones/${id}/rechazar`, { motivo }),
+  verificarCompleta: (id) => api.get(`/devoluciones/${id}/completa`),
+  verificarRevisados: (id) => api.get(`/devoluciones/${id}/revisados`),
 };
 
 export const estDevolucionService = {

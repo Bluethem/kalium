@@ -21,9 +21,6 @@ public class IncidenteService {
     private EstIncidenteRepository estIncidenteRepository;
     
     @Autowired
-    private EstudianteRepository estudianteRepository;
-    
-    @Autowired
     private DevolucionRepository devolucionRepository;
     
     @Autowired
@@ -31,6 +28,9 @@ public class IncidenteService {
     
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private NotificacionRepository notificacionRepository;
     
     /**
      * Obtener todos los incidentes ordenados por fecha descendente
@@ -56,12 +56,10 @@ public class IncidenteService {
     }
     
     /**
-     * Obtener incidentes por estudiante
+     * ✅ MODIFICADO: Obtener incidentes por IDUsuario del estudiante
      */
-    public List<Incidentes> obtenerPorEstudiante(Integer idEstudiante) {
-        return estudianteRepository.findById(idEstudiante)
-            .map(incidentesRepository::findByEstudiante)
-            .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con id: " + idEstudiante));
+    public List<Incidentes> obtenerPorEstudiante(Integer idUsuario) {
+        return incidentesRepository.findByEstudianteUsuarioIdUsuario(idUsuario);
     }
     
     /**
@@ -138,15 +136,36 @@ public class IncidenteService {
         Incidentes incidente = incidentesRepository.findById(idIncidente)
             .orElseThrow(() -> new RuntimeException("Incidente no encontrado con id: " + idIncidente));
         
-        EstIncidente estado = estIncidenteRepository.findById(idEstado)
+        EstIncidente nuevoEstado = estIncidenteRepository.findById(idEstado)
             .orElseThrow(() -> new RuntimeException("Estado no encontrado con id: " + idEstado));
         
-        incidente.setEstIncidente(estado);
+        Integer estadoActual = incidente.getEstIncidente().getIdEstIncidente();
         
-        // Si el nuevo estado es "Resuelto" (ID 3), establecer fecha de solución
+        // ✅ VALIDACIONES DE TRANSICIONES
+        
+        // No se puede cambiar un incidente RESUELTO
+        if (estadoActual == 3) {
+            throw new RuntimeException("No se puede cambiar el estado de un incidente RESUELTO");
+        }
+        
+        // Si intenta poner en RESUELTO, debe estar EN REVISIÓN
+        if (idEstado == 3 && estadoActual != 2) {
+            throw new RuntimeException("Solo se pueden resolver incidentes que estén EN REVISIÓN");
+        }
+        
+        // Si intenta poner EN REVISIÓN, debe estar REPORTADO
+        if (idEstado == 2 && estadoActual != 1) {
+            throw new RuntimeException("Solo se pueden poner en revisión incidentes REPORTADOS");
+        }
+        
+        incidente.setEstIncidente(nuevoEstado);
+        
+        // Si cambia a RESUELTO, establecer fecha de solución
         if (idEstado == 3 && incidente.getFechaSolucion() == null) {
             incidente.setFechaSolucion(LocalDate.now());
         }
+        
+        System.out.println("🔄 Incidente ID " + idIncidente + " cambió a estado: " + nuevoEstado.getEstadoIncidente());
         
         return incidentesRepository.save(incidente);
     }
@@ -158,12 +177,21 @@ public class IncidenteService {
         Incidentes incidente = incidentesRepository.findById(idIncidente)
             .orElseThrow(() -> new RuntimeException("Incidente no encontrado con id: " + idIncidente));
         
-        // Buscar el estado "Resuelto"
+        // ✅ NUEVO: Validar que esté EN REVISIÓN
+        if (incidente.getEstIncidente().getIdEstIncidente() != 2) {
+            throw new RuntimeException("Solo se pueden resolver incidentes que estén EN REVISIÓN. Primero debe ponerlo en revisión.");
+        }
+        
         EstIncidente estadoResuelto = estIncidenteRepository.findById(3)
             .orElseThrow(() -> new RuntimeException("Estado 'Resuelto' no encontrado"));
         
         incidente.setEstIncidente(estadoResuelto);
         incidente.setFechaSolucion(LocalDate.now());
+        
+        System.out.println("✅ Incidente ID " + idIncidente + " RESUELTO");
+        
+        // ✅ Notificar al estudiante
+        notificarEstudianteIncidenteResuelto(incidente);
         
         return incidentesRepository.save(incidente);
     }
@@ -190,8 +218,8 @@ public class IncidenteService {
             // Obtener todos los administradores de laboratorio
             List<Usuario> administradores = usuarioRepository.findByRol_NombreRol("ADMIN_LABORATORIO");
             
-            String nombreEstudiante = incidente.getEstudiante() != null 
-                ? incidente.getEstudiante().getNombre() + " " + incidente.getEstudiante().getApellido()
+            String nombreEstudiante = incidente.getEstudiante() != null && incidente.getEstudiante().getUsuario() != null
+                ? incidente.getEstudiante().getUsuario().getNombre() + " " + incidente.getEstudiante().getUsuario().getApellido()
                 : "Desconocido";
             
             String mensaje = String.format(
@@ -231,10 +259,18 @@ public class IncidenteService {
         Incidentes incidente = incidentesRepository.findById(idIncidente)
             .orElseThrow(() -> new RuntimeException("Incidente no encontrado con id: " + idIncidente));
         
-        EstIncidente estadoRevision = estIncidenteRepository.findById(2) // En Revisión
+        // ✅ Validar que esté en estado REPORTADO
+        if (incidente.getEstIncidente().getIdEstIncidente() != 1) {
+            throw new RuntimeException("Solo se puede poner en revisión incidentes en estado REPORTADO");
+        }
+        
+        EstIncidente estadoRevision = estIncidenteRepository.findById(2)
             .orElseThrow(() -> new RuntimeException("Estado 'En Revisión' no encontrado"));
         
         incidente.setEstIncidente(estadoRevision);
+        
+        System.out.println("🔍 Incidente ID " + idIncidente + " puesto EN REVISIÓN");
+        
         return incidentesRepository.save(incidente);
     }
 
@@ -245,10 +281,66 @@ public class IncidenteService {
         Incidentes incidente = incidentesRepository.findById(idIncidente)
             .orElseThrow(() -> new RuntimeException("Incidente no encontrado con id: " + idIncidente));
         
-        EstIncidente estadoCancelado = estIncidenteRepository.findById(4) // Cancelado
+        // ✅ Validar que NO esté resuelto
+        Integer estadoActual = incidente.getEstIncidente().getIdEstIncidente();
+        if (estadoActual == 3) { // Resuelto
+            throw new RuntimeException("No se puede cancelar un incidente que ya está RESUELTO");
+        }
+        
+        // Solo permitir desde REPORTADO (1) o EN REVISIÓN (2)
+        if (estadoActual != 1 && estadoActual != 2) {
+            throw new RuntimeException("Solo se pueden cancelar incidentes en estado REPORTADO o EN REVISIÓN");
+        }
+        
+        EstIncidente estadoCancelado = estIncidenteRepository.findById(4)
             .orElseThrow(() -> new RuntimeException("Estado 'Cancelado' no encontrado"));
         
         incidente.setEstIncidente(estadoCancelado);
+        
+        System.out.println("❌ Incidente ID " + idIncidente + " CANCELADO");
+        
         return incidentesRepository.save(incidente);
+    }
+
+    private void notificarEstudianteIncidenteResuelto(Incidentes incidente) {
+        try {
+            if (incidente.getEstudiante() != null && 
+                incidente.getEstudiante().getUsuario() != null) {
+                
+                Usuario estudiante = incidente.getEstudiante().getUsuario();
+                
+                Notificacion notif = new Notificacion();
+                notif.setTitulo("Incidencia Resuelta");
+                notif.setMensaje(String.format(
+                    "La incidencia #INC%03d ha sido RESUELTA: %s",
+                    incidente.getIdIncidentes(),
+                    incidente.getDescripcion()
+                ));
+                notif.setTipo("INCIDENCIA_RESUELTA");
+                notif.setLeida(false);
+                notif.setUsuario(estudiante);
+                notif.setFechaCreacion(java.time.LocalDateTime.now());
+                
+                notificacionRepository.save(notif);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de incidencia resuelta: " + e.getMessage());
+        }
+    }
+
+    public boolean puedeResolver(Integer idIncidente) {
+        Incidentes incidente = incidentesRepository.findById(idIncidente)
+            .orElseThrow(() -> new RuntimeException("Incidente no encontrado"));
+        
+        // Solo puede resolverse si está EN REVISIÓN (ID 2)
+        return incidente.getEstIncidente().getIdEstIncidente() == 2;
+    }
+
+    public boolean puedePonerEnRevision(Integer idIncidente) {
+        Incidentes incidente = incidentesRepository.findById(idIncidente)
+            .orElseThrow(() -> new RuntimeException("Incidente no encontrado"));
+        
+        // Solo puede ponerse en revisión si está REPORTADO (ID 1)
+        return incidente.getEstIncidente().getIdEstIncidente() == 1;
     }
 }

@@ -13,12 +13,10 @@ const Reportes = () => {
   
   // Filtros
   const [filtros, setFiltros] = useState({
-    fechaInicio: '',
-    fechaFin: '',
-    idCategoria: '',
-    tipoInsumo: 'todos', // 'todos', 'fisico', 'quimico'
-    estadoInsumo: '', // Para filtrar por estado
-    busqueda: ''
+  idCategoria: '',
+  tipoInsumo: 'todos',
+  nivelStock: 'todos', // ✅ NUEVO
+  busqueda: ''
   });
 
   // Estados de insumos para el filtro
@@ -60,14 +58,19 @@ const Reportes = () => {
 
   const limpiarFiltros = () => {
     setFiltros({
-      fechaInicio: '',
-      fechaFin: '',
       idCategoria: '',
       tipoInsumo: 'todos',
-      estadoInsumo: '',
+      nivelStock: 'todos',
       busqueda: ''
     });
     setPaginaActual(1);
+  };
+
+  const getNivelStock = (insumo) => {
+    const cantidad = parseFloat(insumo.cantidadNumerica || 0);
+    if (cantidad < 10) return 'bajo';
+    if (cantidad < 50) return 'medio';
+    return 'normal';
   };
 
   // Función de filtrado
@@ -89,17 +92,14 @@ const Reportes = () => {
       matchTipo = insumo.esQuimico;
     }
 
-    // Filtro por fecha (simulado con fecha de creación si existe)
-    // Nota: Esto requeriría que el backend devuelva fechas de ingreso
-    let matchFecha = true;
-    if (filtros.fechaInicio && insumo.fechaIngreso) {
-      matchFecha = new Date(insumo.fechaIngreso) >= new Date(filtros.fechaInicio);
-    }
-    if (filtros.fechaFin && insumo.fechaIngreso) {
-      matchFecha = matchFecha && new Date(insumo.fechaIngreso) <= new Date(filtros.fechaFin);
+    // Filtro por nivel de stock
+    let matchStock = true;
+    if (filtros.nivelStock && filtros.nivelStock !== 'todos') {
+      const nivel = getNivelStock(insumo);
+      matchStock = nivel === filtros.nivelStock;
     }
 
-    return matchBusqueda && matchCategoria && matchTipo && matchFecha;
+    return matchBusqueda && matchCategoria && matchTipo && matchStock;
   });
 
   // Paginación
@@ -107,6 +107,7 @@ const Reportes = () => {
   const indexInicio = (paginaActual - 1) * itemsPorPagina;
   const indexFin = indexInicio + itemsPorPagina;
   const insumosPaginados = insumosFiltrados.slice(indexInicio, indexFin);
+  const insumosStockBajo = insumos.filter(insumo => getNivelStock(insumo) === 'bajo');
 
   // Resetear página al cambiar filtros
   useEffect(() => {
@@ -135,7 +136,27 @@ const Reportes = () => {
     }
   ].filter(item => item.cantidad > 0);
 
+  // ✅ NUEVO: Datos para gráfico de Nivel de Stock
+  const datosNivelStock = [
+    {
+      nombre: 'Stock Bajo',
+      cantidad: insumos.filter(i => getNivelStock(i) === 'bajo').length,
+      color: '#ef4444'
+    },
+    {
+      nombre: 'Stock Medio',
+      cantidad: insumos.filter(i => getNivelStock(i) === 'medio').length,
+      color: '#f59e0b'
+    },
+    {
+      nombre: 'Stock Normal',
+      cantidad: insumos.filter(i => getNivelStock(i) === 'normal').length,
+      color: '#10b981'
+    }
+  ].filter(item => item.cantidad > 0);
+
   const COLORS = ['#2cab5b', '#14378f', '#ff6b6b', '#ffd93d', '#6bcf7f', '#4ecdc4'];
+  const COLORS_STOCK = ['#ef4444', '#f59e0b', '#10b981'];
 
   // Generar PDF
   const generarPDF = () => {
@@ -165,11 +186,10 @@ const Reportes = () => {
     if (filtros.tipoInsumo !== 'todos') {
       filtrosActivos.push(`Tipo: ${filtros.tipoInsumo === 'fisico' ? 'Insumo Físico' : 'Químico'}`);
     }
-    if (filtros.fechaInicio) {
-      filtrosActivos.push(`Desde: ${filtros.fechaInicio}`);
-    }
-    if (filtros.fechaFin) {
-      filtrosActivos.push(`Hasta: ${filtros.fechaFin}`);
+    if (filtros.nivelStock !== 'todos') {
+      const nivelTexto = filtros.nivelStock === 'bajo' ? 'Stock Bajo' : 
+                        filtros.nivelStock === 'medio' ? 'Stock Medio' : 'Stock Normal';
+      filtrosActivos.push(`Nivel: ${nivelTexto}`);
     }
     if (filtros.busqueda) {
       filtrosActivos.push(`Búsqueda: "${filtros.busqueda}"`);
@@ -267,6 +287,7 @@ const Reportes = () => {
     doc.text(`Total de tipos de insumos: ${insumosFiltrados.length}`, 14, yPos + 8);
     doc.text(`Insumos físicos: ${insumosFiltrados.filter(i => !i.esQuimico).length}`, 14, yPos + 14);
     doc.text(`Químicos: ${insumosFiltrados.filter(i => i.esQuimico).length}`, 14, yPos + 20);
+    doc.text(`⚠️ Alertas de stock bajo: ${insumosStockBajo.length}`, 14, yPos + 26);
     
     // Calcular por categorías
     const categoriasConDatos = categorias.filter(cat => 
@@ -304,7 +325,9 @@ const Reportes = () => {
       'Descripción': insumo.descripcion,
       'Categoría': insumo.categoria?.nombreCategoria || 'N/A',
       'Cantidad': insumo.cantidadTotal || '0',
-      'Unidad': insumo.unidad?.unidad || 'N/A'
+      'Unidad': insumo.unidad?.unidad || 'N/A',
+      'Nivel Stock': getNivelStock(insumo) === 'bajo' ? 'Bajo' : 
+                      getNivelStock(insumo) === 'medio' ? 'Medio' : 'Normal'
     }));
 
     const wb = XLSX.utils.book_new();
@@ -317,7 +340,8 @@ const Reportes = () => {
       { wch: 40 }, // Descripción
       { wch: 20 }, // Categoría
       { wch: 10 }, // Cantidad
-      { wch: 10 }  // Unidad
+      { wch: 10 }, // Unidad
+      { wch: 12 }  // Nivel Stock
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
@@ -353,6 +377,31 @@ const Reportes = () => {
           </p>
         </div>
 
+        {insumosStockBajo.length > 0 && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-2xl">warning</span>
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-900 dark:text-yellow-300 mb-1">
+                  ⚠️ {insumosStockBajo.length} Alerta(s) de Stock Bajo
+                </h3>
+                <p className="text-sm text-yellow-800 dark:text-yellow-400">
+                  Hay insumos con niveles críticos de inventario. Revisa la sección de alertas en la vista de gráficos.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setFiltros(prev => ({ ...prev, nivelStock: 'bajo' }));
+                  setVistaActual('tabla');
+                }}
+                className="text-sm font-medium text-yellow-800 dark:text-yellow-300 hover:underline"
+              >
+                Ver ahora →
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Filtros Avanzados */}
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 shadow-sm mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -386,36 +435,6 @@ const Reportes = () => {
                   className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[rgb(44,171,91)] focus:border-transparent"
                 />
               </div>
-            </div>
-
-            {/* Fecha Inicio */}
-            <div>
-              <label htmlFor="fechaInicio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Fecha Inicio
-              </label>
-              <input
-                id="fechaInicio"
-                name="fechaInicio"
-                type="date"
-                value={filtros.fechaInicio}
-                onChange={handleChangeFiltro}
-                className="w-full rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white py-2 px-3 focus:ring-2 focus:ring-[rgb(44,171,91)] focus:border-transparent"
-              />
-            </div>
-
-            {/* Fecha Fin */}
-            <div>
-              <label htmlFor="fechaFin" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Fecha Fin
-              </label>
-              <input
-                id="fechaFin"
-                name="fechaFin"
-                type="date"
-                value={filtros.fechaFin}
-                onChange={handleChangeFiltro}
-                className="w-full rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white py-2 px-3 focus:ring-2 focus:ring-[rgb(44,171,91)] focus:border-transparent"
-              />
             </div>
 
             {/* Tipo de Insumo */}
@@ -459,14 +478,20 @@ const Reportes = () => {
 
             {/* Cantidad mínima de stock */}
             <div>
-              <label htmlFor="stockMinimo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Stock Bajo (futuro)
+              <label htmlFor="nivelStock" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nivel de Stock
               </label>
               <select
-                disabled
-                className="w-full rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 py-2 px-3 cursor-not-allowed"
+                id="nivelStock"
+                name="nivelStock"
+                value={filtros.nivelStock}
+                onChange={handleChangeFiltro}
+                className="w-full rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white py-2 px-3 focus:ring-2 focus:ring-[rgb(44,171,91)] focus:border-transparent"
               >
-                <option>Próximamente</option>
+                <option value="todos">Todos los niveles</option>
+                <option value="bajo">⚠️ Stock Bajo (&lt; 10)</option>
+                <option value="medio">⚡ Stock Medio (10-49)</option>
+                <option value="normal">✓ Stock Normal (≥ 50)</option>
               </select>
             </div>
           </div>
@@ -565,12 +590,13 @@ const Reportes = () => {
                     <th className="px-6 py-3">Categoría</th>
                     <th className="px-6 py-3">Cantidad</th>
                     <th className="px-6 py-3">Unidad</th>
+                    <th className="px-6 py-3">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {insumosPaginados.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan="7" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                         No se encontraron insumos con los filtros aplicados
                       </td>
                     </tr>
@@ -602,6 +628,32 @@ const Reportes = () => {
                         </td>
                         <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                           {insumo.unidad?.unidad || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4">
+                          {(() => {
+                            const nivel = getNivelStock(insumo);
+                            if (nivel === 'bajo') {
+                              return (
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 flex items-center gap-1 w-fit">
+                                  <span className="material-symbols-outlined text-sm">warning</span>
+                                  Stock Bajo
+                                </span>
+                              );
+                            } else if (nivel === 'medio') {
+                              return (
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                                  Stock Medio
+                                </span>
+                              );
+                            } else {
+                              return (
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 flex items-center gap-1 w-fit">
+                                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                                  Stock Normal
+                                </span>
+                              );
+                            }
+                          })()}
                         </td>
                       </tr>
                     ))
@@ -732,23 +784,28 @@ const Reportes = () => {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+              {/* ✅ MEJORADO: Tarjeta de Alertas más prominente */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg border-2 border-red-200 dark:border-red-800 p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Categorías</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                      {datosCategoria.length}
+                    <p className="text-sm text-red-600 dark:text-red-400 font-semibold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-base">warning</span>
+                      Stock Bajo
                     </p>
+                    <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-1">
+                      {insumosStockBajo.length}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Insumos críticos</p>
                   </div>
-                  <div className="h-12 w-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400">category</span>
+                  <div className="h-14 w-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center animate-pulse">
+                    <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-3xl">emergency</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Gráfico de Barras - Por Categoría */}
               <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -807,6 +864,48 @@ const Reportes = () => {
                       >
                         {datosTipo.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1f2937', 
+                          border: 'none',
+                          borderRadius: '8px',
+                          color: '#fff'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
+                    No hay datos para mostrar
+                  </div>
+                )}
+              </div>
+
+              {/* ✅ NUEVO: Gráfico de Pastel - Nivel de Stock */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-orange-500">analytics</span>
+                  Nivel de Stock
+                </h3>
+                {datosNivelStock.some(d => d.cantidad > 0) ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={datosNivelStock}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ nombre, cantidad, percent }) => 
+                          `${nombre}: ${cantidad} (${(percent * 100).toFixed(0)}%)`
+                        }
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="cantidad"
+                      >
+                        {datosNivelStock.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip 
@@ -916,17 +1015,44 @@ const Reportes = () => {
             </div>
 
             {/* Lista de Insumos con Stock Bajo (Placeholder futuro) */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400">warning</span>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Alertas de Stock Bajo
-                </h3>
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400">warning</span>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Alertas de Stock Bajo ({insumosStockBajo.length})
+                  </h3>
+                </div>
               </div>
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <span className="material-symbols-outlined text-5xl mb-2 opacity-50">construction</span>
-                <p>Funcionalidad próximamente disponible</p>
-                <p className="text-sm mt-1">Se mostrarán insumos con niveles críticos de inventario</p>
+              <div className="p-6">
+                {insumosStockBajo.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <span className="material-symbols-outlined text-5xl mb-2 text-green-400">check_circle</span>
+                    <p className="font-medium text-gray-900 dark:text-white mb-1">¡Todo en orden!</p>
+                    <p className="text-sm">No hay insumos con niveles críticos de inventario</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {insumosStockBajo.map(insumo => (
+                      <div key={insumo.idTipoInsumo} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {insumo.nombreTipoInsumo}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {insumo.categoria?.nombreCategoria || 'Sin categoría'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                            {insumo.cantidadTotal} {insumo.unidad?.unidad}
+                          </p>
+                          <span className="text-xs text-red-600 dark:text-red-400">Stock crítico</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

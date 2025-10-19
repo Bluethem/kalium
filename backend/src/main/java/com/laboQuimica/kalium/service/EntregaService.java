@@ -72,10 +72,14 @@ public class EntregaService {
     /**
      * Obtener entregas por estudiante
      */
-    public List<Entrega> obtenerPorEstudiante(Integer idEstudiante) {
-        return estudianteRepository.findById(idEstudiante)
-            .map(entregaRepository::findByEstudiante)
-            .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con id: " + idEstudiante));
+    public List<Entrega> obtenerPorEstudiante(Integer idUsuario) {
+        // Buscar estudiante por IDUsuario
+        Estudiante estudiante = estudianteRepository.findAll().stream()
+            .filter(e -> e.getUsuario().getIdUsuario().equals(idUsuario))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con idUsuario: " + idUsuario));
+        
+        return entregaRepository.findByEstudiante(estudiante);
     }
     
     /**

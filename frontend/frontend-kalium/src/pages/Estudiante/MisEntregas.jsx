@@ -1,0 +1,321 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Header from '../../components/Layout/Header';
+import { entregaService, devolucionService } from '../../services/api';
+
+const MisEntregas = () => {
+  const navigate = useNavigate();
+  const [entregas, setEntregas] = useState([]);
+  const [devoluciones, setDevoluciones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const [modalDetalle, setModalDetalle] = useState({ mostrar: false, entrega: null });
+  const [insumosDetalle, setInsumosDetalle] = useState([]);
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
+
+  const cargarDatos = async () => {
+    try {
+      setLoading(true);
+      
+      // Cargar entregas del estudiante
+      const entregasRes = await entregaService.getEntregasPorEstudiante(usuario.idUsuario);
+      setEntregas(entregasRes.data || []);
+      
+      // Cargar devoluciones para saber cuáles entregas ya fueron devueltas
+      const devolucionesRes = await devolucionService.getDevolucionesPorEstudiante(usuario.idUsuario);
+      setDevoluciones(devolucionesRes.data || []);
+    } catch (error) {
+      console.error('Error al cargar entregas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tieneDevolucion = (idEntrega) => {
+    return devoluciones.some(dev => dev.entrega?.idEntrega === idEntrega);
+  };
+
+  const getEstadoDevolucion = (idEntrega) => {
+    const dev = devoluciones.find(d => d.entrega?.idEntrega === idEntrega);
+    return dev?.estDevolucion;
+  };
+
+  const iniciarDevolucion = (idEntrega) => {
+    navigate(`/devoluciones/nueva?crear=true&entrega=${idEntrega}`);
+  };
+
+  const formatearFechaHora = (fecha, hora) => {
+    if (!hora) return 'N/A';
+    const fechaHora = new Date(hora);
+    return fechaHora.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+  const verDetalleEntrega = async (entrega) => {
+    setModalDetalle({ mostrar: true, entrega });
+    setLoadingDetalle(true);
+    
+    try {
+      const insumosRes = await entregaService.getInsumosPorEntrega(entrega.idEntrega);
+      setInsumosDetalle(insumosRes.data || []);
+    } catch (error) {
+      console.error('Error al cargar insumos:', error);
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+
+  const cerrarModalDetalle = () => {
+    setModalDetalle({ mostrar: false, entrega: null });
+    setInsumosDetalle([]);
+  };
+
+  const getEstadoBadge = (idEntrega) => {
+    if (!tieneDevolucion(idEntrega)) {
+      return {
+        texto: 'Activa',
+        clase: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      };
+    }
+    
+    const estado = getEstadoDevolucion(idEntrega);
+    
+    if (estado?.idEstDevolucion === 1) {
+      return {
+        texto: 'Devolución Pendiente',
+        clase: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+      };
+    } else if (estado?.idEstDevolucion === 2) {
+      return {
+        texto: 'Devuelta ✓',
+        clase: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+      };
+    } else if (estado?.idEstDevolucion === 3) {
+      return {
+        texto: 'Devolución Rechazada',
+        clase: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+      };
+    }
+    
+    return {
+      texto: 'Desconocido',
+      clase: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#111621]">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(44,171,91)] mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Cargando entregas...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-[#F9FAFB] dark:bg-[#111827]">
+      <Header />
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          {/* Encabezado */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Mis Entregas
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Gestiona tus entregas de laboratorio y realiza devoluciones
+            </p>
+          </div>
+
+          {/* Lista de Entregas */}
+          {entregas.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-12 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-3xl text-gray-400">
+                  inventory_2
+                </span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                No tienes entregas asignadas
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Cuando se te asigne una entrega de laboratorio, aparecerá aquí.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {entregas.map((entrega) => {
+                const devolucion = devoluciones.find(dev => dev.entrega?.idEntrega === entrega.idEntrega);
+                const tieneDevolucionRegistrada = !!devolucion;
+                const estadoDev = devolucion ? getEstadoDevolucion(entrega.idEntrega) : null;
+
+                return (
+                  <div key={entrega.idEntrega} 
+                      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                    
+                    {/* Contenido existente de la tarjeta */}
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                            Entrega #{String(entrega.idEntrega).padStart(3, '0')}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Pedido: #{String(entrega.pedido?.idPedido).padStart(3, '0')}
+                          </p>
+                        </div>
+                        
+                        {/* Estado de devolución si existe */}
+                        {tieneDevolucionRegistrada && estadoDev && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${estadoDev.clase}`}>
+                            {estadoDev.texto}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Información de la entrega */}
+                      <div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">calendar_today</span>
+                          <span>Fecha: {entrega.fechaEntrega}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">schedule</span>
+                          <span>Hora: {entrega.horaEntrega}</span>
+                        </div>
+                      </div>
+
+                      {/* Botones de acción */}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => verDetalle(entrega)}
+                          className="flex-1 px-4 py-2 border border-[rgb(44,171,91)] text-[rgb(44,171,91)] rounded-lg hover:bg-[rgb(44,171,91)] hover:text-white transition-colors font-semibold"
+                        >
+                          Ver Detalles
+                        </button>
+
+                        {/* ✅ BOTÓN DE SOLICITAR DEVOLUCIÓN */}
+                        {!tieneDevolucionRegistrada ? (
+                          <button
+                            onClick={() => navigate(`/solicitar-devolucion?entrega=${entrega.idEntrega}`)}
+                            className="flex-1 px-4 py-2 bg-[rgb(44,171,91)] text-white rounded-lg hover:bg-[rgb(39,153,82)] transition-colors font-semibold"
+                          >
+                            📦 Solicitar Devolución
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                            title="Ya tiene devolución registrada"
+                          >
+                            ✅ Devolución {estadoDev?.texto}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {modalDetalle.mostrar && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-2xl rounded-xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[90vh] overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Detalle de Entrega #{String(modalDetalle.entrega?.idEntrega).padStart(3, '0')}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Insumos asignados a esta entrega
+                    </p>
+                  </div>
+                  <button
+                    onClick={cerrarModalDetalle}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  {loadingDetalle ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#34D399] mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Cargando insumos...</p>
+                    </div>
+                  ) : insumosDetalle.length === 0 ? (
+                    <div className="text-center py-8">
+                      <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">
+                        inventory_2
+                      </span>
+                      <p className="text-gray-600 dark:text-gray-400">No hay insumos en esta entrega</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {insumosDetalle.map((item, index) => (
+                        <div
+                          key={item.idEntregaInsumo || index}
+                          className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#34D399]/10 dark:bg-[#34D399]/20">
+                            <span className="material-symbols-outlined text-[#34D399]">
+                              science
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              {item.insumo?.tipoInsumo?.nombreTipoInsumo || 'Sin nombre'}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              ID: {item.insumo?.idInsumo} • 
+                              Estado: {item.insumo?.estInsumo?.nombreEstado || 'N/A'}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            item.insumo?.estInsumo?.idEstInsumo === 2 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {item.insumo?.estInsumo?.nombreEstado || 'N/A'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Footer */}
+                <div className="p-6 border-t border-gray-200 dark:border-gray-800">
+                  <button
+                    onClick={cerrarModalDetalle}
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-[#34D399] hover:bg-[#2ab885] rounded-lg"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default MisEntregas;

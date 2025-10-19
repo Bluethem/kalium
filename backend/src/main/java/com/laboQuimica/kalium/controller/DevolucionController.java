@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/devoluciones")
@@ -41,6 +42,11 @@ public class DevolucionController {
         return ResponseEntity.ok(devolucionService.obtenerPorEstado(idEstado));
     }
     
+    @GetMapping("/usuario/{idUsuario}")
+    public ResponseEntity<List<Devolucion>> obtenerPorUsuario(@PathVariable Integer idUsuario) {
+        return ResponseEntity.ok(devolucionService.obtenerPorEstudiante(idUsuario));
+    }
+    
     @GetMapping("/{id}/detalles")
     public ResponseEntity<List<DevolucionDetalle>> obtenerDetalles(@PathVariable Integer id) {
         return ResponseEntity.ok(devolucionService.obtenerDetalles(id));
@@ -68,5 +74,57 @@ public class DevolucionController {
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         devolucionService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Aprobar una devolución
+     * PATCH /api/devoluciones/{id}/aprobar
+     */
+    @PatchMapping("/{id}/aprobar")
+    public ResponseEntity<?> aprobar(@PathVariable Integer id) {
+        try {
+            Devolucion devolucionAprobada = devolucionService.aprobarDevolucion(id);
+            return ResponseEntity.ok(devolucionAprobada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Rechazar una devolución
+     * PATCH /api/devoluciones/{id}/rechazar
+     * Body: { "motivo": "Los insumos no están completos" }
+     */
+    @PatchMapping("/{id}/rechazar")
+    public ResponseEntity<?> rechazar(
+        @PathVariable Integer id,
+        @RequestBody Map<String, String> body
+    ) {
+        try {
+            String motivo = body.getOrDefault("motivo", "Sin motivo especificado");
+            Devolucion devolucionRechazada = devolucionService.rechazarDevolucion(id, motivo);
+            return ResponseEntity.ok(devolucionRechazada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/completa")
+    public ResponseEntity<Boolean> verificarCompleta(@PathVariable Integer id) {
+        try {
+            boolean completa = devolucionService.esDevolucionCompleta(id);
+            return ResponseEntity.ok(completa);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(false);
+        }
+    }
+    @GetMapping("/{id}/revisados")
+    public ResponseEntity<Boolean> verificarRevisados(@PathVariable Integer id) {
+        try {
+            boolean todosRevisados = devolucionService.todosInsumosRevisados(id);
+            return ResponseEntity.ok(todosRevisados);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(false);
+        }
     }
 }

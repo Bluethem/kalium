@@ -299,7 +299,7 @@ const GenerarEntregas = () => {
                         {entrega.estudiante ? (
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Asignada a: <span className="font-medium text-[rgb(44,171,91)] dark:text-white">
-                              {entrega.estudiante.nombre} {entrega.estudiante.apellido}
+                              {entrega.estudiante.usuario?.nombre} {entrega.estudiante.usuario?.apellido}
                             </span>
                           </p>
                         ) : (
@@ -312,7 +312,7 @@ const GenerarEntregas = () => {
                               <option value="">Seleccionar estudiante</option>
                               {estudiantes.map(est => (
                                 <option key={est.idEstudiante} value={est.idEstudiante}>
-                                  {est.nombre} {est.apellido}
+                                  {est.usuario?.nombre} {est.usuario?.apellido}
                                 </option>
                               ))}
                             </select>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
-import { pedidoService, insumoService, horarioService, pedidoDetalleService } from '../../services/api';
+import { pedidoService, insumoService, horarioService, pedidoDetalleService, experimentoService } from '../../services/api';
 import axios from 'axios';
 
 const NuevoPedido = () => {
@@ -11,6 +11,8 @@ const NuevoPedido = () => {
   const [cursos, setCursos] = useState([]);
   const [tiposPedido, setTiposPedido] = useState([]);
   const [tiposInsumo, setTiposInsumo] = useState([]);
+  const [experimentos, setExperimentos] = useState([]);
+  const [experimentoSeleccionado, setExperimentoSeleccionado] = useState('');
   
   // Modales
   const [showErrorStock, setShowErrorStock] = useState(false);
@@ -40,17 +42,19 @@ const NuevoPedido = () => {
 
   const cargarDatos = async () => {
     try {
-      const [instructoresRes, cursosRes, tiposPedidoRes, tiposInsumoRes] = await Promise.all([
+      const [instructoresRes, cursosRes, tiposPedidoRes, tiposInsumoRes, experimentosRes] = await Promise.all([
         axios.get('http://localhost:8080/api/instructores'),
         axios.get('http://localhost:8080/api/cursos'),
         axios.get('http://localhost:8080/api/tipos-pedido'),
-        insumoService.getTiposInsumoConStock()
+        insumoService.getTiposInsumoConStock(),
+        experimentoService.getExperimentos()
       ]);
       
       setInstructores(instructoresRes.data || []);
       setCursos(cursosRes.data || []);
       setTiposPedido(tiposPedidoRes.data || []);
       setTiposInsumo(tiposInsumoRes.data || []);
+      setExperimentos(experimentosRes.data || []);
     } catch (error) {
       console.error('Error al cargar datos:', error);
     }
@@ -59,6 +63,15 @@ const NuevoPedido = () => {
   const handleChangePedido = (e) => {
     const { name, value } = e.target;
     setFormPedido(prev => ({ ...prev, [name]: value }));
+    
+    // Si cambió la cantidad de grupos, recalcular cantidades totales
+    if (name === 'cantGrupos' && items.length > 0) {
+      const nuevosCantGrupos = parseInt(value) || 1;
+      setItems(prev => prev.map(item => ({
+        ...item,
+        cantidadTotal: item.cantPorGrupo * nuevosCantGrupos
+      })));
+    }
   };
 
   const handleChangeItem = (e) => {
@@ -113,6 +126,53 @@ const NuevoPedido = () => {
 
   const eliminarItem = (index) => {
     setItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const cargarInsumosDeExperimento = async (idExperimento) => {
+    if (!idExperimento) {
+      setExperimentoSeleccionado('');
+      return;
+    }
+
+    try {
+      setExperimentoSeleccionado(idExperimento);
+      
+      // Obtener detalles del experimento
+      const detallesRes = await experimentoService.getDetallesExperimento(idExperimento);
+      const detalles = detallesRes.data || [];
+      
+      // Limpiar items actuales
+      setItems([]);
+      
+      // Agregar cada insumo del experimento
+      const cantGrupos = parseInt(formPedido.cantGrupos) || 1;
+      
+      for (const detalle of detalles) {
+        const tipoInsumo = tiposInsumo.find(t => t.idTipoInsumo === detalle.tipoInsumo.idTipoInsumo);
+        
+        if (tipoInsumo) {
+          const cantPorGrupo = detalle.cantInsumoExperimento;
+          const cantidadTotal = cantPorGrupo * cantGrupos;
+          
+          setItems(prev => [...prev, {
+            idTipoInsumo: detalle.tipoInsumo.idTipoInsumo,
+            cantPorGrupo: cantPorGrupo,
+            cantidadTotal: cantidadTotal,
+            nombreTipoInsumo: tipoInsumo.nombreTipoInsumo,
+            unidad: tipoInsumo.unidad?.unidad,
+            esQuimico: tipoInsumo.esQuimico
+          }]);
+        }
+      }
+      
+      // Auto-seleccionar Tipo de Pedido: "Experimento de Investigación" (ID=2)
+      setFormPedido(prev => ({ ...prev, idTipoPedido: '2' }));
+      
+    } catch (error) {
+      console.error('Error al cargar insumos del experimento:', error);
+      setErrorMessage('Error al cargar los insumos del experimento');
+      setShowErrorStock(true);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -276,6 +336,28 @@ const NuevoPedido = () => {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label htmlFor="experimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Experimento (Opcional)
+                  </label>
+                  <select
+                    id="experimento"
+                    value={experimentoSeleccionado}
+                    onChange={(e) => cargarInsumosDeExperimento(e.target.value)}
+                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                  >
+                    <option value="">Sin experimento</option>
+                    {experimentos.map(exp => (
+                      <option key={exp.idExperimento} value={exp.idExperimento}>
+                        EXP{String(exp.idExperimento).padStart(3, '0')} - {exp.nombreExperimento}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Al seleccionar un experimento se cargarán sus insumos predefinidos
+                  </p>
                 </div>
 
                 <div>
