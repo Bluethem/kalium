@@ -44,6 +44,8 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   // Si no tiene acceso, redirigir según su rol
   if (rolNombre === 'ESTUDIANTE' || rolNombre === 'Estudiante') {
     return <Navigate to="/dashboard-estudiante" replace />;
+  } else if (rolNombre === 'ADMIN_SISTEMA') {
+    return <Navigate to="/dashboard-admin-sistema" replace />;
   } else if (rolNombre === 'INSTRUCTOR' || rolNombre === 'Instructor') {
     return <Navigate to="/dashboard-instructor" replace />;
   } else {

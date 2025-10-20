@@ -319,5 +319,39 @@ public class NotificacionService {
             System.err.println("Error al crear notificación: " + e.getMessage());
         }
     }
-    
+
+    /**
+     * Obtener notificaciones filtradas por rol
+     */
+    public List<NotificacionDTO> obtenerNotificacionesPorRol(Integer idUsuario, String rol) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        List<Notificacion> todasLasNotificaciones = notificacionRepository
+            .findByUsuarioOrderByFechaCreacionDesc(usuario);
+        
+        // Filtrar según el rol
+        List<Notificacion> notificacionesFiltradas;
+        
+        if ("ADMIN_SISTEMA".equals(rol)) {
+            notificacionesFiltradas = todasLasNotificaciones.stream()
+                .filter(n -> "SOLICITUD_REGISTRO".equals(n.getTipo()) || 
+                            "NUEVO_USUARIO".equals(n.getTipo()) ||
+                            "CAMBIO_ROL".equals(n.getTipo()))
+                .collect(Collectors.toList());
+        } else if ("ESTUDIANTE".equals(rol) || "Estudiante".equals(rol)) {
+            notificacionesFiltradas = todasLasNotificaciones.stream()
+                .filter(n -> "PEDIDO_APROBADO".equals(n.getTipo()) || 
+                            "PEDIDO_RECHAZADO".equals(n.getTipo()) ||
+                            "ENTREGA_DISPONIBLE".equals(n.getTipo()) ||
+                            "DEVOLUCION_PROCESADA".equals(n.getTipo()) ||
+                            "INCIDENTE_ACTUALIZADO".equals(n.getTipo()))
+                .collect(Collectors.toList());
+        } else {
+            // ADMIN y otros roles ven todo
+            notificacionesFiltradas = todasLasNotificaciones;
+        }
+        
+        return convertirADTOList(notificacionesFiltradas);
+    }
 }

@@ -127,6 +127,23 @@ const Header = ({ minimal = false }) => {
   const renderNavMenu = () => {
     const role = userRole?.toUpperCase();
 
+    // En la función renderNavMenu(), agrega:
+    if (role === 'ADMIN_SISTEMA') {
+      return (
+        <nav className="flex flex-1 justify-center items-center gap-8 text-sm font-medium">
+          <Link to="/dashboard-admin-sistema" className={`hover:text-[rgb(44,171,91)] ${isActive('/dashboard-admin-sistema') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Dashboard
+          </Link>
+          <Link to="/solicitudes" className={`hover:text-[rgb(44,171,91)] ${isActive('/solicitudes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Solicitudes
+          </Link>
+          <Link to="/usuarios" className={`hover:text-[rgb(44,171,91)] ${isActive('/usuarios') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
+            Usuarios
+          </Link>
+        </nav>
+      );
+    }
+
     // ESTUDIANTE: Menú a la izquierda
     if (role === 'ESTUDIANTE' || role === 'ESTUDIANTE') {
       return (
@@ -158,14 +175,6 @@ const Header = ({ minimal = false }) => {
       <nav className="flex flex-1 justify-center items-center gap-8 text-sm font-medium text-gray-600 dark:text-gray-300">
         <Link to="/dashboard" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/dashboard') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
           Dashboard
-        </Link>
-        {isRol1 && (
-          <Link to="/solicitudes" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/solicitudes') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-            Solicitudes
-          </Link>
-        )}
-        <Link to="/usuarios" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/usuarios') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
-          Usuarios
         </Link>
         <Link to="/insumos" className={`hover:text-[rgb(44,171,91)] transition-colors ${isActive('/insumos') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
           Insumos

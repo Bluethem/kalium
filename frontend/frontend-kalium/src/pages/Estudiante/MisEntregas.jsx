@@ -195,7 +195,7 @@ const MisEntregas = () => {
                       {/* Botones de acción */}
                       <div className="flex gap-3">
                         <button
-                          onClick={() => verDetalle(entrega)}
+                          onClick={() => verDetalleEntrega(entrega)}
                           className="flex-1 px-4 py-2 border border-[rgb(44,171,91)] text-[rgb(44,171,91)] rounded-lg hover:bg-[rgb(44,171,91)] hover:text-white transition-colors font-semibold"
                         >
                           Ver Detalles

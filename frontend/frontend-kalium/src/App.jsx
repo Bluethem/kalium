@@ -32,6 +32,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import SolicitarDevolucion from './pages/Devoluciones/SolicitarDevolucion';
 import Solicitudes from './pages/Solicitudes';
 import MainLayout from './components/Layout/MainLayout';
+import DashboardAdminSistema from './pages/DashboardAdminSistema';
 
 function App() {
   useEffect(() => {
@@ -93,6 +94,13 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/dashboard" replace />} />
+
+          {/* =========== RUTA DE ADMIN SISTEMAS ===========*/}
+          <Route path="dashboard-admin-sistema" element={
+            <ProtectedRoute allowedRoles={['ADMIN_SISTEMA']}>
+              <DashboardAdminSistema />
+            </ProtectedRoute>
+          } />
           
           {/* ========== RUTAS DE ADMIN ========== */}
           <Route path="dashboard" element={<Dashboard />} />

@@ -24,14 +24,15 @@ function Login() {
         // ✅ Redirigir según el ROL del usuario
         const rolNombre = user.rol?.nombreRol || user.rol; // Soporte para objeto o string
         
-        if (rolNombre === 'ADMIN' || rolNombre === 'Administrador') {
+        if (rolNombre === 'ADMIN_SISTEMA') {
+          navigate('/dashboard-admin-sistema');
+        } else if (rolNombre === 'ADMIN' || rolNombre === 'Administrador' || rolNombre === 'ADMIN_LABORATORIO') {
           navigate('/dashboard');
         } else if (rolNombre === 'ESTUDIANTE' || rolNombre === 'Estudiante') {
           navigate('/dashboard-estudiante');
         } else if (rolNombre === 'INSTRUCTOR' || rolNombre === 'Instructor') {
-          navigate('/dashboard-instructor'); // Pendiente de implementar
+          navigate('/dashboard-instructor');
         } else {
-          // Rol desconocido, ir a dashboard por defecto
           console.warn('Rol no reconocido:', rolNombre);
           navigate('/dashboard');
         }

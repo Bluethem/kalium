@@ -38,16 +38,6 @@ function Dashboard() {
         </section>
 
         <section className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Link to="/usuarios" className="group block rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-            <div className="flex flex-col items-center justify-center">
-              <div className="flex size-16 items-center justify-center rounded-full bg-[#eef7f2] dark:bg-gray-700 text-[rgb(44,171,91)] group-hover:bg-[rgb(44,171,91)] group-hover:text-white transition-colors">
-                <span className="material-symbols-outlined text-4xl">group</span>
-              </div>
-              <h3 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Usuarios</h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestionar cuentas</p>
-            </div>
-          </Link>
-
           <Link to="/insumos" className="group block rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
             <div className="flex flex-col items-center justify-center">
               <div className="flex size-16 items-center justify-center rounded-full bg-[#eef7f2] dark:bg-gray-700 text-[rgb(44,171,91)] group-hover:bg-[rgb(44,171,91)] group-hover:text-white transition-colors">

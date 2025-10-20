@@ -51,11 +51,11 @@ function DashboardEstudiante() {
   const calcularEstadisticas = (devols, incids) => {
     setEstadisticas({
       totalDevoluciones: devols.length,
-      devolucionesPendientes: devols.filter(d => d.idEstadoDevolucion === 1).length,
-      devolucionesAprobadas: devols.filter(d => d.idEstadoDevolucion === 2).length,
+      devolucionesPendientes: devols.filter(d => d.estDevolucion?.idEstDevolucion === 1).length,
+      devolucionesAprobadas: devols.filter(d => d.estDevolucion?.idEstDevolucion === 2).length,
       totalIncidentes: incids.length,
-      incidentesPendientes: incids.filter(i => i.idEstado === 1).length,
-      incidentesResueltos: incids.filter(i => i.idEstado === 3).length,
+      incidentesPendientes: incids.filter(i => i.estIncidente?.idEstIncidente === 1).length,
+      incidentesResueltos: incids.filter(i => i.estIncidente?.idEstIncidente === 3).length,
     });
   };
 
@@ -64,7 +64,8 @@ function DashboardEstudiante() {
     return new Date(fecha).toLocaleDateString('es-ES');
   };
 
-  const obtenerColorEstadoDevolucion = (idEstado) => {
+  const obtenerColorEstadoDevolucion = (devolucion) => {
+    const idEstado = devolucion?.estDevolucion?.idEstDevolucion;
     switch (idEstado) {
       case 1: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 2: return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
@@ -73,23 +74,23 @@ function DashboardEstudiante() {
     }
   };
 
-  const obtenerColorEstadoIncidente = (idEstado) => {
+  const obtenerColorEstadoIncidente = (incidente) => {
+    const idEstado = incidente?.estIncidente?.idEstIncidente;
     switch (idEstado) {
       case 1: return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       case 2: return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 3: return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 4: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
-  const obtenerNombreEstadoDevolucion = (idEstado) => {
-    const estados = { 1: 'Pendiente', 2: 'Aprobada', 3: 'Rechazada' };
-    return estados[idEstado] || 'Desconocido';
+  const obtenerNombreEstadoDevolucion = (devolucion) => {
+    return devolucion?.estDevolucion?.estadoDevolucion || 'Desconocido';
   };
 
-  const obtenerNombreEstadoIncidente = (idEstado) => {
-    const estados = { 1: 'Reportado', 2: 'En Revisión', 3: 'Resuelto', 4: 'Cancelado' };
-    return estados[idEstado] || 'Desconocido';
+  const obtenerNombreEstadoIncidente = (incidente) => {
+    return incidente?.estIncidente?.estadoIncidente || 'Desconocido';
   };
 
   if (loading) {
@@ -127,6 +128,12 @@ function DashboardEstudiante() {
                 }`}
               >
                 Resumen
+              </button>
+              <button
+                onClick={() => navigate('/mis-entregas')}
+                className="px-6 py-2 text-sm font-medium rounded-md transition-all text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                Mis Entregas
               </button>
               <button
                 onClick={() => setVistaActual('devoluciones')}
@@ -168,28 +175,6 @@ function DashboardEstudiante() {
                   <span className="material-symbols-outlined text-blue-500 dark:text-blue-400">
                     swap_horiz
                   </span>
-                </div>
-              </div>
-
-              {/* Card de Mis Entregas - NUEVO */}
-              <div 
-                onClick={() => navigate('/mis-entregas')}
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Mis Entregas
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                      Ver
-                    </p>
-                  </div>
-                  <div className="h-14 w-14 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl text-purple-600 dark:text-purple-400">
-                      inventory_2
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -323,8 +308,8 @@ function DashboardEstudiante() {
                           {formatearFecha(dev.fechaDevolucion)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${obtenerColorEstadoDevolucion(dev.idEstadoDevolucion)}`}>
-                            {obtenerNombreEstadoDevolucion(dev.idEstadoDevolucion)}
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${obtenerColorEstadoDevolucion(dev)}`}>
+                            {obtenerNombreEstadoDevolucion(dev)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -388,8 +373,8 @@ function DashboardEstudiante() {
                           {formatearFecha(inc.fechaReporte)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${obtenerColorEstadoIncidente(inc.idEstado)}`}>
-                            {obtenerNombreEstadoIncidente(inc.idEstado)}
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${obtenerColorEstadoIncidente(inc)}`}>
+                            {obtenerNombreEstadoIncidente(inc)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">

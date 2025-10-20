@@ -36,6 +36,10 @@ const ListaNotificaciones = () => {
       setLoading(true);
       setError('');
       
+      // Obtener rol del usuario
+      const usuario = JSON.parse(localStorage.getItem('usuario'));
+      const rolNombre = usuario?.rol?.nombreRol || usuario?.rol;
+      
       let response;
       if (tabActual === 'no-leidas') {
         response = await notificacionService.getNotificacionesNoLeidas(userId);
@@ -43,12 +47,75 @@ const ListaNotificaciones = () => {
         response = await notificacionService.getNotificacionesPorUsuario(userId);
       }
       
-      setNotificaciones(response.data || []);
+      let notifs = response.data || [];
+      
+      // ✅ Filtrar según el rol
+      notifs = filtrarPorRol(notifs, rolNombre);
+      
+      // Filtrar por tipo si hay filtro activo
+      if (filtroTipo) {
+        notifs = notifs.filter(n => n.tipo === filtroTipo);
+      }
+      
+      setNotificaciones(notifs);
     } catch (err) {
       console.error('Error al cargar notificaciones:', err);
       setError('Error al cargar las notificaciones');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Nueva función para filtrar por rol
+  const filtrarPorRol = (notificaciones, rol) => {
+    if (rol === 'ADMIN_SISTEMA') {
+      // ADMIN_SISTEMA solo ve notificaciones de usuarios y solicitudes
+      return notificaciones.filter(n => 
+        n.tipo === 'SOLICITUD_REGISTRO' ||
+        n.tipo === 'NUEVO_USUARIO' ||
+        n.tipo === 'CAMBIO_ROL'
+      );
+    } else if (rol === 'ESTUDIANTE' || rol === 'Estudiante') {
+      // ESTUDIANTE solo ve sus notificaciones personales
+      return notificaciones.filter(n =>
+        n.tipo === 'PEDIDO_APROBADO' ||
+        n.tipo === 'PEDIDO_RECHAZADO' ||
+        n.tipo === 'ENTREGA_DISPONIBLE' ||
+        n.tipo === 'DEVOLUCION_PROCESADA' ||
+        n.tipo === 'INCIDENTE_ACTUALIZADO'
+      );
+    } else {
+      // ADMIN, ADMIN_LABORATORIO, INSTRUCTOR ven todo
+      return notificaciones;
+    }
+  };
+
+  const getTiposPorRol = (rol) => {
+    if (rol === 'ADMIN_SISTEMA') {
+      return [
+        { value: '', label: 'Todos' },
+        { value: 'SOLICITUD_REGISTRO', label: 'Solicitudes' },
+        { value: 'NUEVO_USUARIO', label: 'Nuevos Usuarios' },
+        { value: 'CAMBIO_ROL', label: 'Cambios de Rol' },
+      ];
+    } else if (rol === 'ESTUDIANTE' || rol === 'Estudiante') {
+      return [
+        { value: '', label: 'Todos' },
+        { value: 'PEDIDO_APROBADO', label: 'Pedidos Aprobados' },
+        { value: 'PEDIDO_RECHAZADO', label: 'Pedidos Rechazados' },
+        { value: 'ENTREGA_DISPONIBLE', label: 'Entregas' },
+        { value: 'DEVOLUCION_PROCESADA', label: 'Devoluciones' },
+        { value: 'INCIDENTE_ACTUALIZADO', label: 'Incidentes' },
+      ];
+    } else {
+      return [
+        { value: '', label: 'Todos' },
+        { value: 'BAJO_STOCK', label: 'Bajo Stock' },
+        { value: 'PEDIDO_PENDIENTE', label: 'Pedidos Pendientes' },
+        { value: 'PEDIDO_APROBADO', label: 'Pedidos Aprobados' },
+        { value: 'INCIDENTE', label: 'Incidentes' },
+        { value: 'DEVOLUCION_PENDIENTE', label: 'Devoluciones' },
+      ];
     }
   };
 
@@ -101,8 +168,22 @@ const ListaNotificaciones = () => {
         return { icono: 'schedule', color: 'blue' };
       case 'PEDIDO_APROBADO':
         return { icono: 'check_circle', color: 'green' };
+      case 'PEDIDO_RECHAZADO':
+        return { icono: 'cancel', color: 'red' };
       case 'INCIDENTE':
+      case 'INCIDENTE_ACTUALIZADO':
         return { icono: 'error', color: 'red' };
+      case 'SOLICITUD_REGISTRO':
+        return { icono: 'person_add', color: 'blue' };
+      case 'NUEVO_USUARIO':
+        return { icono: 'group_add', color: 'green' };
+      case 'CAMBIO_ROL':
+        return { icono: 'admin_panel_settings', color: 'purple' };
+      case 'ENTREGA_DISPONIBLE':
+        return { icono: 'local_shipping', color: 'blue' };
+      case 'DEVOLUCION_PROCESADA':
+      case 'DEVOLUCION_PENDIENTE':
+        return { icono: 'assignment_return', color: 'orange' };
       default:
         return { icono: 'info', color: 'gray' };
     }
@@ -194,11 +275,17 @@ const ListaNotificaciones = () => {
                 onChange={(e) => { setFiltroTipo(e.target.value); setPaginaActual(1); }}
                 className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300"
               >
-                <option value="">Todos los tipos</option>
-                <option value="BAJO_STOCK">Bajo Stock</option>
-                <option value="PEDIDO_PENDIENTE">Pedidos Pendientes</option>
-                <option value="PEDIDO_APROBADO">Pedidos Aprobados</option>
-                <option value="INCIDENTE">Incidentes</option>
+                {(() => {
+                  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+                  const rolNombre = usuario?.rol?.nombreRol || usuario?.rol;
+                  const tiposDisponibles = getTiposPorRol(rolNombre);
+                  
+                  return tiposDisponibles.map(tipo => (
+                    <option key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </option>
+                  ));
+                })()}
               </select>
             </div>
 
