@@ -158,32 +158,81 @@ const Reportes = () => {
   const COLORS_STOCK = ['#ef4444', '#f59e0b', '#10b981'];
 
   // Generar PDF
-  const generarPDF = () => {
+  const generarPDFMejorado = () => {
     const doc = new jsPDF();
     const fechaActual = new Date().toLocaleDateString('es-ES');
-
-    // Encabezado
-    doc.setFontSize(18);
-    doc.setTextColor(44, 171, 91);
-    doc.text('Reporte de Inventario - Kalium', 14, 20);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
+    // Obtener datos del usuario desde localStorage
+    let nombreUsuario = 'Usuario';
+    try {
+      const usuarioStorage = localStorage.getItem('usuario');
+      if (usuarioStorage) {
+        const usuario = JSON.parse(usuarioStorage);
+        nombreUsuario = `${usuario.nombre} ${usuario.apellido}`;
+      }
+    } catch (error) {
+      console.error('Error al obtener usuario:', error);
+    }
+    
+    // ============ HEADER PROFESIONAL CON LOGO CORREGIDO ============
+    const agregarHeader = () => {
+      // Fondo del header
+      doc.setFillColor(44, 171, 91);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      
+      // Logo con proporciones correctas (cuadrado)
+      try {
+        const logoImg = new Image();
+        logoImg.src = '/logo_nuevo.png';
+        // Cambio: ahora es cuadrado 20x20 para mantener proporción
+        doc.addImage(logoImg, 'PNG', 10, 7, 16, 22);
+      } catch (error) {
+        console.log('Logo no disponible');
+      }
+      
+      // Título principal
+      doc.setFontSize(20);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('KALIUM', 40, 15);
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Sistema de Gestión de Inventario', 40, 22);
+      
+      // Info de fecha en el header
+      doc.setFontSize(9);
+      doc.text(`Generado: ${fechaActual}`, pageWidth - 55, 15);
+      doc.text(`Usuario: ${nombreUsuario}`, pageWidth - 55, 21);
+    };
+    
+    agregarHeader();
+    
+    // ============ TÍTULO DEL REPORTE ============
+    let yPos = 45;
+    doc.setFontSize(16);
+    doc.setTextColor(44, 171, 91);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Reporte de Inventario', 14, yPos);
+    
+    yPos += 10;
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Fecha de generación: ${fechaActual}`, 14, 28);
-    doc.text(`Total de ítems: ${insumosFiltrados.length}`, 14, 34);
-
-    // Filtros aplicados
-    let yPos = 42;
-    doc.setFontSize(9);
-    doc.setTextColor(80);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total de registros: ${insumosFiltrados.length}`, 14, yPos);
     
+    // ============ FILTROS APLICADOS ============
+    yPos += 8;
     const filtrosActivos = [];
+    
     if (filtros.idCategoria) {
       const catNombre = categorias.find(c => c.idCategoria === parseInt(filtros.idCategoria))?.nombreCategoria;
-      filtrosActivos.push(`Categoría: ${catNombre}`);
+      filtrosActivos.push(`Categoria: ${catNombre}`);
     }
     if (filtros.tipoInsumo !== 'todos') {
-      filtrosActivos.push(`Tipo: ${filtros.tipoInsumo === 'fisico' ? 'Insumo Físico' : 'Químico'}`);
+      filtrosActivos.push(`Tipo: ${filtros.tipoInsumo === 'fisico' ? 'Insumo Fisico' : 'Quimico'}`);
     }
     if (filtros.nivelStock !== 'todos') {
       const nivelTexto = filtros.nivelStock === 'bajo' ? 'Stock Bajo' : 
@@ -191,160 +240,439 @@ const Reportes = () => {
       filtrosActivos.push(`Nivel: ${nivelTexto}`);
     }
     if (filtros.busqueda) {
-      filtrosActivos.push(`Búsqueda: "${filtros.busqueda}"`);
+      filtrosActivos.push(`Busqueda: "${filtros.busqueda}"`);
     }
 
     if (filtrosActivos.length > 0) {
-      doc.text('Filtros aplicados:', 14, yPos);
-      yPos += 5;
+      doc.setFillColor(245, 245, 245);
+      doc.roundedRect(12, yPos - 2, pageWidth - 24, filtrosActivos.length * 5 + 8, 2, 2, 'F');
+      
+      doc.setFontSize(9);
+      doc.setTextColor(60);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Filtros aplicados:', 14, yPos + 3);
+      
+      doc.setFont('helvetica', 'normal');
+      yPos += 7;
       filtrosActivos.forEach(filtro => {
         doc.text(`• ${filtro}`, 16, yPos);
-        yPos += 4;
+        yPos += 5;
       });
+      yPos += 3;
     } else {
-      doc.text('Sin filtros aplicados', 14, yPos);
-      yPos += 5;
+      doc.setFillColor(245, 245, 245);
+      doc.roundedRect(12, yPos - 2, pageWidth - 24, 10, 2, 2, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text('Sin filtros aplicados - Mostrando todo el inventario', 14, yPos + 3);
+      yPos += 10;
     }
 
-    // Preparar datos de la tabla
-    const tableData = insumosFiltrados.map(insumo => [
-      insumo.nombreTipoInsumo,
-      insumo.esQuimico ? 'Químico' : 'Físico',
-      insumo.categoria?.nombreCategoria || 'N/A',
-      insumo.cantidadTotal || '0',
-      insumo.unidad?.unidad || 'N/A'
-    ]);
+    // ============ ALERTAS DE STOCK BAJO (SIN EMOJIS) ============
+    if (insumosStockBajo.length > 0) {
+      yPos += 5;
+      doc.setFillColor(254, 243, 199);
+      doc.roundedRect(12, yPos - 2, pageWidth - 24, 12, 2, 2, 'F');
+      
+      doc.setFontSize(10);
+      doc.setTextColor(146, 64, 14);
+      doc.setFont('helvetica', 'bold');
+      // CAMBIO: Sin emoji, usando símbolo de texto
+      doc.text(`ALERTA: ${insumosStockBajo.length} insumo(s) con stock critico`, 14, yPos + 3);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('Revise la seccion de resumen para mas detalles', 14, yPos + 8);
+      yPos += 14;
+    }
 
-    // USO CORRECTO para jspdf-autotable v5
+    // ============ TABLA CON INDICADORES DE TEXTO (SIN EMOJIS) ============
+    yPos += 5;
+    const tableData = insumosFiltrados.map(insumo => {
+      const nivelStock = getNivelStock(insumo);
+      // CAMBIO: Indicadores de texto en lugar de emojis
+      const stockIndicador = nivelStock === 'bajo' ? 'Bajo' : 
+                            nivelStock === 'medio' ? 'Medio' : 
+                            'Normal';
+      
+      return [
+        insumo.nombreTipoInsumo,
+        insumo.esQuimico ? 'Quimico' : 'Fisico',
+        insumo.categoria?.nombreCategoria || 'N/A',
+        `${insumo.cantidadTotal || '0'} ${insumo.unidad?.unidad || ''}`,
+        stockIndicador
+      ];
+    });
+
     autoTable(doc, {
-      startY: yPos + 5,
-      head: [['Nombre', 'Tipo', 'Categoría', 'Cantidad', 'Unidad']],
+      startY: yPos,
+      head: [['Nombre del Insumo', 'Tipo', 'Categoria', 'Cantidad', 'Estado Stock']],
       body: tableData,
-      theme: 'grid',
+      theme: 'striped',
       headStyles: {
         fillColor: [44, 171, 91],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 10,
-        halign: 'center'
+        halign: 'center',
+        cellPadding: 4
       },
       alternateRowStyles: {
-        fillColor: [245, 245, 245]
+        fillColor: [248, 250, 252]
       },
       bodyStyles: {
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: 3,
+        textColor: [50, 50, 50]
       },
       columnStyles: {
-        0: { cellWidth: 60 }, // Nombre
-        1: { cellWidth: 25, halign: 'center' }, // Tipo
-        2: { cellWidth: 40 }, // Categoría
-        3: { cellWidth: 25, halign: 'right' }, // Cantidad
-        4: { cellWidth: 25, halign: 'center' }  // Unidad
+        0: { cellWidth: 65, fontStyle: 'bold' },
+        1: { cellWidth: 25, halign: 'center' },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 30, halign: 'right' },
+        4: { cellWidth: 30, halign: 'center' }
       },
       margin: { left: 14, right: 14 },
+      // Colorear filas según nivel de stock
+      didParseCell: function(data) {
+        if (data.column.index === 4 && data.section === 'body') {
+          const cellText = data.cell.text[0];
+          if (cellText.includes('Bajo')) {
+            data.cell.styles.textColor = [220, 38, 38];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (cellText.includes('Medio')) {
+            data.cell.styles.textColor = [245, 158, 11];
+          } else {
+            data.cell.styles.textColor = [34, 197, 94];
+          }
+        }
+      },
       didDrawPage: function(data) {
         // Footer en cada página
         const pageCount = doc.internal.getNumberOfPages();
-        const pageSize = doc.internal.pageSize;
-        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
         
         doc.setFontSize(8);
         doc.setTextColor(150);
         doc.text(
-          `Página ${data.pageNumber} de ${pageCount}`,
-          data.settings.margin.left,
+          `Pagina ${data.pageNumber} de ${pageCount}`,
+          14,
           pageHeight - 10
         );
         
         doc.text(
-          'Sistema Kalium - Gestión de Inventario',
-          pageSize.width / 2,
+          'Sistema Kalium - Confidencial',
+          pageWidth / 2,
           pageHeight - 10,
           { align: 'center' }
+        );
+        
+        doc.text(
+          `Generado: ${fechaActual}`,
+          pageWidth - 14,
+          pageHeight - 10,
+          { align: 'right' }
         );
       }
     });
 
-    // Resumen estadístico
+    // ============ RESUMEN ESTADÍSTICO (SIN EMOJIS) ============
     const finalY = doc.lastAutoTable.finalY + 15;
     
-    // Verificar si hay espacio, si no, agregar página
-    if (finalY > 250) {
+    if (finalY > pageHeight - 80) {
       doc.addPage();
-      yPos = 20;
+      agregarHeader();
+      yPos = 45;
     } else {
       yPos = finalY;
     }
     
-    doc.setFontSize(12);
+    // Box para resumen
+    doc.setFillColor(240, 249, 243);
+    doc.roundedRect(12, yPos - 5, pageWidth - 24, 70, 3, 3, 'F');
+    doc.setDrawColor(44, 171, 91);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(12, yPos - 5, pageWidth - 24, 70, 3, 3, 'S');
+    
+    doc.setFontSize(14);
     doc.setTextColor(44, 171, 91);
-    doc.text('Resumen Estadístico', 14, yPos);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen Estadistico', 16, yPos + 2);
     
-    doc.setFontSize(9);
-    doc.setTextColor(80);
-    doc.text(`Total de tipos de insumos: ${insumosFiltrados.length}`, 14, yPos + 8);
-    doc.text(`Insumos físicos: ${insumosFiltrados.filter(i => !i.esQuimico).length}`, 14, yPos + 14);
-    doc.text(`Químicos: ${insumosFiltrados.filter(i => i.esQuimico).length}`, 14, yPos + 20);
-    doc.text(`⚠️ Alertas de stock bajo: ${insumosStockBajo.length}`, 14, yPos + 26);
+    // Estadísticas en dos columnas
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    doc.setFont('helvetica', 'normal');
     
-    // Calcular por categorías
+    const col1X = 20;
+    const col2X = pageWidth / 2 + 10;
+    let statsY = yPos + 12;
+    
+    // Columna 1
+    doc.setFont('helvetica', 'bold');
+    doc.text('General:', col1X, statsY);
+    doc.setFont('helvetica', 'normal');
+    statsY += 6;
+    doc.text(`• Total tipos de insumos: ${insumosFiltrados.length}`, col1X + 2, statsY);
+    statsY += 5;
+    doc.text(`• Insumos fisicos: ${insumosFiltrados.filter(i => !i.esQuimico).length}`, col1X + 2, statsY);
+    statsY += 5;
+    doc.text(`• Quimicos: ${insumosFiltrados.filter(i => i.esQuimico).length}`, col1X + 2, statsY);
+    
+    // Columna 2 - Niveles de Stock (SIN EMOJIS)
+    statsY = yPos + 12;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Niveles de Stock:', col2X, statsY);
+    doc.setFont('helvetica', 'normal');
+    statsY += 6;
+    
+    const stockBajo = insumos.filter(i => getNivelStock(i) === 'bajo').length;
+    const stockMedio = insumos.filter(i => getNivelStock(i) === 'medio').length;
+    const stockNormal = insumos.filter(i => getNivelStock(i) === 'normal').length;
+    
+    doc.setTextColor(220, 38, 38);
+    doc.text(`Stock Bajo: ${stockBajo}`, col2X + 2, statsY);
+    statsY += 5;
+    doc.setTextColor(245, 158, 11);
+    doc.text(`Stock Medio: ${stockMedio}`, col2X + 2, statsY);
+    statsY += 5;
+    doc.setTextColor(34, 197, 94);
+    doc.text(`Stock Normal: ${stockNormal}`, col2X + 2, statsY);
+    
+    // Distribución por Categoría
+    statsY += 10;
+    doc.setTextColor(60);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Distribucion por Categoria:', col1X, statsY);
+    doc.setFont('helvetica', 'normal');
+    
     const categoriasConDatos = categorias.filter(cat => 
       insumosFiltrados.some(ins => ins.categoria?.idCategoria === cat.idCategoria)
     );
     
     if (categoriasConDatos.length > 0) {
-      doc.setFontSize(10);
-      doc.setTextColor(44, 171, 91);
-      doc.text('Distribución por Categoría:', 14, yPos + 30);
-      
-      doc.setFontSize(9);
-      doc.setTextColor(80);
-      let catYPos = yPos + 37;
-      
-      categoriasConDatos.forEach(cat => {
+      statsY += 6;
+      categoriasConDatos.slice(0, 4).forEach(cat => {
         const cantidad = insumosFiltrados.filter(
           ins => ins.categoria?.idCategoria === cat.idCategoria
         ).length;
         
-        doc.text(`• ${cat.nombreCategoria}: ${cantidad} tipo(s)`, 16, catYPos);
-        catYPos += 5;
+        const porcentaje = ((cantidad / insumosFiltrados.length) * 100).toFixed(1);
+        doc.text(`• ${cat.nombreCategoria}: ${cantidad} (${porcentaje}%)`, col1X + 2, statsY);
+        statsY += 5;
+      });
+    }
+
+    // ============ PÁGINA DE ALERTAS (SIN EMOJIS) ============
+    if (insumosStockBajo.length > 0) {
+      doc.addPage();
+      agregarHeader();
+      
+      yPos = 45;
+      doc.setFontSize(14);
+      doc.setTextColor(220, 38, 38);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Insumos con Stock Critico', 14, yPos);
+      
+      yPos += 8;
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Los siguientes insumos requieren atencion inmediata:', 14, yPos);
+      
+      yPos += 8;
+      const alertasData = insumosStockBajo.map(ins => [
+        ins.nombreTipoInsumo,
+        ins.categoria?.nombreCategoria || 'N/A',
+        `${ins.cantidadTotal} ${ins.unidad?.unidad}`,
+        'Critico'
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Insumo', 'Categoria', 'Cantidad Actual', 'Estado']],
+        body: alertasData,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [220, 38, 38],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          textColor: [220, 38, 38]
+        }
       });
     }
 
     // Guardar PDF
-    doc.save(`reporte_inventario_${fechaActual.replace(/\//g, '-')}.pdf`);
+    const nombreArchivo = `Reporte_Kalium_${fechaActual.replace(/\//g, '-')}_${Date.now()}.pdf`;
+    doc.save(nombreArchivo);
   };
 
   // Generar Excel
-  const generarExcel = () => {
-    const datos = insumosFiltrados.map(insumo => ({
+  // Función mejorada para generar Excel con múltiples hojas y estilos
+  const generarExcelMejorado = () => {
+    const wb = XLSX.utils.book_new();
+    const fechaActual = new Date().toLocaleDateString('es-ES');
+
+    // ============ HOJA 1: INVENTARIO COMPLETO ============
+    const datosInventario = insumosFiltrados.map(insumo => ({
+      'ID': insumo.idTipoInsumo,
       'Nombre': insumo.nombreTipoInsumo,
       'Tipo': insumo.esQuimico ? 'Químico' : 'Físico',
-      'Descripción': insumo.descripcion,
-      'Categoría': insumo.categoria?.nombreCategoria || 'N/A',
-      'Cantidad': insumo.cantidadTotal || '0',
-      'Unidad': insumo.unidad?.unidad || 'N/A',
+      'Descripción': insumo.descripcion || '',
+      'Categoría': insumo.categoria?.nombreCategoria || 'Sin categoría',
+      'Cantidad': insumo.cantidadTotal || 0,
+      'Unidad': insumo.unidad?.unidad || '',
       'Nivel Stock': getNivelStock(insumo) === 'bajo' ? 'Bajo' : 
-                      getNivelStock(insumo) === 'medio' ? 'Medio' : 'Normal'
+                    getNivelStock(insumo) === 'medio' ? 'Medio' : 'Normal',
+      'Estado': getNivelStock(insumo) === 'bajo' ? 'CRÍTICO' : 'OK'
     }));
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(datos);
+    const wsInventario = XLSX.utils.json_to_sheet(datosInventario);
 
     // Ajustar ancho de columnas
-    ws['!cols'] = [
-      { wch: 30 }, // Nombre
-      { wch: 15 }, // Tipo
-      { wch: 40 }, // Descripción
-      { wch: 20 }, // Categoría
-      { wch: 10 }, // Cantidad
-      { wch: 10 }, // Unidad
-      { wch: 12 }  // Nivel Stock
+    wsInventario['!cols'] = [
+      { wch: 8 },   // ID
+      { wch: 35 },  // Nombre
+      { wch: 15 },  // Tipo
+      { wch: 45 },  // Descripción
+      { wch: 20 },  // Categoría
+      { wch: 12 },  // Cantidad
+      { wch: 10 },  // Unidad
+      { wch: 15 },  // Nivel Stock
+      { wch: 12 }   // Estado
     ];
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
-    XLSX.writeFile(wb, `reporte_inventario_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, wsInventario, 'Inventario Completo');
+
+    // ============ HOJA 2: RESUMEN ESTADÍSTICO ============
+    const resumenData = [
+      { Métrica: 'Total de Tipos de Insumos', Valor: insumosFiltrados.length },
+      { Métrica: 'Insumos Físicos', Valor: insumosFiltrados.filter(i => !i.esQuimico).length },
+      { Métrica: 'Químicos', Valor: insumosFiltrados.filter(i => i.esQuimico).length },
+      { Métrica: '', Valor: '' },
+      { Métrica: 'NIVELES DE STOCK', Valor: '' },
+      { Métrica: 'Stock Bajo (Crítico)', Valor: insumos.filter(i => getNivelStock(i) === 'bajo').length },
+      { Métrica: 'Stock Medio', Valor: insumos.filter(i => getNivelStock(i) === 'medio').length },
+      { Métrica: 'Stock Normal', Valor: insumos.filter(i => getNivelStock(i) === 'normal').length },
+      { Métrica: '', Valor: '' },
+      { Métrica: 'Fecha de generación', Valor: fechaActual },
+      { Métrica: 'Generado por', Valor: 'Sistema Kalium' }
+    ];
+
+    const wsResumen = XLSX.utils.json_to_sheet(resumenData);
+    wsResumen['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+    // ============ HOJA 3: ALERTAS DE STOCK BAJO ============
+    if (insumosStockBajo.length > 0) {
+      const datosAlertas = insumosStockBajo.map(insumo => ({
+        'Estado': 'CRÍTICO',
+        'Nombre del Insumo': insumo.nombreTipoInsumo,
+        'Categoría': insumo.categoria?.nombreCategoria || 'Sin categoría',
+        'Cantidad Actual': insumo.cantidadTotal || 0,
+        'Unidad': insumo.unidad?.unidad || '',
+        'Acción Requerida': 'Revisar y reponer'
+      }));
+
+      const wsAlertas = XLSX.utils.json_to_sheet(datosAlertas);
+      wsAlertas['!cols'] = [
+        { wch: 12 },  // Estado
+        { wch: 35 },  // Nombre
+        { wch: 20 },  // Categoría
+        { wch: 15 },  // Cantidad
+        { wch: 10 },  // Unidad
+        { wch: 25 }   // Acción
+      ];
+      XLSX.utils.book_append_sheet(wb, wsAlertas, 'Alertas Stock Bajo');
+    }
+
+    // ============ HOJA 4: POR CATEGORÍA ============
+    const categoriaStats = categorias
+      .map(cat => {
+        const insumosCategoria = insumosFiltrados.filter(
+          ins => ins.categoria?.idCategoria === cat.idCategoria
+        );
+        
+        if (insumosCategoria.length === 0) return null;
+        
+        return {
+          'Categoría': cat.nombreCategoria,
+          'Total Insumos': insumosCategoria.length,
+          'Físicos': insumosCategoria.filter(i => !i.esQuimico).length,
+          'Químicos': insumosCategoria.filter(i => i.esQuimico).length,
+          'Stock Bajo': insumosCategoria.filter(i => getNivelStock(i) === 'bajo').length,
+          'Stock Medio': insumosCategoria.filter(i => getNivelStock(i) === 'medio').length,
+          'Stock Normal': insumosCategoria.filter(i => getNivelStock(i) === 'normal').length,
+          '% del Total': ((insumosCategoria.length / insumosFiltrados.length) * 100).toFixed(1) + '%'
+        };
+      })
+      .filter(item => item !== null);
+
+    const wsCategorias = XLSX.utils.json_to_sheet(categoriaStats);
+    wsCategorias['!cols'] = [
+      { wch: 25 },  // Categoría
+      { wch: 15 },  // Total
+      { wch: 12 },  // Físicos
+      { wch: 12 },  // Químicos
+      { wch: 12 },  // Bajo
+      { wch: 12 },  // Medio
+      { wch: 12 },  // Normal
+      { wch: 12 }   // Porcentaje
+    ];
+    XLSX.utils.book_append_sheet(wb, wsCategorias, 'Por Categoría');
+
+    // ============ HOJA 5: DETALLE DE QUÍMICOS ============
+    const quimicos = insumosFiltrados.filter(i => i.esQuimico);
+    if (quimicos.length > 0) {
+      const datosQuimicos = quimicos.map(q => ({
+        'Nombre': q.nombreTipoInsumo,
+        'Descripción': q.descripcion || '',
+        'Categoría': q.categoria?.nombreCategoria || '',
+        'Cantidad': q.cantidadTotal || 0,
+        'Unidad': q.unidad?.unidad || '',
+        'Nivel': getNivelStock(q)
+      }));
+
+      const wsQuimicos = XLSX.utils.json_to_sheet(datosQuimicos);
+      wsQuimicos['!cols'] = [
+        { wch: 35 },  // Nombre
+        { wch: 40 },  // Descripción
+        { wch: 20 },  // Categoría
+        { wch: 12 },  // Cantidad
+        { wch: 10 },  // Unidad
+        { wch: 12 }   // Nivel
+      ];
+      XLSX.utils.book_append_sheet(wb, wsQuimicos, 'Químicos');
+    }
+
+    // ============ HOJA 6: DETALLE DE INSUMOS FÍSICOS ============
+    const fisicos = insumosFiltrados.filter(i => !i.esQuimico);
+    if (fisicos.length > 0) {
+      const datosFisicos = fisicos.map(f => ({
+        'Nombre': f.nombreTipoInsumo,
+        'Descripción': f.descripcion || '',
+        'Categoría': f.categoria?.nombreCategoria || '',
+        'Cantidad': f.cantidadTotal || 0,
+        'Unidad': f.unidad?.unidad || '',
+        'Nivel': getNivelStock(f)
+      }));
+
+      const wsFisicos = XLSX.utils.json_to_sheet(datosFisicos);
+      wsFisicos['!cols'] = [
+        { wch: 35 },  // Nombre
+        { wch: 40 },  // Descripción
+        { wch: 20 },  // Categoría
+        { wch: 12 },  // Cantidad
+        { wch: 10 },  // Unidad
+        { wch: 12 }   // Nivel
+      ];
+      XLSX.utils.book_append_sheet(wb, wsFisicos, 'Insumos Físicos');
+    }
+
+    // Guardar archivo
+    const nombreArchivo = `Reporte_Kalium_${fechaActual.replace(/\//g, '-')}_${Date.now()}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
   };
 
   if (loading) {
@@ -530,14 +858,14 @@ const Reportes = () => {
         {/* Botones de Exportación */}
         <div className="mb-6 flex flex-wrap gap-4">
           <button
-            onClick={generarPDF}
+            onClick={generarPDFMejorado}
             className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors"
           >
             <span className="material-symbols-outlined text-base">picture_as_pdf</span>
             Exportar PDF
           </button>
           <button
-            onClick={generarExcel}
+            onClick={generarExcelMejorado}
             className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
           >
             <span className="material-symbols-outlined text-base">table_view</span>
