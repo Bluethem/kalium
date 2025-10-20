@@ -130,7 +130,7 @@ const Header = ({ minimal = false }) => {
     // En la función renderNavMenu(), agrega:
     if (role === 'ADMIN_SISTEMA') {
       return (
-        <nav className="flex flex-1 justify-center items-center gap-8 text-sm font-medium">
+        <nav className="flex flex-1 justify-center items-center gap-8 text-sm font-medium text-gray-600 dark:text-gray-300">
           <Link to="/dashboard-admin-sistema" className={`hover:text-[rgb(44,171,91)] ${isActive('/dashboard-admin-sistema') ? 'text-[rgb(44,171,91)] font-bold' : ''}`}>
             Dashboard
           </Link>
@@ -208,7 +208,7 @@ const Header = ({ minimal = false }) => {
       <header className="flex items-center justify-between whitespace-nowrap border-b border-gray-200 dark:border-gray-800 px-10 py-3 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-4 text-gray-900 dark:text-white">
           <div className="size-6">
-            <img src="/logo.png" alt="Kalium" className="h-6 w-6 object-contain" />
+            <img src="/logo.png" alt="Kalium" className="h-6 w-6 object-contain dark:invert" />
           </div>
           <h1 className="text-xl font-bold">Kalium</h1>
           {/* ✅ Menú de Estudiante va al lado del logo */}
@@ -270,11 +270,11 @@ const Header = ({ minimal = false }) => {
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden z-50">
                 {userEmail && <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b truncate">{userEmail}</div>}
-                <button onClick={() => { setMenuOpen(false); navigate('/cuenta'); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                <button onClick={() => { setMenuOpen(false); navigate('/cuenta'); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
                   <span className="material-symbols-outlined text-base">account_circle</span>
                   Mi cuenta
                 </button>
-                <button onClick={() => { localStorage.removeItem('usuario'); navigate('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                <button onClick={() => { localStorage.removeItem('usuario'); navigate('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
                   <span className="material-symbols-outlined text-base">logout</span>
                   Cerrar sesión
                 </button>

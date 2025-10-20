@@ -102,25 +102,27 @@ const ListaPedidos = () => {
   };
 
   const handleRechazar = async (idPedido) => {
-    if (!window.confirm('¿Está seguro de rechazar este pedido?')) return;
+    if (!window.confirm('¿Está seguro de cancelar este pedido?'))
+      return;
     
     try {
-      await pedidoService.cambiarEstado(idPedido, 3);
+      // Cambiar al estado "Cancelado" (ID = 5)
+      await pedidoService.cambiarEstado(idPedido, 5);
       cargarPedidos();
     } catch (error) {
-      console.error('Error al rechazar pedido:', error);
-      alert('No se pudo rechazar el pedido');
+      console.error('Error al cancelar pedido:', error);
+      alert('No se pudo cancelar el pedido');
     }
   };
 
   const getEstadoBadge = (estado) => {
     const estados = {
-      'Pendiente': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      'Aprobado': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'Rechazado': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      'En Proceso': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Pendiente': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+      'Aprobado': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+      'Entregado': 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
+      'Cancelado': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
     };
-    return estados[estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+    return estados[estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
   };
 
   // ✅ Verificar si hay filtros activos
@@ -178,10 +180,10 @@ const ListaPedidos = () => {
                   className="appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 pr-8 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <option value="">Todos los estados</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="aprobado">Aprobado</option>
-                  <option value="rechazado">Rechazado</option>
-                  <option value="en proceso">En Proceso</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Aprobado">Aprobado</option>
+                  <option value="Entregado">Entregado</option>
+                  <option value="Cancelado">Cancelado</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-base">
                   expand_more
@@ -359,7 +361,7 @@ const ListaPedidos = () => {
                               className="flex items-center gap-1 rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-500/20 dark:bg-red-500/20 dark:text-red-400"
                             >
                               <span className="material-symbols-outlined text-sm">cancel</span>
-                              Rechazar
+                              Cancelar
                             </button>
                             <button
                               onClick={() => navigate(`/pedidos/${pedido.idPedido}`)}

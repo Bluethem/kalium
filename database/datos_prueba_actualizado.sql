@@ -218,7 +218,7 @@ INSERT INTO Horario (FechaEntrega, HoraInicio) VALUES
 INSERT INTO Pedido (FechaPedido, CantGrupos, IDInstructor, IDEstPedido, IDCurso, IDTipoPedido, IDHorario) VALUES
 ('2025-01-05', 5, 1, 1, 1, 1, 1), -- Pedido Pendiente de María
 ('2025-01-06', 3, 2, 2, 2, 1, 2), -- Pedido Aprobado de Carlos
-('2025-01-07', 4, 1, 3, 1, 1, 3); -- Pedido En Preparación de María
+('2025-01-07', 4, 1, 5, 1, 1, 3); -- Pedido En Preparación de María
 
 -- ============================================
 -- 17. ESTADOS DE PEDIDO DETALLE (ANTES DE CREAR DETALLES)

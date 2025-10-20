@@ -76,13 +76,13 @@ const ListaNotificaciones = () => {
         n.tipo === 'CAMBIO_ROL'
       );
     } else if (rol === 'ESTUDIANTE' || rol === 'Estudiante') {
-      // ESTUDIANTE solo ve sus notificaciones personales
+      // ESTUDIANTE solo ve entregas, devoluciones e incidentes
       return notificaciones.filter(n =>
-        n.tipo === 'PEDIDO_APROBADO' ||
-        n.tipo === 'PEDIDO_RECHAZADO' ||
         n.tipo === 'ENTREGA_DISPONIBLE' ||
         n.tipo === 'DEVOLUCION_PROCESADA' ||
-        n.tipo === 'INCIDENTE_ACTUALIZADO'
+        n.tipo === 'DEVOLUCION_PENDIENTE' ||
+        n.tipo === 'INCIDENTE_ACTUALIZADO' ||
+        n.tipo === 'INCIDENTE'
       );
     } else {
       // ADMIN, ADMIN_LABORATORIO, INSTRUCTOR ven todo
@@ -101,11 +101,11 @@ const ListaNotificaciones = () => {
     } else if (rol === 'ESTUDIANTE' || rol === 'Estudiante') {
       return [
         { value: '', label: 'Todos' },
-        { value: 'PEDIDO_APROBADO', label: 'Pedidos Aprobados' },
-        { value: 'PEDIDO_RECHAZADO', label: 'Pedidos Rechazados' },
         { value: 'ENTREGA_DISPONIBLE', label: 'Entregas' },
-        { value: 'DEVOLUCION_PROCESADA', label: 'Devoluciones' },
-        { value: 'INCIDENTE_ACTUALIZADO', label: 'Incidentes' },
+        { value: 'DEVOLUCION_PROCESADA', label: 'Devoluciones Procesadas' },
+        { value: 'DEVOLUCION_PENDIENTE', label: 'Devoluciones Pendientes' },
+        { value: 'INCIDENTE_ACTUALIZADO', label: 'Incidentes Actualizados' },
+        { value: 'INCIDENTE', label: 'Incidentes' },
       ];
     } else {
       return [
@@ -207,22 +207,13 @@ const ListaNotificaciones = () => {
   };
 
   // Filtrar notificaciones
-  const notificacionesFiltradas = notificaciones.filter(notif => {
-    // Filtro por tab
-    if (tabActual === 'no-leidas' && notif.leida) return false;
-    if (tabActual === 'archivadas' && !notif.leida) return false;
-    
-    // Filtro por tipo
-    if (filtroTipo && notif.tipo !== filtroTipo) return false;
-    
-    return true;
-  });
+  const notificacionesFiltradas = notificaciones;
 
   // Paginación
   const indiceUltimo = paginaActual * itemsPorPagina;
   const indicePrimero = indiceUltimo - itemsPorPagina;
-  const notificacionesPaginadas = notificacionesFiltradas.slice(indicePrimero, indiceUltimo);
-  const totalPaginas = Math.ceil(notificacionesFiltradas.length / itemsPorPagina);
+  const notificacionesPaginadas = notificaciones.slice(indicePrimero, indiceUltimo);
+  const totalPaginas = Math.ceil(notificaciones.length / itemsPorPagina);
 
   const cambiarPagina = (numeroPagina) => {
     setPaginaActual(numeroPagina);

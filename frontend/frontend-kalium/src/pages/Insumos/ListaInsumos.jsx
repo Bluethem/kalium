@@ -101,7 +101,7 @@ const ListaInsumos = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header con título y botón */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             Gestionar Insumos
           </h2>
           <button

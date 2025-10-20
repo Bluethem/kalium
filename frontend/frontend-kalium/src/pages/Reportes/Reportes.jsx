@@ -379,7 +379,7 @@ const Reportes = () => {
               <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-2xl">warning</span>
               <div className="flex-1">
                 <h3 className="font-semibold text-yellow-900 dark:text-yellow-300 mb-1">
-                  ⚠️ {insumosStockBajo.length} Alerta(s) de Stock Bajo
+                  {insumosStockBajo.length} Alerta(s) de Stock Bajo
                 </h3>
                 <p className="text-sm text-yellow-800 dark:text-yellow-400">
                   Hay insumos con niveles críticos de inventario. Revisa la sección de alertas en la vista de gráficos.

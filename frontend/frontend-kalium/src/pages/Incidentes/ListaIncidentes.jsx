@@ -154,14 +154,17 @@ const ListaIncidentes = () => {
               </div>
 
               {/* Botón Limpiar */}
-              <div className="flex items-end">
-                <button
-                  onClick={limpiarFiltros}
-                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold transition-colors"
-                >
-                  Limpiar Filtros
-                </button>
-              </div>
+              {hayFiltrosActivos && (
+                <div className="flex items-end">
+                  <button
+                    onClick={limpiarFiltros}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-[rgb(44,171,91)] dark:hover:text-[rgb(44,171,91)] transition-colors font-medium"
+                  >
+                    <span className="material-symbols-outlined text-base">filter_alt_off</span>
+                    Limpiar filtros
+                  </button>
+                </div>
+              )}
             </div>
 
             {hayFiltrosActivos && (

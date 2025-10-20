@@ -12,7 +12,14 @@ const NuevoPedido = () => {
   const [tiposInsumo, setTiposInsumo] = useState([]);
   const [experimentos, setExperimentos] = useState([]);
   const [experimentoSeleccionado, setExperimentoSeleccionado] = useState('');
-  
+  // Estados para modales
+  const [modalCursoOpen, setModalCursoOpen] = useState(false);
+  const [modalTipoPedidoOpen, setModalTipoPedidoOpen] = useState(false);
+
+  // Estados para formularios de creación rápida
+  const [nuevoCurso, setNuevoCurso] = useState({ nombreCurso: '', codigoCurso: '' });
+  const [nuevoTipoPedido, setNuevoTipoPedido] = useState({ nombrePedido: '' });
+
   // Modales
   const [showErrorStock, setShowErrorStock] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -226,6 +233,74 @@ const NuevoPedido = () => {
     }
   };
 
+  // Función para crear curso rápido
+  const handleCrearCursoRapido = async () => {
+    try {
+      if (!nuevoCurso.nombreCurso.trim()) {
+        alert('El nombre del curso es obligatorio');
+        return;
+      }
+
+      const response = await axios.post('http://localhost:8080/api/cursos', {
+        nombreCurso: nuevoCurso.nombreCurso,
+        codigo: nuevoCurso.codigoCurso || null,
+        descripcion: null
+      });
+
+      // Recargar cursos
+      const cursosRes = await axios.get('http://localhost:8080/api/cursos');
+      setCursos(cursosRes.data);
+
+      // Seleccionar el nuevo curso automáticamente
+      setFormPedido(prev => ({
+        ...prev,
+        idCurso: response.data.idCurso
+      }));
+
+      // Cerrar modal y limpiar
+      setModalCursoOpen(false);
+      setNuevoCurso({ nombreCurso: '', codigoCurso: '' });
+
+      alert('Curso creado exitosamente');
+    } catch (error) {
+      console.error('Error al crear curso:', error);
+      alert(error.response?.data || 'Error al crear curso');
+    }
+  };
+
+  // Función para crear tipo de pedido rápido
+  const handleCrearTipoPedidoRapido = async () => {
+    try {
+      if (!nuevoTipoPedido.nombrePedido.trim()) {
+        alert('El nombre del tipo de pedido es obligatorio');
+        return;
+      }
+
+      const response = await axios.post('http://localhost:8080/api/tipos-pedido', {
+        nombrePedido: nuevoTipoPedido.nombrePedido
+      });
+
+      // Recargar tipos de pedido
+      const tiposRes = await axios.get('http://localhost:8080/api/tipos-pedido');
+      setTiposPedido(tiposRes.data);
+
+      // Seleccionar el nuevo tipo automáticamente
+      setFormPedido(prev => ({
+        ...prev,
+        idTipoPedido: response.data.idTipoPedido
+      }));
+
+      // Cerrar modal y limpiar
+      setModalTipoPedidoOpen(false);
+      setNuevoTipoPedido({ nombrePedido: '' });
+
+      alert('Tipo de pedido creado exitosamente');
+    } catch (error) {
+      console.error('Error al crear tipo de pedido:', error);
+      alert(error.response?.data || 'Error al crear tipo de pedido');
+    }
+  };
+
   return (
     <>
         <div className="mx-auto max-w-4xl p-6 lg:p-8">
@@ -296,42 +371,62 @@ const NuevoPedido = () => {
                   <label htmlFor="idCurso" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Curso
                   </label>
-                  <select
-                    id="idCurso"
-                    name="idCurso"
-                    value={formPedido.idCurso}
-                    onChange={handleChangePedido}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  >
-                    <option value="">Seleccionar curso</option>
-                    {cursos.map(curso => (
-                      <option key={curso.idCurso} value={curso.idCurso}>
-                        {curso.nombreCurso}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      id="idCurso"
+                      name="idCurso"
+                      value={formPedido.idCurso}
+                      onChange={handleChangePedido}
+                      required
+                      className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                    >
+                      <option value="">Seleccionar curso</option>
+                      {cursos.map(curso => (
+                        <option key={curso.idCurso} value={curso.idCurso}>
+                          {curso.nombreCurso}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setModalCursoOpen(true)}
+                      className="px-3 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
+                      title="Agregar curso nuevo"
+                    >
+                      <span className="material-symbols-outlined text-xl">add</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label htmlFor="idTipoPedido" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Tipo de Pedido
                   </label>
-                  <select
-                    id="idTipoPedido"
-                    name="idTipoPedido"
-                    value={formPedido.idTipoPedido}
-                    onChange={handleChangePedido}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  >
-                    <option value="">Seleccionar tipo</option>
-                    {tiposPedido.map(tipo => (
-                      <option key={tipo.idTipoPedido} value={tipo.idTipoPedido}>
-                        {tipo.nombrePedido}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      id="idTipoPedido"
+                      name="idTipoPedido"
+                      value={formPedido.idTipoPedido}
+                      onChange={handleChangePedido}
+                      required
+                      className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                    >
+                      <option value="">Seleccionar tipo</option>
+                      {tiposPedido.map(tipo => (
+                        <option key={tipo.idTipoPedido} value={tipo.idTipoPedido}>
+                          {tipo.nombrePedido}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setModalTipoPedidoOpen(true)}
+                      className="px-3 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
+                      title="Agregar tipo de pedido nuevo"
+                    >
+                      <span className="material-symbols-outlined text-xl">add</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -436,7 +531,7 @@ const NuevoPedido = () => {
                 <div className="flex flex-col justify-between">
                   <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                     <span className="font-medium">Total a pedir:</span>
-                    <span className="block text-lg font-bold text-[rgb(44,171,91)] dark:text-white">
+                    <span className="block text-lg font-bold text-[#2cab5bff] dark:text-white">
                       {(parseFloat(nuevoItem.cantPorGrupo) * parseInt(formPedido.cantGrupos) || 0).toFixed(2)}
                     </span>
                   </div>
@@ -593,6 +688,109 @@ const NuevoPedido = () => {
                   Ir a Mis Pedidos
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal - Nuevo Curso */}
+      {modalCursoOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Nuevo Curso
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nombre del Curso *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Química General I"
+                  value={nuevoCurso.nombreCurso}
+                  onChange={(e) => setNuevoCurso({...nuevoCurso, nombreCurso: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#34D399]"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Código (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: QUI-101"
+                  value={nuevoCurso.codigoCurso}
+                  onChange={(e) => setNuevoCurso({...nuevoCurso, codigoCurso: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#34D399]"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setModalCursoOpen(false);
+                  setNuevoCurso({ nombreCurso: '', codigoCurso: '' });
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCrearCursoRapido}
+                className="flex-1 px-4 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
+              >
+                Crear Curso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Nuevo Tipo de Pedido */}
+      {modalTipoPedidoOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Nuevo Tipo de Pedido
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Prácticas de Laboratorio"
+                  value={nuevoTipoPedido.nombrePedido}
+                  onChange={(e) => setNuevoTipoPedido({nombrePedido: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#34D399] focus:border-[#34D399]"
+                  autoFocus
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalTipoPedidoOpen(false);
+                  setNuevoTipoPedido({ nombrePedido: '' });
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCrearTipoPedidoRapido}
+                className="flex-1 px-4 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors font-medium"
+              >
+                Crear Tipo
+              </button>
             </div>
           </div>
         </div>
