@@ -33,6 +33,7 @@ import SolicitarDevolucion from './pages/Devoluciones/SolicitarDevolucion';
 import Solicitudes from './pages/Solicitudes';
 import MainLayout from './components/Layout/MainLayout';
 import DashboardAdminSistema from './pages/DashboardAdminSistema';
+import DashboardInstructor from './pages/Instructor/DashboardInstructor';
 
 function App() {
   useEffect(() => {
@@ -89,11 +90,43 @@ function App() {
         
         {/* ========== RUTAS PROTEGIDAS ========== */}
         <Route element={
-          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'ESTUDIANTE']}>
+          <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'ADMIN', 'ESTUDIANTE', 'INSTRUCTOR']}>
             <MainLayout />
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/dashboard" replace />} />
+
+          {/* =========== RUTA DE INSTRUCTOR ===========*/}
+          <Route path="dashboard-instructor" element={
+            <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+              <DashboardInstructor />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="instructor">
+            <Route index element={
+              <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+                <Navigate to="/dashboard-instructor" replace />
+              </ProtectedRoute>
+            } />
+            <Route path="pedidos">
+              <Route index element={
+                <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+                  <ListaPedidos />
+                </ProtectedRoute>
+              } />
+              <Route path="nuevo" element={
+                <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+                  <NuevoPedido />
+                </ProtectedRoute>
+              } />
+              <Route path=":id" element={
+                <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
+                  <DetallePedido />
+                </ProtectedRoute>
+              } />
+            </Route>
+          </Route>
 
           {/* =========== RUTA DE ADMIN SISTEMAS ===========*/}
           <Route path="dashboard-admin-sistema" element={
@@ -278,7 +311,26 @@ function App() {
           } />
         
           {/* ========== RUTA POR DEFECTO ========== */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Redirigir a cada dashboard según el rol */}
+          <Route path="*" element={
+            <ProtectedRoute allowedRoles={['ADMIN_SISTEMA', 'ADMIN_LABORATORIO', 'INSTRUCTOR', 'ESTUDIANTE']}>
+              {() => {
+                const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+                const rol = usuario.rol?.nombreRol || usuario.rol || '';
+                
+                switch(rol.toUpperCase()) {
+                  case 'ADMIN_SISTEMA':
+                    return <Navigate to="/dashboard-admin-sistema" replace />;
+                  case 'INSTRUCTOR':
+                    return <Navigate to="/dashboard-instructor" replace />;
+                  case 'ESTUDIANTE':
+                    return <Navigate to="/dashboard-estudiante" replace />;
+                  default:
+                    return <Navigate to="/dashboard" replace />;
+                }
+              }}
+            </ProtectedRoute>
+          } />
         </Route>
         
         <Route path="*" element={<Navigate to="/" replace />} />

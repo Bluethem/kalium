@@ -24,15 +24,34 @@ const NuevoPedido = () => {
   const [showErrorStock, setShowErrorStock] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  
+
+  // Obtener usuario del localStorage
+  const usuarioStorage = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const instructorId = usuarioStorage.id || '';
+  const nombreInstructor = usuarioStorage.nombre ? 
+    `${usuarioStorage.nombre} ${usuarioStorage.apellido || ''}`.trim() : '';
+
   const [formPedido, setFormPedido] = useState({
     fechaPedido: new Date().toISOString().split('T')[0],
     cantGrupos: 1,
-    idInstructor: '',
+    idInstructor: instructorId,
+    nombreInstructor: nombreInstructor,
     idCurso: '',
     idTipoPedido: '',
-    fechaEntrega: '',
-    horaEntrega: '08:00' // Hora por defecto
+    idHorario: '',
+    horaEntrega: ''
+  });
+
+  // Estado para los horarios disponibles
+  const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+  const [cargandoHorarios, setCargandoHorarios] = useState(false);
+  const [horariosSemana, setHorariosSemana] = useState({
+    lunes: [],
+    martes: [],
+    miercoles: [],
+    jueves: [],
+    viernes: [],
+    sabado: []
   });
 
   const [items, setItems] = useState([]);
@@ -41,6 +60,77 @@ const NuevoPedido = () => {
     cantPorGrupo: 1, // Cantidad por grupo
     esQuimico: false
   });
+  const [horarioSeleccionado, setHorarioSeleccionado] = useState(null);
+
+  const obtenerFechaLocal = (valor) => {
+    if (!valor) return null;
+    if (valor instanceof Date) return valor;
+    if (typeof valor === 'string') {
+      const soloFecha = valor.split('T')[0];
+      const [anio, mes, dia] = soloFecha.split('-').map(Number);
+      if ([anio, mes, dia].some((parte) => Number.isNaN(parte))) {
+        return null;
+      }
+      return new Date(anio, mes - 1, dia);
+    }
+    return null;
+  };
+
+  const obtenerDateHora = (hora, fechaFallback) => {
+    if (!hora) return null;
+    if (hora instanceof Date) return hora;
+    if (typeof hora === 'string') {
+      const conT = hora.replace(' ', 'T');
+      const normalizada = conT.includes('T') ? conT : (fechaFallback ? `${fechaFallback}T${conT}` : conT);
+      const fecha = new Date(normalizada);
+      if (!isNaN(fecha.getTime())) {
+        return fecha;
+      }
+    }
+    if (fechaFallback) {
+      const fechaBase = obtenerFechaLocal(fechaFallback);
+      if (fechaBase) {
+        return fechaBase;
+      }
+    }
+    return null;
+  };
+
+  const obtenerDiaSemanaClave = (horario) => {
+    if (!horario) return null;
+    const diasMap = {
+      1: 'lunes',
+      2: 'martes',
+      3: 'miercoles',
+      4: 'jueves',
+      5: 'viernes',
+      6: 'sabado'
+    };
+
+    if (horario.diaSemana && diasMap[horario.diaSemana]) {
+      return diasMap[horario.diaSemana];
+    }
+
+    const fecha = obtenerFechaLocal(horario.fechaEntrega);
+    if (!fecha) return null;
+
+    const mapFromDate = {
+      0: 'domingo',
+      1: 'lunes',
+      2: 'martes',
+      3: 'miercoles',
+      4: 'jueves',
+      5: 'viernes',
+      6: 'sabado'
+    };
+
+    const dia = mapFromDate[fecha.getDay()];
+    if (!dia || dia === 'domingo') {
+      return null;
+    }
+
+    return dia;
+  };
 
   useEffect(() => {
     cargarDatos();
@@ -48,12 +138,14 @@ const NuevoPedido = () => {
 
   const cargarDatos = async () => {
     try {
-      const [instructoresRes, cursosRes, tiposPedidoRes, tiposInsumoRes, experimentosRes] = await Promise.all([
+      const [instructoresRes, cursosRes, tiposPedidoRes, tiposInsumoRes, experimentosRes, horariosRes, pedidosRes] = await Promise.all([
         axios.get('http://localhost:8080/api/instructores'),
         axios.get('http://localhost:8080/api/cursos'),
         axios.get('http://localhost:8080/api/tipos-pedido'),
         insumoService.getTiposInsumoConStock(),
-        experimentoService.getExperimentos()
+        experimentoService.getExperimentos(),
+        horarioService.getHorarios(),
+        pedidoService.getPedidos()
       ]);
       
       setInstructores(instructoresRes.data || []);
@@ -61,6 +153,54 @@ const NuevoPedido = () => {
       setTiposPedido(tiposPedidoRes.data || []);
       setTiposInsumo(tiposInsumoRes.data || []);
       setExperimentos(experimentosRes.data || []);
+
+      const pedidos = Array.isArray(pedidosRes.data) ? pedidosRes.data : [];
+      const pedidosPorHorario = new Map();
+
+      pedidos.forEach(pedido => {
+        const id = pedido?.horario?.idHorario;
+        if (!id) return;
+        const estado = pedido?.estPedido?.nombreEstPedido;
+        if (estado && estado.toLowerCase() === 'cancelado') {
+          // Si está cancelado, se considera liberado. No lo marcamos como ocupado.
+          return;
+        }
+        pedidosPorHorario.set(id, {
+          idPedido: pedido.idPedido,
+          estado: estado || 'Desconocido'
+        });
+      });
+
+      const agrupadosPorDia = {
+        lunes: [],
+        martes: [],
+        miercoles: [],
+        jueves: [],
+        viernes: [],
+        sabado: []
+      };
+
+      (horariosRes.data || []).forEach(horario => {
+        const diaKey = obtenerDiaSemanaClave(horario);
+        if (diaKey && agrupadosPorDia[diaKey]) {
+          const inicio = horario?.horaInicioDate || obtenerDateHora(horario?.horaInicio, horario?.fechaEntrega);
+          const fin = horario?.horaFinDate || obtenerDateHora(horario?.horaFin, horario?.fechaEntrega) || (inicio && (horario?.duracionMinutos || horario?.duracion)
+            ? new Date(inicio.getTime() + (horario.duracionMinutos || horario.duracion) * 60000)
+            : null);
+
+          const ocupadoInfo = pedidosPorHorario.get(horario.idHorario);
+          agrupadosPorDia[diaKey].push({
+            ...horario,
+            disponible: !ocupadoInfo,
+            pedidoRelacionado: ocupadoInfo || null,
+            horaInicioDate: inicio,
+            horaFinDate: fin
+          });
+        }
+      });
+
+      setHorariosSemana(agrupadosPorDia);
+      setHorariosDisponibles(horariosRes.data || []);
     } catch (error) {
       console.error('Error al cargar datos:', error);
     }
@@ -189,18 +329,12 @@ const NuevoPedido = () => {
       if (items.length === 0) {
         throw new Error('Debe agregar al menos un ítem al pedido');
       }
-  
-      // ✅ PASO 1: Crear el horario PRIMERO
-      // Combinar fecha y hora en formato LocalDateTime: "2025-01-20T14:30:00"
-      const horarioData = {
-        fechaEntrega: formPedido.fechaEntrega, // LocalDate: "2025-01-20"
-        horaInicio: `${formPedido.fechaEntrega}T${formPedido.horaEntrega}:00` // LocalDateTime: "2025-01-20T14:30:00"
-      };
-      
-      const horarioRes = await horarioService.createHorario(horarioData);
-      const idHorarioCreado = horarioRes.data.idHorario;
-  
-      // ✅ PASO 2: Crear el pedido con el ID del horario
+
+      if (!horarioSeleccionado) {
+        throw new Error('Seleccione un horario disponible');
+      }
+
+      // ✅ Crear el pedido usando el horario seleccionado existente
       const pedidoData = {
         fechaPedido: formPedido.fechaPedido,
         cantGrupos: parseInt(formPedido.cantGrupos),
@@ -208,11 +342,11 @@ const NuevoPedido = () => {
         estPedido: { idEstPedido: 1 }, // Pendiente
         curso: { idCurso: parseInt(formPedido.idCurso) },
         tipoPedido: { idTipoPedido: parseInt(formPedido.idTipoPedido) },
-        horario: { idHorario: idHorarioCreado } // ✅ Usar el ID generado
+        horario: { idHorario: horarioSeleccionado.idHorario }
       };
   
       const pedidoRes = await pedidoService.createPedido(pedidoData);
-      
+
       // ✅ PASO 3: Crear detalles del pedido
       for (const item of items) {
         await pedidoDetalleService.createPedidoDetalle({
@@ -301,501 +435,378 @@ const NuevoPedido = () => {
     }
   };
 
+  const seleccionarHorario = (horario) => {
+    if (!horario?.disponible) {
+      setErrorMessage('Este horario ya tiene un pedido asignado');
+      setShowErrorStock(true);
+      return;
+    }
+
+    const inicio = horario?.horaInicioDate || obtenerDateHora(horario?.horaInicio, horario?.fechaEntrega);
+    const finCalculado = horario?.horaFinDate || obtenerDateHora(horario?.horaFin, horario?.fechaEntrega) || (inicio && (horario?.duracionMinutos || horario?.duracion)
+      ? new Date(inicio.getTime() + (horario.duracionMinutos || horario.duracion) * 60000)
+      : null);
+
+    setHorarioSeleccionado({
+      ...horario,
+      horaInicioDate: inicio,
+      horaFinDate: finCalculado
+    });
+    setFormPedido(prev => ({
+      ...prev,
+      idHorario: horario.idHorario,
+      horaEntrega: inicio ? inicio.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : ''
+    }));
+
+    // Limpiamos cualquier mensaje previo de error
+    setErrorMessage('');
+    setShowErrorStock(false);
+  };
+
+  // Función para formatear la hora
+  const formatearHora = (hora) => {
+    const [h, m] = hora.split(':');
+    const horaNum = parseInt(h);
+    const periodo = horaNum >= 12 ? 'PM' : 'AM';
+    const hora12 = horaNum % 12 || 12;
+    return `${hora12}:${m} ${periodo}`;
+  };
+
   return (
-    <>
-        <div className="mx-auto max-w-4xl p-6 lg:p-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Nuevo Pedido</h2>
-            <p className="text-gray-500 dark:text-gray-400">Complete el formulario para registrar un nuevo pedido.</p>
-          </div>
+    <div className="mx-auto max-w-4xl p-6 lg:p-8">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Nuevo Pedido</h2>
+        <p className="text-gray-500 dark:text-gray-400">Complete el formulario para registrar un nuevo pedido.</p>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Información del Pedido */}
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
-              <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Información del Pedido</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="fechaPedido" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha del Pedido
-                  </label>
-                  <input
-                    type="date"
-                    id="fechaPedido"
-                    name="fechaPedido"
-                    value={formPedido.fechaPedido}
-                    onChange={handleChangePedido}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  />
-                </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Información del Pedido */}
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
+          <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Información del Pedido</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Fecha del Pedido */}
+            <div>
+              <label htmlFor="fechaPedido" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Fecha del Pedido
+              </label>
+              <input
+                type="text"
+                id="fechaPedido"
+                value={new Date(formPedido.fechaPedido).toLocaleDateString('es-ES', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+                readOnly
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white cursor-not-allowed"
+              />
+              <input
+                type="hidden"
+                name="fechaPedido"
+                value={formPedido.fechaPedido}
+              />
+            </div>
 
-                <div>
-                  <label htmlFor="cantGrupos" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Cantidad de Grupos
-                  </label>
-                  <input
-                    type="number"
-                    id="cantGrupos"
-                    name="cantGrupos"
-                    value={formPedido.cantGrupos}
-                    onChange={handleChangePedido}
-                    min="1"
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  />
-                </div>
+            {/* Instructor */}
+            <div>
+              <label htmlFor="idInstructor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Instructor
+              </label>
+              <input
+                type="text"
+                value={nombreInstructor}
+                className="w-full p-2 border rounded-md bg-gray-100"
+                readOnly
+              />
+              <input
+                type="hidden"
+                name="idInstructor"
+                value={formPedido.idInstructor}
+              />
+            </div>
 
-                <div>
-                  <label htmlFor="idInstructor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Instructor
-                  </label>
-                  <select
-                    id="idInstructor"
-                    name="idInstructor"
-                    value={formPedido.idInstructor}
-                    onChange={handleChangePedido}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  >
-                    <option value="">Seleccionar instructor</option>
-                    {instructores.map(inst => (
-                      <option key={inst.idInstructor} value={inst.idInstructor}>
-                        {inst.usuario?.nombre} {inst.usuario?.apellido}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="idCurso" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Curso
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      id="idCurso"
-                      name="idCurso"
-                      value={formPedido.idCurso}
-                      onChange={handleChangePedido}
-                      required
-                      className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                    >
-                      <option value="">Seleccionar curso</option>
-                      {cursos.map(curso => (
-                        <option key={curso.idCurso} value={curso.idCurso}>
-                          {curso.nombreCurso}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setModalCursoOpen(true)}
-                      className="px-3 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
-                      title="Agregar curso nuevo"
-                    >
-                      <span className="material-symbols-outlined text-xl">add</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="idTipoPedido" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tipo de Pedido
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      id="idTipoPedido"
-                      name="idTipoPedido"
-                      value={formPedido.idTipoPedido}
-                      onChange={handleChangePedido}
-                      required
-                      className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                    >
-                      <option value="">Seleccionar tipo</option>
-                      {tiposPedido.map(tipo => (
-                        <option key={tipo.idTipoPedido} value={tipo.idTipoPedido}>
-                          {tipo.nombrePedido}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setModalTipoPedidoOpen(true)}
-                      className="px-3 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
-                      title="Agregar tipo de pedido nuevo"
-                    >
-                      <span className="material-symbols-outlined text-xl">add</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="experimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Experimento (Opcional)
-                  </label>
-                  <select
-                    id="experimento"
-                    value={experimentoSeleccionado}
-                    onChange={(e) => cargarInsumosDeExperimento(e.target.value)}
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  >
-                    <option value="">Sin experimento</option>
-                    {experimentos.map(exp => (
-                      <option key={exp.idExperimento} value={exp.idExperimento}>
-                        EXP{String(exp.idExperimento).padStart(3, '0')} - {exp.nombreExperimento}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Al seleccionar un experimento se cargarán sus insumos predefinidos
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="fechaEntrega" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha de Entrega
-                  </label>
-                  <input
-                    type="date"
-                    id="fechaEntrega"
-                    name="fechaEntrega"
-                    value={formPedido.fechaEntrega}
-                    onChange={handleChangePedido}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="horaEntrega" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Hora de Entrega
-                  </label>
-                  <input
-                    type="time"
-                    id="horaEntrega"
-                    name="horaEntrega"
-                    value={formPedido.horaEntrega}
-                    onChange={handleChangePedido}
-                    required
-                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                  />
-                </div>
+            {/* Curso */}
+            <div>
+              <label htmlFor="idCurso" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Curso
+              </label>
+              <div className="flex items-center gap-2">
+                <select
+                  id="idCurso"
+                  name="idCurso"
+                  value={formPedido.idCurso}
+                  onChange={handleChangePedido}
+                  required
+                  className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                >
+                  <option value="">Seleccionar curso</option>
+                  {cursos.map(curso => (
+                    <option key={curso.idCurso} value={curso.idCurso}>
+                      {curso.nombreCurso}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setModalCursoOpen(true)}
+                  className="px-3 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
+                  title="Agregar curso nuevo"
+                >
+                  <span className="material-symbols-outlined text-xl">add</span>
+                </button>
               </div>
             </div>
 
-            {/* Insumos y Químicos */}
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
-              <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Insumos y Químicos</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="idTipoInsumo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Tipo de Insumo
-                    </label>
-                    <select
-                      id="idTipoInsumo"
-                      name="idTipoInsumo"
-                      value={nuevoItem.idTipoInsumo}
-                      onChange={handleChangeItem}
-                      className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                    >
-                      <option value="">Seleccionar insumo</option>
-                      {tiposInsumo.map(tipo => (
-                        <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
-                          {tipo.nombreTipoInsumo} ({tipo.esQuimico ? 'Químico' : 'Físico'}) - Disp: {tipo.cantidadTotal}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+            {/* Tipo de Pedido */}
+            <div>
+              <label htmlFor="idTipoPedido" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tipo de Pedido
+              </label>
+              <div className="flex items-center gap-2">
+                <select
+                  id="idTipoPedido"
+                  name="idTipoPedido"
+                  value={formPedido.idTipoPedido}
+                  onChange={handleChangePedido}
+                  required
+                  className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
+                >
+                  <option value="">Seleccionar tipo</option>
+                  {tiposPedido.map(tipo => (
+                    <option key={tipo.idTipoPedido} value={tipo.idTipoPedido}>
+                      {tipo.nombrePedido}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setModalTipoPedidoOpen(true)}
+                  className="px-3 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
+                  title="Agregar tipo de pedido nuevo"
+                >
+                  <span className="material-symbols-outlined text-xl">add</span>
+                </button>
+              </div>
+            </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Horario seleccionado
+              </label>
+              {horarioSeleccionado ? (
+                <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-900/40 dark:bg-green-900/20 dark:text-green-200">
+                  <div className="font-medium">
+                    {(horarioSeleccionado.horaInicioDate || obtenerDateHora(horarioSeleccionado.horaInicio, horarioSeleccionado.fechaEntrega))?.toLocaleDateString('es-ES', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long'
+                    })}
+                  </div>
                   <div>
-                    <label htmlFor="cantPorGrupo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Cantidad por Grupo
-                    </label>
-                    <input
-                      type="number"
-                      id="cantPorGrupo"
-                      name="cantPorGrupo"
-                      value={nuevoItem.cantPorGrupo}
-                      onChange={handleChangeItem}
-                      min="0.01"
-                      step={nuevoItem.esQuimico ? "0.01" : "1"}
-                      placeholder="Ej: 2"
-                      className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-[rgb(44,171,91)] focus:border-[rgb(44,171,91)]"
-                    />
+                    {(horarioSeleccionado.horaInicioDate || obtenerDateHora(horarioSeleccionado.horaInicio, horarioSeleccionado.fechaEntrega))?.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                    {' - '}
+                    {(horarioSeleccionado.horaFinDate || obtenerDateHora(horarioSeleccionado.horaFin, horarioSeleccionado.fechaEntrega))?.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">
+                    {horarioSeleccionado.laboratorio?.nombre || 'Sin laboratorio asignado'}
                   </div>
                 </div>
+              ) : (
+                <div className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800">
+                  Seleccione un horario en la sección de horarios semanales.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-                <div className="flex flex-col justify-between">
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    <span className="font-medium">Total a pedir:</span>
-                    <span className="block text-lg font-bold text-[#2cab5bff] dark:text-white">
-                      {(parseFloat(nuevoItem.cantPorGrupo) * parseInt(formPedido.cantGrupos) || 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={agregarItem}
-                    disabled={!nuevoItem.idTipoInsumo}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined text-base">add</span>
-                    Añadir
-                  </button>
+        {errorMessage && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-900/20 dark:text-red-200">
+            {errorMessage}
+          </div>
+        )}
+
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
+          <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Horarios semanales</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Object.entries(horariosSemana).map(([dia, horarios]) => (
+              <div key={dia} className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <h4 className="text-base font-medium capitalize text-gray-800 dark:text-gray-200 mb-3">{dia}</h4>
+                <div className="space-y-2 text-sm">
+                  {horarios.length === 0 && (
+                    <div className="rounded-md border border-dashed border-gray-300 dark:border-gray-600 p-3 text-gray-500 dark:text-gray-400">
+                      No hay horarios registrados
+                    </div>
+                  )}
+                  {horarios.map((horario, index) => {
+                    const disponible = horario?.disponible ?? true;
+                    const inicio = horario?.horaInicioDate || obtenerDateHora(horario?.horaInicio, horario?.fechaEntrega);
+                    const fin = horario?.horaFinDate || obtenerDateHora(horario?.horaFin, horario?.fechaEntrega) || (inicio && (horario?.duracionMinutos || horario?.duracion)
+                      ? new Date(inicio.getTime() + (horario.duracionMinutos || horario.duracion) * 60000)
+                      : null);
+
+                    return (
+                      <button
+                        key={`${horario?.idHorario}-${index}`}
+                        type="button"
+                        onClick={() => seleccionarHorario(horario)}
+                        className={`w-full rounded-md px-3 py-3 text-left transition-colors border ${
+                          horarioSeleccionado?.idHorario === horario.idHorario
+                            ? 'border-blue-500 bg-blue-50 text-blue-800 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-200'
+                            : disponible
+                              ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100 dark:border-green-900/40 dark:bg-green-900/20 dark:text-green-200'
+                              : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200'
+                        } ${disponible ? '' : 'cursor-not-allowed opacity-80'}`}
+                        disabled={!disponible}
+                      >
+                        <div className="font-medium">
+                          {inicio ? inicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                          {' - '}
+                          {fin ? fin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-300">
+                          {horario?.laboratorio?.nombre || 'Sin laboratorio'}
+                        </div>
+                        {!disponible && (
+                          <div className="text-xs font-medium">
+                            No disponible (Pedido #{horario?.pedidoRelacionado?.idPedido || '—'})
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              {/* Tabla de items agregados */}
-              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                  <thead className="bg-gray-50 dark:bg-gray-800/50">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Agregar insumo</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Complete los campos para añadir los insumos al pedido.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="lg:col-span-2">
+              <label htmlFor="idTipoInsumo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tipo de insumo
+              </label>
+              <select
+                id="idTipoInsumo"
+                name="idTipoInsumo"
+                value={nuevoItem.idTipoInsumo}
+                onChange={handleChangeItem}
+                className="w-full rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">Seleccionar tipo de insumo...</option>
+                {tiposInsumo.map(tipo => (
+                  <option key={tipo.idTipoInsumo} value={tipo.idTipoInsumo}>
+                    {tipo.nombreTipoInsumo} {tipo.cantidadTotal ? `(Disponible: ${tipo.cantidadTotal} ${tipo.unidad?.unidad || ''})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="cantPorGrupo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Cantidad por grupo
+              </label>
+              <input
+                id="cantPorGrupo"
+                name="cantPorGrupo"
+                type="number"
+                min="1"
+                value={nuevoItem.cantPorGrupo}
+                onChange={(e) => handleChangeItem({ target: { name: 'cantPorGrupo', value: parseFloat(e.target.value) || 1 } })}
+                className="w-full rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
+
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={agregarItem}
+                className="w-full rounded-md bg-[#2cab5bff] px-4 py-2 text-sm font-medium text-white hover:bg-[#2ab885] transition-colors"
+              >
+                Agregar a la lista
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Lista de insumos del pedido</h4>
+            {items.length === 0 ? (
+              <div className="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-gray-500 dark:text-gray-400">
+                Aún no has agregado insumos. Utiliza el formulario superior para añadirlos al pedido.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 uppercase tracking-wider text-xs">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                        Insumo
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                        Tipo
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                        Cant/Grupo
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                        Total
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                        Acción
-                      </th>
+                      <th className="px-4 py-3 text-left">Tipo de insumo</th>
+                      <th className="px-4 py-3 text-left">Cantidad / grupo</th>
+                      <th className="px-4 py-3 text-left">Total ({formPedido.cantGrupos} grupos)</th>
+                      <th className="px-4 py-3 text-left">Unidad</th>
+                      <th className="px-4 py-3 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                    {items.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                          No hay ítems agregados al pedido
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                    {items.map((item, index) => (
+                      <tr key={`${item.idTipoInsumo}-${index}`}>
+                        <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{item.nombreTipoInsumo}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.cantPorGrupo}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.cantidadTotal}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.unidad || '—'}</td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => eliminarItem(index)}
+                            className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+                          >
+                            Eliminar
+                          </button>
                         </td>
                       </tr>
-                    ) : (
-                      items.map((item, index) => (
-                        <tr key={index}>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                            {item.nombreTipoInsumo}
-                          </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                            {item.esQuimico ? 'Químico' : 'Físico'}
-                          </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                            {item.cantPorGrupo} {item.unidad}
-                          </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
-                            {item.cantidadTotal} {item.unidad}
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">({item.cantPorGrupo} × {formPedido.cantGrupos})</span>
-                          </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
-                            <button
-                              type="button"
-                              onClick={() => eliminarItem(index)}
-                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                            >
-                              <span className="material-symbols-outlined text-base">delete</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* Botones de acción */}
-            <div className="flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => navigate('/pedidos')}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex items-center gap-2 rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-opacity-90 disabled:opacity-50"
-              >
-                {loading ? 'Guardando...' : 'Guardar Pedido'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-      {/* Modal de Error - Stock Insuficiente */}
-      {showErrorStock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl p-8 w-full max-w-md text-center border border-gray-200 dark:border-gray-800">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50 mb-4">
-              <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-3xl">error</span>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Error al añadir el ítem
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              {errorMessage || 'El stock del producto seleccionado es insuficiente.'}
-            </p>
-            <button
-              onClick={() => {
-                setShowErrorStock(false);
-                setErrorMessage('');
-              }}
-              className="w-full rounded-lg bg-[rgb(44,171,91)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgb(44,171,91)]"
-            >
-              Aceptar
-            </button>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Modal de Éxito */}
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={loading || items.length === 0}
+            className={`rounded-md px-6 py-2 text-sm font-medium text-white transition-colors ${
+              items.length === 0 || loading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-[#2cab5bff] hover:bg-[#2ab885]'
+            }`}
+          >
+            {loading ? 'Guardando...' : 'Guardar pedido'}
+          </button>
+        </div>
+      </form>
+
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-8 shadow-2xl border border-gray-200 dark:border-gray-800">
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-                <span className="material-symbols-outlined text-4xl text-green-600 dark:text-green-400">
-                  check
-                </span>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                ¡Pedido Registrado con Éxito!
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-8">
-                Tu pedido ha sido enviado y será procesado a la brevedad.
-              </p>
-              <div className="flex w-full flex-col gap-4 sm:flex-row sm:justify-center">
-                <button
-                  onClick={() => {
-                    setShowSuccess(false);
-                    navigate('/pedidos');
-                  }}
-                  className="w-full rounded-lg bg-[rgb(44,171,91)] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-opacity-90"
-                >
-                  Aceptar
-                </button>
-                <button
-                  onClick={() => navigate('/pedidos')}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Ir a Mis Pedidos
-                </button>
-              </div>
+          <div className="rounded-lg bg-white px-8 py-6 text-center shadow-lg dark:bg-gray-900">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
+              <span className="material-symbols-outlined">check</span>
             </div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Pedido creado exitosamente</h4>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Serás redirigido en unos segundos...</p>
           </div>
         </div>
       )}
-      {/* Modal - Nuevo Curso */}
-      {modalCursoOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Nuevo Curso
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nombre del Curso *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Química General I"
-                  value={nuevoCurso.nombreCurso}
-                  onChange={(e) => setNuevoCurso({...nuevoCurso, nombreCurso: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#34D399]"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Código (Opcional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: QUI-101"
-                  value={nuevoCurso.codigoCurso}
-                  onChange={(e) => setNuevoCurso({...nuevoCurso, codigoCurso: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#34D399]"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setModalCursoOpen(false);
-                  setNuevoCurso({ nombreCurso: '', codigoCurso: '' });
-                }}
-                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCrearCursoRapido}
-                className="flex-1 px-4 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors"
-              >
-                Crear Curso
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal - Nuevo Tipo de Pedido */}
-      {modalTipoPedidoOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Nuevo Tipo de Pedido
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nombre <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Prácticas de Laboratorio"
-                  value={nuevoTipoPedido.nombrePedido}
-                  onChange={(e) => setNuevoTipoPedido({nombrePedido: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#34D399] focus:border-[#34D399]"
-                  autoFocus
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setModalTipoPedidoOpen(false);
-                  setNuevoTipoPedido({ nombrePedido: '' });
-                }}
-                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleCrearTipoPedidoRapido}
-                className="flex-1 px-4 py-2 bg-[#2cab5bff] text-white rounded-lg hover:bg-[#2ab885] transition-colors font-medium"
-              >
-                Crear Tipo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 };
 
