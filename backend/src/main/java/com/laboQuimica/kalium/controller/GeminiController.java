@@ -1,6 +1,7 @@
 package com.laboQuimica.kalium.controller;
 
 import com.laboQuimica.kalium.service.GeminiService;
+import com.laboQuimica.kalium.service.FrontendContextService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -18,14 +19,26 @@ public class GeminiController {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(GeminiController.class);
     
     private final GeminiService geminiService;
+    private final FrontendContextService frontendContextService;
 
     // Prompt del sistema configurable para dar contexto del sitio
     @Value("${ASSISTANT_SYSTEM_PROMPT:Actúa como un asistente de la aplicación Kalium. Responde de forma breve y útil sobre la página y sus funcionalidades. Si el usuario tiene dudas de navegación, guíalo con pasos claros.}")
     private String systemPrompt;
 
+    @Value("${FRONTEND_CONTEXT_ENABLED:true}")
+    private boolean frontendContextEnabled;
+
+    @Value("${FRONTEND_CONTEXT_MAX_CHARS:3000}")
+    private int frontendContextMaxChars;
+
+    // Conocimiento persistente de la app (editable por env). Por defecto, incluye las capacidades de /cuenta.
+    @Value("${APP_KNOWLEDGE:En la pantalla /cuenta el usuario puede cambiar su icono de perfil y activar o desactivar el modo oscuro para las pantallas.}")
+    private String appKnowledge;
+
     @Autowired
-    public GeminiController(GeminiService geminiService) {
+    public GeminiController(GeminiService geminiService, FrontendContextService frontendContextService) {
         this.geminiService = geminiService;
+        this.frontendContextService = frontendContextService;
     }
 
     @PostMapping("/chat")
@@ -41,7 +54,13 @@ public class GeminiController {
                 return ResponseEntity.badRequest().body(createErrorResponse("El campo 'prompt' es requerido"));
             }
             
-            String composedPrompt = buildComposedPrompt(systemPrompt, context, prompt);
+            String frontendIndex = "";
+            if (frontendContextEnabled) {
+                // Use the page context (contains URL/Path/Title) and user prompt to retrieve a compact index
+                frontendIndex = frontendContextService.getContextFor(context, prompt, frontendContextMaxChars);
+            }
+
+            String composedPrompt = buildComposedPrompt(systemPrompt, appKnowledge, context, frontendIndex, prompt);
             logger.info("Recibida solicitud POST de chat. Contexto: {} | Prompt: {}", truncate(context, 200), truncate(prompt, 200));
             String response = geminiService.generateResponse(composedPrompt);
             
@@ -87,13 +106,19 @@ public class GeminiController {
         return errorResponse;
     }
 
-    private String buildComposedPrompt(String system, String context, String userPrompt) {
+    private String buildComposedPrompt(String system, String appKnowledge, String context, String frontendIndex, String userPrompt) {
         StringBuilder sb = new StringBuilder();
         if (system != null && !system.isBlank()) {
             sb.append("[SYSTEM]\n").append(system.trim()).append("\n\n");
         }
+        if (appKnowledge != null && !appKnowledge.isBlank()) {
+            sb.append("[APP KNOWLEDGE]\n").append(appKnowledge.trim()).append("\n\n");
+        }
         if (context != null && !context.isBlank()) {
             sb.append("[PAGE CONTEXT]\n").append(context.trim()).append("\n\n");
+        }
+        if (frontendIndex != null && !frontendIndex.isBlank()) {
+            sb.append(frontendIndex.trim()).append("\n\n");
         }
         sb.append("[USER]\n").append(userPrompt);
         return sb.toString();
