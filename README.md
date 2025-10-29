@@ -21,7 +21,7 @@ kalium/
 ## Requisitos
 
 - **Java 17+** - Usar java v17, por temas de compatibilidad con lombok.
-- **Maven 3+** - Si clonas el repositorio, te recomiendo usar netbeans v24 (configurando la version de java) o en su defecto usar instalar maven.
+- **Maven 3+** - Si clonas el repositorio, te recomiendo usar netbeans v24 (configurando la version de java) o en su defecto usar la dependencia de maven para ejecutar directamente desde consola.
 - **Node.js 18+** - Instalar dependencias de node.js.
 - **MySQL** - Proyecto corrido desde una dependencia de mariaDB (XAMPP).
 
