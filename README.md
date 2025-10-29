@@ -20,10 +20,10 @@ kalium/
 
 ## Requisitos
 
-- **Java 17+**
-- **Maven 3+**
+- **Java 17+** - Usar java v17, por temas de compatibilidad con lombok.
+- **Maven 3+** - Si clonas el repositorio, te recomiendo usar netbeans v24 (configurando la version de java) o en su defecto usar instalar maven.
 - **Node.js 18+**
-- **MySQL / PostgreSQL**
+- **MySQL** - Proyecto corrido desde una dependencia de mariaDB (XAMPP).
 
 ## Instalación y Ejecución
 
@@ -86,7 +86,7 @@ El frontend consume la API del backend desde http://localhost:8080/api/.... Conf
     - Vite
     - TailwindCSS
 - Base de Datos:
-    - MySQL / PostgreSQL
+    - MySQL
 
 ### 6. Autor
 - Desarrollado por:
