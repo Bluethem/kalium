@@ -1,4 +1,18 @@
 # Proyecto Kalium
+> Plataforma para la gestión de laboratorios de química
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Finalizado-blueviolet?style=flat-square">
+  <img src="https://img.shields.io/badge/Licencia-MIT-green?style=flat-square">
+  <img src="https://img.shields.io/badge/Framework-React-red?style=flat-square">
+  <img src="https://img.shields.io/badge/Backend-Java-orange?style=flat-square">
+</p>
+
+<div align="center">
+  <img src="/frontend/frontend-kalium/public/logo_nuevo.png" alt="Blume Cover" style="border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+</div>
+
+## Descripción general
 
 Aplicación web full-stack construida con Spring Boot (Java) para el backend y React + Vite + TailwindCSS para el frontend. El sistema está diseñado para ser modular, escalable y fácil de desplegar.
 
@@ -24,6 +38,15 @@ kalium/
 - **Maven 3+** - Si clonas el repositorio, te recomiendo usar netbeans v24 (configurando la version de java) o en su defecto usar la dependencia de maven para ejecutar directamente desde consola.
 - **Node.js 18+** - Instalar dependencias de node.js.
 - **MySQL** - Proyecto corrido desde una dependencia de mariaDB (XAMPP).
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-17%2B-007396?logo=openjdk&logoColor=white&style=for-the-badge" alt="Java 17+">
+  <img src="https://img.shields.io/badge/Maven-3%2B-C71A36?logo=apachemaven&logoColor=white&style=for-the-badge" alt="Maven 3+">
+  <img src="https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white&style=for-the-badge" alt="Node.js 18+">
+  <img src="https://img.shields.io/badge/React-18%2B-61DAFB?logo=react&logoColor=white&style=for-the-badge" alt="React 18+">
+  <img src="https://img.shields.io/badge/MySQL-8%2B-4479A1?logo=mysql&logoColor=white&style=for-the-badge" alt="MySQL 8+">
+  <img src="https://img.shields.io/badge/XAMPP-8%2B-FB7A24?logo=xampp&logoColor=white&style=for-the-badge" alt="XAMPP 8+">
+</p>
 
 ## Instalación y Ejecución
 
@@ -68,7 +91,7 @@ El frontend correrá en: http://localhost:5173
 
 El frontend consume la API del backend desde http://localhost:8080/api/.... Configura la URL base en frontend/src/config.js (o donde la tengas definida).
 
-### 4. Funcionalidades
+## Funcionalidades
 - Autenticación de usuarios
 - Gestión de perfiles y roles
 - Dashboard dinámico con React + TailwindCSS
@@ -76,7 +99,7 @@ El frontend consume la API del backend desde http://localhost:8080/api/.... Conf
 - Persistencia en base de datos relacional
 - Interfaz moderna y responsiva
 
-### 5. Tecnologías
+## Tecnologías
 - Backend:
     - Java 17
     - Spring Boot 3 (Spring Web, Spring Data JPA, Spring Security)
@@ -88,13 +111,17 @@ El frontend consume la API del backend desde http://localhost:8080/api/.... Conf
 - Base de Datos:
     - MySQL
 
-### 6. Autor
-- Desarrollado por:
-    1. David Luza Ccorimanya
-    2. Henry Javier Medina Malpartida
-    3. Romel Rodrigo Chumpitaz Flores
+<div align="center">
+  <img src="https://skillicons.dev/icons?i=react,vite,tailwind,java,spring,mysql,git&theme=dark" />
+</div>
 
-- Contactos: 
+### Autores
+- **Desarrollado por:**
+    **1. David Luza Ccorimanya**
+    **2. Henry Javier Medina Malpartida**
+    **3. Romel Rodrigo Chumpitaz Flores**
+
+- **Contactos:** 
     1. david.luza.c@uni.pe
     2. henry.medina.m@uni.pe
     3. romel.chumpitaz.f@uni.pe
