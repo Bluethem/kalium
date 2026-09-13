@@ -67,7 +67,7 @@ public class NotificacionWebSocketService {
             // Envía a /topic/contador/{idUsuario}
             messagingTemplate.convertAndSend(
                 "/topic/contador/" + idUsuario, 
-                mensaje
+                (Object) mensaje
             );
             logger.debug("Contador actualizado por WebSocket para usuario: {} - Contador: {}", idUsuario, contador);
         } catch (Exception e) {
@@ -88,7 +88,7 @@ public class NotificacionWebSocketService {
             
             messagingTemplate.convertAndSend(
                 "/topic/notificaciones/" + idUsuario, 
-                mensaje
+                (Object) mensaje
             );
             logger.debug("Test de conexión enviado a usuario: {}", idUsuario);
         } catch (Exception e) {
