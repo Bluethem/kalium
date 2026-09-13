@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 function Solicitudes() {
   const [data, setData] = useState([]);
@@ -11,7 +12,7 @@ function Solicitudes() {
   async function cargar() {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8080/api/solicitudes');
+      const res = await fetch(`${API_BASE_URL}/solicitudes`);
       const list = await res.json();
       setData(Array.isArray(list) ? list : []);
     } catch (e) {
@@ -35,10 +36,10 @@ function Solicitudes() {
     if (!confirm.id || !confirm.action) return;
     try {
       if (confirm.action === 'aceptar') {
-        const res = await fetch(`http://localhost:8080/api/solicitudes/${confirm.id}/aceptar`, { method: 'POST' });
+        const res = await fetch(`${API_BASE_URL}/solicitudes/${confirm.id}/aceptar`, { method: 'POST' });
         if (!res.ok) throw new Error(await res.text());
       } else if (confirm.action === 'rechazar') {
-        const res = await fetch(`http://localhost:8080/api/solicitudes/${confirm.id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE_URL}/solicitudes/${confirm.id}`, { method: 'DELETE' });
         if (!res.ok && res.status !== 204) throw new Error(await res.text());
       }
       cerrarConfirm();

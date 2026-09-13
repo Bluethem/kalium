@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { API_BASE_URL } from '../../config';
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,7 +65,7 @@ const ChatWidget = () => {
     try {
       // Llamar al backend para obtener la respuesta de Gemini
       const pageContext = `URL: ${window.location.href}\nPath: ${window.location.pathname}\nTitle: ${document.title}`;
-      const response = await fetch('http://localhost:8080/api/ai/chat', {
+      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

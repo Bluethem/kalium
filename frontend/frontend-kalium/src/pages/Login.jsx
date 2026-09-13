@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Layout/Header';
+import { API_BASE_URL } from '../config';
 
 function Login() {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ function Login() {
     const contrasena = e.target.password.value;
 
     try {
-      const res = await fetch('http://localhost:8080/api/usuarios/login', {
+      const res = await fetch(`${API_BASE_URL}/usuarios/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ correo, contrasena }),

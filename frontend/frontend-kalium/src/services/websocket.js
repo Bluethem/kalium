@@ -1,6 +1,7 @@
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import logger from '../utils/logger';
+import { WS_URL } from '../config';
 
 /**
  * Servicio para manejar conexiones WebSocket con STOMP
@@ -29,7 +30,7 @@ class WebSocketService {
     logger.log(`🔌 Intentando conectar WebSocket para usuario: ${userId}`);
 
     // Crear socket SockJS
-    const socket = new SockJS('http://localhost:8080/ws');
+    const socket = new SockJS(WS_URL);
     
     this.client = new Client({
       webSocketFactory: () => socket,

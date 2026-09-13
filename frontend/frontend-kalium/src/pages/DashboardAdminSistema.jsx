@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 function DashboardAdminSistema() {
   const navigate = useNavigate();
@@ -28,11 +28,11 @@ function DashboardAdminSistema() {
       setLoading(true);
       
       // Cargar solicitudes
-      const solicitudesRes = await axios.get('http://localhost:8080/api/solicitudes');
+      const solicitudesRes = await api.get('/solicitudes');
       const solicitudes = solicitudesRes.data || [];
       
       // Cargar usuarios
-      const usuariosRes = await axios.get('http://localhost:8080/api/usuarios');
+      const usuariosRes = await api.get('/usuarios');
       const usuarios = usuariosRes.data || [];
       
       setEstadisticas({

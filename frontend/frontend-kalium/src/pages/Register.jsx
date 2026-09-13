@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Layout/Header';
+import { API_BASE_URL } from '../config';
 
 function Register() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ function Register() {
     }
 
     try {
-      const res = await fetch('http://localhost:8080/api/solicitudes', {
+      const res = await fetch(`${API_BASE_URL}/solicitudes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, apellido, correo, contrasena, idRol: Number(rolSeleccionado) })

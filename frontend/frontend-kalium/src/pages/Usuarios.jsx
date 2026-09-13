@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 function Usuarios() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ function Usuarios() {
       const current = getCurrentUser();
       setCurrentUser(current);
       
-      const res = await fetch('http://localhost:8080/api/usuarios');
+      const res = await fetch(`${API_BASE_URL}/usuarios`);
       if (!res.ok) throw new Error('No se pudieron obtener los usuarios');
       let data = await res.json();
       
@@ -94,7 +95,7 @@ function Usuarios() {
     if (!deleteConfirm.id) return;
     
     try {
-      const res = await fetch(`http://localhost:8080/api/usuarios/${deleteConfirm.id}`, { 
+      const res = await fetch(`${API_BASE_URL}/usuarios/${deleteConfirm.id}`, { 
         method: 'DELETE' 
       });
       
@@ -155,7 +156,7 @@ function Usuarios() {
       if (!correoTrim) throw new Error('El correo es requerido');
       let existente = null;
       try {
-        const resExiste = await fetch(`http://localhost:8080/api/usuarios/correo/${encodeURIComponent(correoTrim)}`);
+        const resExiste = await fetch(`${API_BASE_URL}/usuarios/correo/${encodeURIComponent(correoTrim)}`);
         if (resExiste.ok) {
           existente = await resExiste.json();
         }
@@ -174,13 +175,13 @@ function Usuarios() {
       let res;
       if (editing) {
         // PUT: si contrasena vacía, backend la ignora según lógica existente
-        res = await fetch(`http://localhost:8080/api/usuarios/${form.idUsuario}`, {
+        res = await fetch(`${API_BASE_URL}/usuarios/${form.idUsuario}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nombre: form.nombre, apellido: form.apellido, correo: form.correo, contrasena: form.contrasena })
         });
       } else {
-        res = await fetch('http://localhost:8080/api/usuarios', {
+        res = await fetch(`${API_BASE_URL}/usuarios`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nombre: form.nombre, apellido: form.apellido, correo: form.correo, contrasena: form.contrasena })

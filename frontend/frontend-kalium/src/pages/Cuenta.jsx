@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 function Cuenta() {
   const [form, setForm] = useState({ idUsuario: null, nombre: '', apellido: '', correo: '', contrasena: '' });
@@ -108,7 +109,7 @@ function Cuenta() {
       // PUT al backend (incluye logo si está disponible)
       const payload = { nombre: form.nombre, apellido: form.apellido, correo: form.correo, contrasena: form.contrasena };
       if (logoBase64) payload.logo = logoBase64;
-      const res = await fetch(`http://localhost:8080/api/usuarios/${form.idUsuario}`, {
+      const res = await fetch(`${API_BASE_URL}/usuarios/${form.idUsuario}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { insumoService, quimicoService } from '../../services/api';
-import axios from 'axios';
+import { insumoService, quimicoService, estadoInsumoService } from '../../services/api';
 
 const DetalleInsumo = () => {
   const { id } = useParams();
@@ -37,7 +36,7 @@ const DetalleInsumo = () => {
       const tipo = tipoRes.data.find(t => t.idTipoInsumo === parseInt(id));
       setTipoInsumo(tipo);
       
-      const estadosRes = await axios.get('http://localhost:8080/api/estados-insumo');
+      const estadosRes = await estadoInsumoService.getEstados();
       setEstadosInsumo(estadosRes.data);
       
       if (tipo) {

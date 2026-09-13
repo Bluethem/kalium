@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { pedidoService, insumoService, horarioService, pedidoDetalleService, experimentoService } from '../../services/api';
-import axios from 'axios';
+import api, {
+  pedidoService,
+  insumoService,
+  horarioService,
+  pedidoDetalleService,
+  experimentoService,
+  instructorService,
+  cursoService,
+  tipoPedidoService,
+} from '../../services/api';
 
 const NuevoPedido = () => {
   const navigate = useNavigate();
@@ -49,9 +57,9 @@ const NuevoPedido = () => {
   const cargarDatos = async () => {
     try {
       const [instructoresRes, cursosRes, tiposPedidoRes, tiposInsumoRes, experimentosRes] = await Promise.all([
-        axios.get('http://localhost:8080/api/instructores'),
-        axios.get('http://localhost:8080/api/cursos'),
-        axios.get('http://localhost:8080/api/tipos-pedido'),
+        instructorService.getInstructores(),
+        cursoService.getCursos(),
+        tipoPedidoService.getTiposPedido(),
         insumoService.getTiposInsumoConStock(),
         experimentoService.getExperimentos()
       ]);
@@ -241,14 +249,14 @@ const NuevoPedido = () => {
         return;
       }
 
-      const response = await axios.post('http://localhost:8080/api/cursos', {
+      const response = await api.post('/cursos', {
         nombreCurso: nuevoCurso.nombreCurso,
         codigo: nuevoCurso.codigoCurso || null,
         descripcion: null
       });
 
       // Recargar cursos
-      const cursosRes = await axios.get('http://localhost:8080/api/cursos');
+      const cursosRes = await cursoService.getCursos();
       setCursos(cursosRes.data);
 
       // Seleccionar el nuevo curso automáticamente
@@ -276,12 +284,12 @@ const NuevoPedido = () => {
         return;
       }
 
-      const response = await axios.post('http://localhost:8080/api/tipos-pedido', {
+      const response = await api.post('/tipos-pedido', {
         nombrePedido: nuevoTipoPedido.nombrePedido
       });
 
       // Recargar tipos de pedido
-      const tiposRes = await axios.get('http://localhost:8080/api/tipos-pedido');
+      const tiposRes = await tipoPedidoService.getTiposPedido();
       setTiposPedido(tiposRes.data);
 
       // Seleccionar el nuevo tipo automáticamente
