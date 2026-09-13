@@ -1,3 +1,4 @@
 /backend/nbproject/
-
-.worktrees/
+.env
+*.log
+.DS_Store
