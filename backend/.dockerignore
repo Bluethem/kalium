@@ -1,0 +1,8 @@
+target/
+.mvn/wrapper/maven-wrapper.jar
+nbactions.xml
+nb-configuration.xml
+controllers/
+services/
+*.md
+.git
