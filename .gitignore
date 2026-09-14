@@ -4,3 +4,6 @@
 .DS_Store
 .worktrees/
 **/application-secret.properties
+docs/superpowers
+node_modules
+target
