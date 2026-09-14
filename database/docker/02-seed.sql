@@ -433,7 +433,7 @@ SELECT
         ELSE 
             CASE WHEN COUNT(i.IDInsumo) < ti.stockMinimo THEN '⚠️ BAJO' ELSE '✅ OK' END
     END AS Estado,
-    ti.Unidad AS Unidad
+    u.Unidad AS Unidad
 FROM TipoInsumo ti
 LEFT JOIN Quimico q ON ti.IDTipoInsumo = q.IDTipoInsumo AND ti.EsQuimico = 1
 LEFT JOIN Insumo i ON ti.IDTipoInsumo = i.IDTipoInsumo AND ti.EsQuimico = 0
