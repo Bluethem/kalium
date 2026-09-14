@@ -64,6 +64,9 @@ kalium/
 
 5. Abre la aplicación en http://localhost:5173.
 
+La URL de la API del frontend se configura con `VITE_API_URL` y por defecto es
+`http://localhost:8080/api`; consulta el README del frontend para más detalles.
+
 Las credenciales MySQL predeterminadas son: usuario `kalium`, contraseña `kalium` y base de datos `kaliumdb`.
 
 Para resetear la base de datos y volver a cargar el seed:
@@ -86,9 +89,12 @@ docker compose down -v && docker compose up --build
     - Spring Boot 4 (Spring Web, Spring Data JPA, Spring Security)
     - Maven
 - Frontend:
-    - React 18
+    - React 19
     - Vite
     - TailwindCSS
+    - `xlsx` permanece en 0.18.5 por el congelamiento de publicaciones en npm y
+      tiene avisos conocidos de prototype pollution y ReDoS. Se dará seguimiento
+      a una actualización futura mediante el CDN de SheetJS.
 - Base de Datos:
     - MySQL
 

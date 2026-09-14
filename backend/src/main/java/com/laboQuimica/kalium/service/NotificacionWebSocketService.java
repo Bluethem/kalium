@@ -32,7 +32,7 @@ public class NotificacionWebSocketService {
             // Envía a /topic/notificaciones/{idUsuario}
             messagingTemplate.convertAndSend(
                 "/topic/notificaciones/" + idUsuario, 
-                notificacion
+                (Object) notificacion
             );
             logger.debug("Notificación enviada por WebSocket a usuario: {}", idUsuario);
         } catch (Exception e) {
@@ -46,7 +46,7 @@ public class NotificacionWebSocketService {
      */
     public void enviarNotificacionGlobal(NotificacionDTO notificacion) {
         try {
-            messagingTemplate.convertAndSend("/topic/notificaciones/global", notificacion);
+            messagingTemplate.convertAndSend("/topic/notificaciones/global", (Object) notificacion);
             logger.debug("Notificación global enviada por WebSocket");
         } catch (Exception e) {
             logger.error("Error al enviar notificación global: {}", e.getMessage());

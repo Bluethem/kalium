@@ -6,3 +6,4 @@ controllers/
 services/
 *.md
 .git
+**/application-secret.properties
